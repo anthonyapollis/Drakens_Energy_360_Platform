@@ -1,0 +1,79 @@
+name: vivo_energy_360
+version: 1.0.0
+config-version: 2
+
+profile: vivo_energy_360
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+require-dbt-version: [">=1.7.0", "<2.0.0"]
+
+vars:
+  # Rows older than this are treated as history and never reprocessed by the
+  # incremental models. Overridden per environment in the CI/CD pipeline.
+  incremental_lookback_days: 7
+  # Reporting currency for all conformed monetary measures.
+  reporting_currency: ZAR
+  # Late-delivery threshold used consistently across marts and Power BI.
+  otif_delay_threshold_minutes: 60
+  # Days-of-cover below which a site is treated as stock-out risk.
+  stock_out_cover_days: 1.5
+
+models:
+  vivo_energy_360:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +materialized: view
+      +schema: silver
+      +tags: ["silver", "staging"]
+    intermediate:
+      +materialized: ephemeral
+      +schema: silver
+      +tags: ["silver", "intermediate"]
+    marts:
+      +materialized: table
+      +schema: gold
+      +tags: ["gold"]
+      core:
+        +tags: ["gold", "conformed"]
+      retail:
+        +tags: ["gold", "retail"]
+      commercial:
+        +tags: ["gold", "commercial"]
+      supply:
+        +tags: ["gold", "supply"]
+      energy:
+        +tags: ["gold", "new_energy"]
+      assets:
+        +tags: ["gold", "assets"]
+      finance:
+        +tags: ["gold", "finance"]
+      executive:
+        +tags: ["gold", "executive"]
+      observability:
+        +materialized: table
+        +schema: platform
+        +tags: ["observability"]
+
+seeds:
+  vivo_energy_360:
+    +schema: reference
+    +tags: ["reference"]
+
+snapshots:
+  vivo_energy_360:
+    +target_schema: silver_snapshots
+    +tags: ["scd2"]
+
+on-run-end:
+  - "{{ log_run_results() }}"

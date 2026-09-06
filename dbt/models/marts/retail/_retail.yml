@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: fct_retail_fuel_sales
+    description: >
+      One row per retail fuel sales transaction line. Largest fact in the
+      model (5,000,000 rows at portfolio scale). Incremental with a
+      configurable late-arriving-data lookback window.
+    columns:
+      - name: transaction_id
+        data_tests: [unique, not_null]
+      - name: date_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: site_key
+        description: "Null would mean a sale at a site not in the dimension."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_site')
+                field: site_key
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: litres
+        description: "A single vehicle fill. Above 900 L implies a unit error."
+        data_tests:
+          - not_null
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 900}
+      - name: unit_price_zar
+        description: "Regulated pump price. Outside 8-45 ZAR/L is implausible."
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 8, max_value: 45}
+      - name: gross_sales_zar
+        data_tests:
+          - not_null
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 40000}
+    data_tests:
+      - margin_is_reconcilable:
+          arguments:
+            revenue_column: gross_sales_zar
+            cogs_column: cogs_zar
+            margin_column: gross_margin_zar
+
+  - name: agg_site_daily_fuel
+    description: >
+      One row per site per day. The aggregate serving retail trend reporting
+      and the demand-forecast feature set.
+    columns:
+      - name: date_key
+        data_tests: [not_null]
+      - name: site_key
+        data_tests: [not_null]
+      - name: gross_margin_pct
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: -50, max_value: 60}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [date_key, site_key]

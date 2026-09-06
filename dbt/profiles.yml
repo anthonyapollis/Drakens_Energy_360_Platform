@@ -1,0 +1,48 @@
+# dbt profiles for Vivo Energy 360.
+#
+# `duckdb_local` runs the entire medallion against the generated Parquet lake
+# with no cloud account, which is what CI uses. The Databricks targets are the
+# real deployment path and read the same models unchanged.
+vivo_energy_360:
+  target: duckdb_local
+
+  outputs:
+    # ------------------------------------------------------------------ local
+    duckdb_local:
+      type: duckdb
+      path: "{{ env_var('VIVO_DUCKDB_PATH', '../data/vivo360.duckdb') }}"
+      threads: 8
+      extensions:
+        - httpfs
+        - parquet
+      settings:
+        memory_limit: "6GB"
+        preserve_insertion_order: false
+
+    # ------------------------------------------------------------- Databricks
+    dev:
+      type: databricks
+      catalog: vivo_dev
+      schema: gold
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      auth_type: oauth
+      threads: 8
+
+    test:
+      type: databricks
+      catalog: vivo_test
+      schema: gold
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      auth_type: oauth
+      threads: 12
+
+    prod:
+      type: databricks
+      catalog: vivo_prod
+      schema: gold
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      auth_type: oauth
+      threads: 24

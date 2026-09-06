@@ -1,0 +1,115 @@
+version: 2
+
+exposures:
+  - name: executive_network_dashboard
+    label: "Executive Network Performance"
+    type: dashboard
+    maturity: high
+    url: https://app.powerbi.com/synthetic-workspace/executive-network
+    description: >
+      The C-level view of network performance: volume, margin, OTIF, safety
+      and new-energy progress by province. Refreshed 06:00 SAST daily. If this
+      breaks, the Monday executive meeting has no numbers, so its upstream
+      models are the first thing to check on a failed run.
+    depends_on:
+      - ref('agg_executive_daily_kpi')
+      - ref('dim_date')
+      - ref('dim_site')
+    owner:
+      name: Data Platform Team
+      email: data.platform@example.invalid
+
+  - name: network_investment_decision_pack
+    label: "Network Investment Decision Pack"
+    type: analysis
+    maturity: high
+    url: https://app.powerbi.com/synthetic-workspace/network-investment
+    description: >
+      Site-level investment scoring and the capital-allocation optimiser
+      output. Used in the quarterly capital committee. Every score component
+      is exposed so a recommendation can be challenged on its inputs.
+    depends_on:
+      - ref('network_investment_scorecard')
+      - ref('agg_site_daily_fuel')
+      - ref('fct_maintenance_work_orders')
+    owner:
+      name: Network Strategy
+      email: network.strategy@example.invalid
+
+  - name: supply_control_tower
+    label: "Supply Control Tower"
+    type: dashboard
+    maturity: high
+    url: https://app.powerbi.com/synthetic-workspace/supply-control-tower
+    description: >
+      Near-real-time stock cover, replenishment and delivery OTIF. Backed by
+      the streaming tank-telemetry pipeline; a 15-minute SLA applies.
+    depends_on:
+      - ref('fct_inventory_position')
+      - ref('fct_deliveries')
+      - ref('obs_table_freshness')
+    owner:
+      name: Supply and Distribution
+      email: supply.ops@example.invalid
+
+  - name: commercial_margin_review
+    label: "Commercial Margin and Discount Review"
+    type: dashboard
+    maturity: medium
+    url: https://app.powerbi.com/synthetic-workspace/commercial-margin
+    description: >
+      Customer profitability and discount leakage for the monthly commercial
+      review.
+    depends_on:
+      - ref('fct_commercial_orders')
+      - ref('agg_customer_monthly')
+      - ref('dim_customer')
+    owner:
+      name: Commercial Finance
+      email: commercial.finance@example.invalid
+
+  - name: ml_demand_forecast
+    label: "Fuel Demand Forecast Model"
+    type: ml
+    maturity: medium
+    url: https://adb-synthetic.azuredatabricks.net/ml/experiments/demand-forecast
+    description: >
+      MLflow experiment forecasting site-level daily fuel volume. Consumes the
+      site-day aggregate. Retrained weekly; the registered model serves the
+      replenishment planner.
+    depends_on:
+      - ref('agg_site_daily_fuel')
+      - ref('dim_date')
+      - ref('dim_site')
+    owner:
+      name: Data Science
+      email: data.science@example.invalid
+
+  - name: ml_predictive_maintenance
+    label: "Predictive Maintenance Model"
+    type: ml
+    maturity: medium
+    url: https://adb-synthetic.azuredatabricks.net/ml/experiments/predictive-maintenance
+    description: >
+      Predicts whether a work order will be an unplanned breakdown, from asset
+      age, criticality and telemetry. Feeds the maintenance planning queue.
+    depends_on:
+      - ref('fct_maintenance_work_orders')
+    owner:
+      name: Data Science
+      email: data.science@example.invalid
+
+  - name: platform_observability
+    label: "Pipeline Health and Controls"
+    type: dashboard
+    maturity: high
+    url: https://app.powerbi.com/synthetic-workspace/platform-observability
+    description: >
+      Freshness against SLA, reconciliation controls and test results. The
+      page the on-call engineer opens first.
+    depends_on:
+      - ref('obs_table_freshness')
+      - ref('obs_reconciliation_controls')
+    owner:
+      name: Data Platform Team
+      email: data.platform@example.invalid

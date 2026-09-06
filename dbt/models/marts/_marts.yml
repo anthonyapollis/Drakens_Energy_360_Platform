@@ -1,0 +1,177 @@
+version: 2
+
+models:
+  # ------------------------------------------------------------------ supply
+  - name: fct_deliveries
+    description: >
+      One row per primary-distribution delivery. Carries the single conformed
+      OTIF definition used by every downstream report and by the
+      late-delivery model.
+    columns:
+      - name: delivery_id
+        data_tests: [unique, not_null]
+      - name: destination_site_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_site'), field: site_key}
+      - name: delivered_litres
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 60000}
+      - name: is_otif
+        data_tests: [not_null]
+      - name: punctuality_band
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Early', 'On Time', 'Late', 'Severely Late']
+
+  - name: fct_inventory_position
+    description: >
+      Semi-additive stock position. Sum across locations, never across time.
+    columns:
+      - name: snapshot_id
+        data_tests: [unique, not_null]
+      - name: fill_pct
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 100}
+      - name: cover_band
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Critical', 'At Risk', 'Healthy', 'Long', 'Overstocked']
+
+  # -------------------------------------------------------------- commercial
+  - name: fct_commercial_orders
+    description: "One row per B2B order header, with discount leakage valued."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_key}
+      - name: volume_litres
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 3000000}
+    data_tests:
+      - margin_is_reconcilable:
+          arguments:
+            revenue_column: revenue_zar
+            cogs_column: cogs_zar
+            margin_column: gross_margin_zar
+
+  - name: agg_customer_monthly
+    description: >
+      One row per customer per month. Feature source for the churn model.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [year_month, customer_key]
+
+  # ------------------------------------------------------------------ assets
+  - name: fct_maintenance_work_orders
+    description: >
+      One row per work order. Asset age and criticality are the state at the
+      time the order was raised, to avoid leakage into the ML model.
+    columns:
+      - name: work_order_id
+        data_tests: [unique, not_null]
+      - name: asset_age_band
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['0-5', '5-10', '10-15', '15+']}
+      - name: is_breakdown
+        data_tests: [not_null]
+
+  # -------------------------------------------------------------- new energy
+  - name: fct_ev_charging_sessions
+    description: "One row per EV charging session."
+    columns:
+      - name: ev_session_id
+        data_tests: [unique, not_null]
+      - name: energy_kwh
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 400}
+      - name: power_utilisation_pct
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 100}
+
+  # ----------------------------------------------------------------- finance
+  - name: fct_general_ledger
+    description: >
+      One row per posted journal line. Only signed_amount_zar is additive.
+    columns:
+      - name: journal_line_id
+        data_tests: [unique, not_null]
+      - name: statement
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['Income Statement', 'Balance Sheet']}
+
+  # --------------------------------------------------------------- executive
+  - name: agg_executive_daily_kpi
+    description: "One row per province per day. Backs the executive dashboard."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [date_key, province]
+
+  - name: network_investment_scorecard
+    description: >
+      One row per site. Trading, asset, safety and new-energy performance
+      combined into a ranked investment score with every input visible.
+    columns:
+      - name: site_key
+        data_tests: [unique, not_null]
+      - name: investment_score
+        data_tests:
+          - not_null
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 100}
+      - name: investment_recommendation
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Invest - Expand'
+                  - 'Invest - Maintain Leadership'
+                  - 'Invest - Refurbish'
+                  - 'Hold'
+                  - 'Hold - Strategic Coverage'
+                  - 'Review'
+                  - 'Divest Candidate'
+      - name: investment_quartile
+        data_tests:
+          - accepted_values:
+              arguments: {values: [1, 2, 3, 4], quote: false}
+
+  # ----------------------------------------------------------- observability
+  - name: obs_table_freshness
+    description: >
+      Ingestion lag against the per-source SLA held in dim_data_source.
+    columns:
+      - name: table_name
+        data_tests: [unique, not_null]
+      - name: sla_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Within SLA', 'Degraded', 'Breached', 'Unknown']
+
+  - name: obs_reconciliation_controls
+    description: >
+      Financial and volumetric controls evaluated as data so failures can be
+      trended on a dashboard rather than only failing a pipeline run.
+    columns:
+      - name: control_code
+        data_tests: [unique, not_null]
+      - name: is_passing
+        description: "Every control must pass. A failure here blocks release."
+        data_tests:
+          - accepted_values:
+              arguments: {values: [true], quote: false}

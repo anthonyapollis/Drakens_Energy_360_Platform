@@ -1,0 +1,89 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: >
+      Conformed date dimension on the South African fiscal calendar
+      (April to March). One row per calendar day.
+    columns:
+      - name: date_key
+        description: "Integer yyyymmdd surrogate key. Joins every fact table."
+        data_tests: [unique, not_null]
+      - name: full_date
+        data_tests: [not_null]
+      - name: fiscal_year
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [2024, 2025, 2026, 2027]
+                quote: false
+
+  - name: dim_site
+    description: >
+      Conformed site dimension for the synthetic retail and commercial network.
+      All coordinates are city centroids plus random jitter and do not
+      represent any real service station.
+    columns:
+      - name: site_key
+        data_tests: [unique, not_null]
+      - name: site_id
+        data_tests: [not_null]
+      - name: country_code
+        data_tests: [not_null]
+      - name: latitude
+        description: "Synthetic, jittered. Never a real site location."
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: -90, max_value: 90}
+      - name: longitude
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: -180, max_value: 180}
+      - name: demand_band
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Very High', 'High', 'Medium', 'Low', 'Very Low']
+      - name: ownership_model
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['COCO', 'CODO', 'DODO']}
+      - name: is_current
+        data_tests: [not_null]
+
+  - name: dim_customer
+    description: "Conformed B2B customer dimension. Names are synthetic."
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+      - name: credit_band
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['A', 'B', 'C', 'D']}
+      - name: credit_risk_tier
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['Low', 'Medium', 'High']}
+      - name: payment_terms_days
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: 0, max_value: 180}
+
+  - name: dim_product
+    description: "Conformed product dimension across all energy lines."
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+      - name: product_id
+        data_tests: [not_null]
+      - name: category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Fuel', 'LPG', 'Lubricant', 'Convenience', 'Energy']
+      - name: base_margin_pct
+        description: "Regulated fuels must show a materially thinner margin."
+        data_tests:
+          - volume_within_tolerance:
+              arguments: {min_value: -5, max_value: 100}
