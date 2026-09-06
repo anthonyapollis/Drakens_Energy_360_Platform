@@ -32,19 +32,27 @@ models:
     +persist_docs:
       relation: true
       columns: true
+    cleansed:
+      # Stage 1 of the cleansing layer: repair every column and assess every
+      # row, once. Materialised as a table because the parsing -- locale-aware
+      # numerics, sentinel stripping, timestamp range checks -- is by far the
+      # most expensive work in the project. As views these expressions re-ran
+      # on every downstream query and every test, turning single tests into
+      # 190-second operations against the 37-million-row landing zone.
+      +materialized: table
+      +schema: silver_cleansed
+      +tags: ["silver", "cleansing"]
     staging:
-      # Tables, not views. The cleansing expressions -- locale-aware numeric
-      # parsing, sentinel stripping, timestamp range checks -- are expensive,
-      # and as views every downstream query and every test re-parses the full
-      # 37-million-row landing zone. Materialising once turned a ~190s test
-      # into a sub-second one.
+      # Stage 2: valid rows, deduplicated. Reads the already-repaired tables
+      # rather than the raw landing zone, so the parsing is paid for once
+      # rather than once per consumer.
       +materialized: table
       +schema: silver
       +tags: ["silver", "staging"]
     quarantine:
-      # Same reasoning: the quarantine models re-run the same cleansing to
-      # decide what failed, so they pay the same cost as views.
-      +materialized: table
+      # Rejected rows. A cheap filter over the assessed table, so these can
+      # stay views -- there is no expensive work left to memoise.
+      +materialized: view
       +schema: quarantine
       +tags: ["quarantine", "data_quality"]
     intermediate:

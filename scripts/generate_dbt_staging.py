@@ -131,16 +131,18 @@ def quality_rules(table: str, columns: list[str], types: dict,
     return rules
 
 
-def render_model(table: str, columns: list[str], types: dict,
-                 layer: str, quarantine: bool) -> str:
+def render_cleansed(table: str, columns: list[str], types: dict,
+                    layer: str) -> str:
     key = pick_key(table, columns)
-    ts = pick_timestamp(columns)
     rules = quality_rules(table, columns, types, key)
 
-    # Materialisation is deliberately not set here. It comes from
-    # dbt_project.yml, so the cleansing layer can be switched between table
-    # and view in one place rather than by regenerating 289 files.
-    out = [HEADER]
+    # Materialisation comes from dbt_project.yml so the layer can be switched
+    # in one place rather than by regenerating hundreds of files.
+    out = [HEADER,
+           "-- Stage 1 of 2 in the cleansing layer: repair every column and",
+           "-- assess every row, once. `stg_` and `qtn_` both read from here,",
+           "-- so the expensive parsing is not paid for twice.",
+           ""]
 
     ctes: list[str] = []
 
@@ -187,50 +189,72 @@ def render_model(table: str, columns: list[str], types: dict,
                   "    from cleansed",
                   ")"]
     ctes.append("\n".join(assess))
-    stage = "assessed"
 
-    if quarantine:
-        final = ["-- Rows that failed the contract. Kept, not dropped: a",
-                 "-- silently discarded row becomes an unexplainable variance",
-                 "-- months later, and there is no way back from it.",
-                 "select",
-                 f"    '{table}' as _source_table,"]
-        final += [f"    {col}," for col in columns]
-        final += ["    _dq_failed_rules,",
-                  "    {{ cleansing_layer_columns() }}",
-                  f"from {stage}",
-                  "where not _dq_is_valid"]
-    elif key:
-        dedup = ["-- Stage 3: deduplicate. Source systems replay batches, so the",
-                 "-- same business key can arrive more than once. Keep the most",
-                 "-- recently ingested version.",
-                 "deduplicated as (",
-                 "    select",
-                 "        *,"]
-        order_col = "ingested_at" if "ingested_at" in columns else (ts or key)
-        dedup += [
-            f"        row_number() over (partition by {key} "
-            f"order by {order_col} desc nulls last) as _row_rank",
-            f"    from {stage}",
-            "    where _dq_is_valid",
-            ")"]
-        ctes.append("\n".join(dedup))
-
-        final = ["select"]
-        final += [f"    {col}," for col in columns]
-        final += ["    {{ cleansing_layer_columns() }}",
-                  "from deduplicated",
-                  "where _row_rank = 1"]
-    else:
-        final = ["select"]
-        final += [f"    {col}," for col in columns]
-        final += ["    {{ cleansing_layer_columns() }}",
-                  f"from {stage}",
-                  "where _dq_is_valid"]
+    final = ["select", "    *,", "    {{ cleansing_layer_columns() }}",
+             "from assessed"]
 
     out.append(",\n\n".join(ctes))
     out.append("")
     out.append("\n".join(final))
+    return "\n".join(out) + "\n"
+
+
+def render_staging(table: str, columns: list[str], types: dict) -> str:
+    """Valid rows only, deduplicated on the business key.
+
+    Reads the already-repaired `cln_` table rather than re-parsing the raw
+    landing zone, which is the whole reason the cleansing layer is split in
+    two: the parsing is the expensive part and it is paid for once.
+    """
+    key = pick_key(table, columns)
+    ts = pick_timestamp(columns)
+
+    out = [HEADER,
+           "-- Stage 2 of 2: the clean, conformed rows the marts consume.",
+           ""]
+
+    if key:
+        order_col = "ingested_at" if "ingested_at" in columns else (ts or key)
+        out += [
+            "-- Source systems replay batches, so the same business key can",
+            "-- arrive more than once. Keep the most recently ingested version.",
+            "with deduplicated as (",
+            "    select",
+            "        *,",
+            f"        row_number() over (partition by {key} "
+            f"order by {order_col} desc nulls last) as _row_rank",
+            f"    from {{{{ ref('cln_{table}') }}}}",
+            "    where _dq_is_valid",
+            ")",
+            "",
+            "select"]
+        out += [f"    {col}," for col in columns]
+        out += ["    _cleansed_at",
+                "from deduplicated",
+                "where _row_rank = 1"]
+    else:
+        out.append("select")
+        out += [f"    {col}," for col in columns]
+        out += ["    _cleansed_at",
+                f"from {{{{ ref('cln_{table}') }}}}",
+                "where _dq_is_valid"]
+    return "\n".join(out) + "\n"
+
+
+def render_quarantine(table: str, columns: list[str]) -> str:
+    """Rejected rows, with the rule that rejected each one."""
+    out = [HEADER,
+           "-- Rows that failed the contract. Kept, not dropped: a silently",
+           "-- discarded row becomes an unexplainable variance months later,",
+           "-- and there is no way back from it.",
+           "",
+           "select",
+           f"    '{table}' as _source_table,"]
+    out += [f"    {col}," for col in columns]
+    out += ["    _dq_failed_rules,",
+            "    _cleansed_at",
+            f"from {{{{ ref('cln_{table}') }}}}",
+            "where not _dq_is_valid"]
     return "\n".join(out) + "\n"
 
 
@@ -303,6 +327,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifest", type=Path, default=Path("data/lake/_manifest.json"))
     ap.add_argument("--out", type=Path, default=Path("dbt/models/staging"))
+    ap.add_argument("--cleansed-out", type=Path,
+                    default=Path("dbt/models/cleansed"))
     ap.add_argument("--quarantine-out", type=Path,
                     default=Path("dbt/models/quarantine"))
     args = ap.parse_args(argv)
@@ -312,32 +338,37 @@ def main(argv=None):
 
     for sub in ("dimensions", "facts"):
         (args.out / sub).mkdir(parents=True, exist_ok=True)
+        (args.cleansed_out / sub).mkdir(parents=True, exist_ok=True)
     args.quarantine_out.mkdir(parents=True, exist_ok=True)
 
-    n_stg = n_qtn = 0
+    n_cln = n_stg = n_qtn = 0
     for table, info in sorted(tables.items()):
         layer = "facts" if table.startswith("fact_") else "dimensions"
         cols = info["columns"]
         types = info.get("intended_types", {})
 
+        (args.cleansed_out / layer / f"cln_{table}.sql").write_text(
+            render_cleansed(table, cols, types, layer), encoding="utf-8")
+        n_cln += 1
+
         (args.out / layer / f"stg_{table}.sql").write_text(
-            render_model(table, cols, types, layer, quarantine=False),
-            encoding="utf-8")
+            render_staging(table, cols, types), encoding="utf-8")
         n_stg += 1
 
         if quality_rules(table, cols, types, pick_key(table, cols)):
             (args.quarantine_out / f"qtn_{table}.sql").write_text(
-                render_model(table, cols, types, layer, quarantine=True),
-                encoding="utf-8")
+                render_quarantine(table, cols), encoding="utf-8")
             n_qtn += 1
 
-    (args.out / "_sources.yml").write_text(render_sources(tables), encoding="utf-8")
+    (args.cleansed_out / "_sources.yml").write_text(
+        render_sources(tables), encoding="utf-8")
     (args.out / "dimensions" / "_schema.yml").write_text(
         render_schema_yml(tables, "dimensions"), encoding="utf-8")
     (args.out / "facts" / "_schema.yml").write_text(
         render_schema_yml(tables, "facts"), encoding="utf-8")
 
-    print(f"wrote {n_stg} cleansing models to {args.out}")
+    print(f"wrote {n_cln} repair/assess models to {args.cleansed_out}")
+    print(f"wrote {n_stg} staging models to {args.out}")
     print(f"wrote {n_qtn} quarantine models to {args.quarantine_out}")
 
 
