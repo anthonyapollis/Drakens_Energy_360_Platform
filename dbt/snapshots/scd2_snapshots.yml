@@ -8,7 +8,6 @@ snapshots:
       new-energy fit-out and operating status over time, so a margin trend can
       be read against the site as it actually was, not as it is now.
     config:
-      database: "{{ env_var('VIVO_CATALOG', 'vivo_dev') }}"
       schema: silver_snapshots
       unique_key: site_id
       strategy: check
@@ -31,7 +30,6 @@ snapshots:
       Type-2 history for customers. Credit band and limit changes are the
       audit trail behind any credit-exposure question.
     config:
-      database: "{{ env_var('VIVO_CATALOG', 'vivo_dev') }}"
       schema: silver_snapshots
       unique_key: customer_id
       strategy: check
@@ -51,7 +49,6 @@ snapshots:
       Type-2 history for products, principally to retain the base price and
       cost that applied in a given period.
     config:
-      database: "{{ env_var('VIVO_CATALOG', 'vivo_dev') }}"
       schema: silver_snapshots
       unique_key: product_id
       strategy: check
@@ -70,7 +67,6 @@ snapshots:
       Type-2 history for commercial contracts. Discount and committed-volume
       changes drive the contract-compliance reporting.
     config:
-      database: "{{ env_var('VIVO_CATALOG', 'vivo_dev') }}"
       schema: silver_snapshots
       unique_key: contract_id
       strategy: check

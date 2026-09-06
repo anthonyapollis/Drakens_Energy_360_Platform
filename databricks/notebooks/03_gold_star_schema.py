@@ -31,6 +31,20 @@ spark.sql(f"USE CATALOG {CATALOG}")
 def silver(name):
     return spark.table(f"{CATALOG}.silver.{name}")
 
+def join_dim(fact, dim_df, on: str, cols: list[str]):
+    """Join dimension attributes onto a fact, replacing any already present.
+
+    The bronze generator denormalises a few site attributes onto the fact for
+    query convenience. Joining the dimension on top of that would produce
+    duplicate column names, so the fact's copies are dropped first and the
+    dimension is treated as the single source of truth for them.
+    """
+    overlapping = [c for c in cols if c != on and c in fact.columns]
+    if overlapping:
+        fact = fact.drop(*overlapping)
+    return fact.join(dim_df.select(*cols), on, "left")
+
+
 def save_gold(df, name, partition=None, comment=None):
     writer = (df.write.format("delta").mode("overwrite")
               .option("overwriteSchema", "true"))
@@ -143,15 +157,19 @@ save_gold(dim_product, "dim_product", comment="Conformed product dimension acros
 
 # COMMAND ----------
 
+fct_retail = silver("fact_retail_fuel_sales")
+fct_retail = join_dim(fct_retail, dim_site, "site_id",
+                      ["site_id", "site_key", "province", "city", "urban_class",
+                       "site_type", "ownership_model", "demand_band"])
+fct_retail = join_dim(
+    fct_retail,
+    dim_product.withColumn("fuel_grade", F.col("subcategory"))
+               .withColumn("is_regulated_price", F.col("regulated")),
+    "product_id",
+    ["product_id", "product_key", "product_name", "fuel_grade",
+     "reporting_line", "is_regulated_price"])
 fct_retail = (
-    silver("fact_retail_fuel_sales").alias("f")
-    .join(dim_site.select("site_id", "site_key", "province", "city", "urban_class",
-                          "site_type", "ownership_model", "demand_band").alias("s"),
-          "site_id", "left")
-    .join(dim_product.select("product_id", "product_key", "product_name",
-                             F.col("subcategory").alias("fuel_grade"),
-                             "reporting_line", F.col("regulated").alias("is_regulated_price")).alias("p"),
-          "product_id", "left")
+    fct_retail
     .withColumn("line_margin_pct", F.round(
         F.col("gross_margin_zar") / F.nullif(F.col("gross_sales_zar"), F.lit(0)) * 100, 4))
     .withColumn("margin_cents_per_litre", F.round(
@@ -215,10 +233,11 @@ save_gold(agg_site_daily, "agg_site_daily_fuel",
 # COMMAND ----------
 
 if spark.catalog.tableExists(f"{CATALOG}.silver.fact_inventory_snapshot"):
+    fct_inventory = join_dim(
+        silver("fact_inventory_snapshot"), dim_site, "site_id",
+        ["site_id", "site_key", "province", "demand_band"])
     fct_inventory = (
-        silver("fact_inventory_snapshot")
-        .join(dim_site.select("site_id", "site_key", "province", "demand_band"),
-              "site_id", "left")
+        fct_inventory
         .withColumn("cover_band",
             F.when(F.col("days_of_cover") < 0.5, "Critical")
              .when(F.col("days_of_cover") < 1.5, "At Risk")
@@ -238,10 +257,12 @@ if spark.catalog.tableExists(f"{CATALOG}.silver.fact_inventory_snapshot"):
 # COMMAND ----------
 
 if spark.catalog.tableExists(f"{CATALOG}.silver.fact_ev_charging_sessions"):
+    fct_ev = join_dim(
+        silver("fact_ev_charging_sessions"), dim_site, "site_id",
+        ["site_id", "site_key", "province", "city", "urban_class",
+         "on_national_route"])
     fct_ev = (
-        silver("fact_ev_charging_sessions")
-        .join(dim_site.select("site_id", "site_key", "province", "city",
-                              "urban_class", "on_national_route"), "site_id", "left")
+        fct_ev
         .withColumn("power_utilisation_pct", F.round(
             F.col("average_power_kw") / F.nullif(F.col("rated_power_kw"), F.lit(0)) * 100, 2))
         .withColumn("margin_zar_per_kwh", F.round(
@@ -254,10 +275,8 @@ if spark.catalog.tableExists(f"{CATALOG}.silver.fact_ev_charging_sessions"):
     save_gold(fct_ev, "fct_ev_charging_sessions", comment="One row per EV charging session.")
 
 if spark.catalog.tableExists(f"{CATALOG}.silver.fact_solar_generation"):
-    fct_solar = (
-        silver("fact_solar_generation")
-        .join(dim_site.select("site_id", "site_key", "province"), "site_id", "left")
-    )
+    fct_solar = join_dim(silver("fact_solar_generation"), dim_site, "site_id",
+                         ["site_id", "site_key", "province"])
     save_gold(fct_solar, "fct_solar_generation",
               comment="One row per solar asset per 15-minute interval.")
 
@@ -283,8 +302,7 @@ fuel_by_prov = (
 )
 
 shop_by_prov = (
-    silver("fact_shop_sales")
-    .join(dim_site.select("site_id", "province"), "site_id", "left")
+    join_dim(silver("fact_shop_sales"), dim_site, "site_id", ["site_id", "province"])
     .groupBy("date_key", "province")
     .agg(F.round(F.sum("gross_sales_zar"), 2).alias("shop_revenue_zar"),
          F.round(F.sum("gross_margin_zar"), 2).alias("shop_margin_zar"))

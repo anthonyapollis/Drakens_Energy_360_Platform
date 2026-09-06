@@ -36,6 +36,10 @@ models:
       +materialized: view
       +schema: silver
       +tags: ["silver", "staging"]
+    quarantine:
+      +materialized: view
+      +schema: quarantine
+      +tags: ["quarantine", "data_quality"]
     intermediate:
       +materialized: ephemeral
       +schema: silver

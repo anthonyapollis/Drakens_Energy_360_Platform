@@ -8,8 +8,13 @@ from pathlib import Path
 
 import numpy as np
 
-from . import config, dimensions, facts
-from .writer import LakeWriter
+from . import config, dimensions, dirty, facts
+from .writer import LakeWriter, logical_types
+
+
+def writer_types(clean_chunk):
+    """Logical types of a fact table, sampled from one clean row."""
+    return logical_types(clean_chunk(0, 1))
 
 DISCLAIMER = (
     "Independent synthetic portfolio project. Contains no internal Vivo Energy, "
@@ -20,8 +25,9 @@ DISCLAIMER = (
 
 def build(profile_name: str, output: Path, fmt: str = "parquet",
           seed: int = config.DEFAULT_SEED, only: list[str] | None = None,
-          verbose: bool = True) -> dict:
+          verbose: bool = True, defects: str = "realistic") -> dict:
     profile = config.resolve(profile_name)
+    defect_profile = dirty.resolve(defects)
     registry = facts.load_all()
     plan = config.planned_fact_rows(profile)
 
@@ -32,12 +38,18 @@ def build(profile_name: str, output: Path, fmt: str = "parquet",
         )
 
     rng = np.random.default_rng(seed)
+    # A separate stream so toggling the defect profile never shifts the
+    # underlying clean data. The same seed produces the same business facts
+    # whether or not defects are injected, which makes the cleansing layer
+    # testable against a known-good baseline.
+    injector = dirty.DefectInjector(
+        defect_profile, np.random.default_rng(seed + 7919))
     writer = LakeWriter(output, fmt=fmt)
 
     t0 = time.perf_counter()
     if verbose:
         print(f"[1/2] dimensions  profile={profile_name}")
-    ctx = dimensions.build_all(rng, profile, writer)
+    ctx = dimensions.build_all(rng, profile, writer, injector)
     t_dim = time.perf_counter() - t0
     if verbose:
         n_dim = sum(1 for k in writer.stats if not k.startswith("fact_"))
@@ -52,19 +64,32 @@ def build(profile_name: str, output: Path, fmt: str = "parquet",
     t1 = time.perf_counter()
     for i, name in enumerate(targets, start=1):
         rows = plan[name]
-        make_chunk = registry[name](rng, ctx, profile)
+        clean_chunk = registry[name](rng, ctx, profile)
+
+        def make_chunk(offset, n, _fn=clean_chunk, _name=name):
+            return injector.apply(_name, _fn(offset, n))
+
+        # Capture the intended column types from a clean single-row sample.
+        # Defect injection deliberately turns numbers into text, so the types
+        # must be read before damage, not inferred from the landing zone.
+        intended = writer_types(clean_chunk)
+
         ts = time.perf_counter()
-        stat = writer.write_fact(name, rows, make_chunk)
+        stat = writer.write_fact(name, rows, make_chunk, types=intended)
         if verbose:
             print(f"      {i:>3}/{len(targets)}  {name:<38} "
                   f"{stat.rows:>10,} rows  {stat.bytes/1e6:>7.1f} MB  "
                   f"{time.perf_counter()-ts:>6.1f}s")
     t_fact = time.perf_counter() - t1
 
+    defect_summary = injector.summary()
     manifest_extra = {
         "profile": profile_name,
         "seed": seed,
         "disclaimer": DISCLAIMER,
+        # The cleansing layer is validated against these counts: every defect
+        # injected here must be either repaired or quarantined downstream.
+        "data_quality": defect_summary,
         "date_start": str(config.DATE_START),
         "date_end": str(config.DATE_END),
         "dimension_build_seconds": round(t_dim, 2),
@@ -82,6 +107,11 @@ def build(profile_name: str, output: Path, fmt: str = "parquet",
         print(f"      {manifest['total_bytes']/1e9:.2f} GB on disk in "
               f"{manifest['total_build_seconds']:,.0f}s")
         print(f"      manifest: {path}")
+        dq = defect_summary
+        print(f"\ndefect profile '{dq['defect_profile']}': "
+              f"{dq['total_defects_injected']:,} defects injected")
+        for defect, count in list(dq["defects_by_type"].items())[:14]:
+            print(f"      {defect:<32} {count:>12,}")
 
     if profile_name == "portfolio" and manifest["fact_rows"] < config.MIN_PORTFOLIO_FACT_ROWS:
         raise RuntimeError(
@@ -103,11 +133,14 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=config.DEFAULT_SEED)
     ap.add_argument("--only", nargs="*", default=None,
                     help="restrict the build to named fact tables")
+    ap.add_argument("--defects", default="realistic",
+                    choices=sorted(dirty.PROFILES),
+                    help="how damaged the landing zone should be")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args(argv)
 
     build(args.profile, args.output, args.format, args.seed,
-          args.only, verbose=not args.quiet)
+          args.only, verbose=not args.quiet, defects=args.defects)
 
 
 if __name__ == "__main__":

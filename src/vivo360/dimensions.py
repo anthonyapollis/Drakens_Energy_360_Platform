@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from . import config, geography as geo, reference as ref
-from .writer import LakeWriter
+from .writer import LakeWriter, logical_types
 
 
 @dataclass
@@ -1090,7 +1090,8 @@ SCD2_DIMENSIONS = {"dim_site", "dim_customer", "dim_product", "dim_supplier",
                    "dim_employee", "dim_contract"}
 
 
-def build_all(rng, profile: config.ScaleProfile, writer: LakeWriter) -> DimContext:
+def build_all(rng, profile: config.ScaleProfile, writer: LakeWriter,
+              injector=None) -> DimContext:
     """Build and persist every dimension, returning the fact-generation context."""
     geo.validate()
     dims: dict[str, pd.DataFrame] = {}
@@ -1128,9 +1129,16 @@ def build_all(rng, profile: config.ScaleProfile, writer: LakeWriter) -> DimConte
         if name in SCD2_DIMENSIONS:
             df = _scd2_columns(df, rng, config.DATE_START)
             dims[name] = df
-        writer.write_dimension(name, df)
+        # The DimContext below keeps the clean frame: fact generation must join
+        # on real keys. Only the persisted landing-zone copy is damaged, which
+        # is what the cleansing layer is measured against.
+        types = logical_types(df)
+        writer.write_dimension(
+            name, injector.apply_dimension(name, df) if injector else df, types)
     for name, df in bridges.items():
-        writer.write_dimension(name, df)
+        types = logical_types(df)
+        writer.write_dimension(
+            name, injector.apply_dimension(name, df) if injector else df, types)
 
     return DimContext(
         site=dims["dim_site"], product=dims["dim_product"],

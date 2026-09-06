@@ -24,6 +24,32 @@ class TableStat:
     files: int
     bytes: int
     columns: list[str] = field(default_factory=list)
+    # The *intended* type of each column, captured before defect injection
+    # turns numbers into text. The dbt cleansing layer is generated from this,
+    # so it knows what a column is supposed to be rather than guessing from
+    # the damaged landing-zone data.
+    intended_types: dict = field(default_factory=dict)
+
+
+
+def logical_types(df: pd.DataFrame) -> dict:
+    """Map each column to a logical type the cleansing layer can act on."""
+    out = {}
+    for col in df.columns:
+        dt = df[col].dtype
+        if pd.api.types.is_bool_dtype(dt):
+            out[col] = "boolean"
+        elif pd.api.types.is_datetime64_any_dtype(dt):
+            out[col] = "timestamp"
+        elif pd.api.types.is_integer_dtype(dt):
+            out[col] = "integer"
+        elif pd.api.types.is_float_dtype(dt):
+            out[col] = "decimal"
+        elif col.endswith(("_id", "_code")):
+            out[col] = "code"
+        else:
+            out[col] = "text"
+    return out
 
 
 class LakeWriter:
@@ -38,7 +64,8 @@ class LakeWriter:
         self.stats: dict[str, TableStat] = {}
 
     # ---------------------------------------------------------------- dims
-    def write_dimension(self, name: str, df: pd.DataFrame) -> TableStat:
+    def write_dimension(self, name: str, df: pd.DataFrame,
+                        types: dict | None = None) -> TableStat:
         folder = self.root / "dimensions" / name
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / f"{name}.{self.fmt}"
@@ -46,7 +73,8 @@ class LakeWriter:
             df.to_csv(path, index=False)
         else:
             df.to_parquet(path, index=False, compression="snappy")
-        stat = TableStat(name, len(df), 1, path.stat().st_size, list(df.columns))
+        stat = TableStat(name, len(df), 1, path.stat().st_size,
+                         list(df.columns), types or logical_types(df))
         self.stats[name] = stat
         return stat
 
@@ -57,6 +85,7 @@ class LakeWriter:
         total_rows: int,
         make_chunk: Callable[[int, int], pd.DataFrame],
         chunk_rows: int | None = None,
+        types: dict | None = None,
     ) -> TableStat:
         """Materialise `total_rows` of a fact table via repeated chunk calls.
 
@@ -71,6 +100,7 @@ class LakeWriter:
         files = 0
         size = 0
         columns: list[str] = []
+        types: dict = dict(types or {})
         for offset, n in _chunks(total_rows, chunk_rows):
             df = make_chunk(offset, n)
             if len(df) != n:
@@ -88,7 +118,7 @@ class LakeWriter:
             files += 1
             size += path.stat().st_size
 
-        stat = TableStat(name, written, files, size, columns)
+        stat = TableStat(name, written, files, size, columns, types)
         self.stats[name] = stat
         return stat
 
@@ -110,6 +140,7 @@ class LakeWriter:
                     "files": s.files,
                     "bytes": s.bytes,
                     "columns": s.columns,
+                    "intended_types": s.intended_types,
                 }
                 for name, s in sorted(self.stats.items())
             },

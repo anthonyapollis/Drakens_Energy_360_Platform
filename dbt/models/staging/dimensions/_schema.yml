@@ -3,376 +3,376 @@ version: 2
 
 models:
   - name: stg_bridge_asset_site
-    description: "Cleaned 1:1 staging view over bronze bridge_asset_site."
+    description: "Cleansed bridge_asset_site. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_asset_site."
     columns:
       - name: asset_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_customer_contract
-    description: "Cleaned 1:1 staging view over bronze bridge_customer_contract."
+    description: "Cleansed bridge_customer_contract. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_customer_contract."
     columns:
       - name: customer_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_customer_hierarchy
-    description: "Cleaned 1:1 staging view over bronze bridge_customer_hierarchy."
+    description: "Cleansed bridge_customer_hierarchy. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_customer_hierarchy."
     columns:
       - name: parent_customer_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_customer_site
-    description: "Cleaned 1:1 staging view over bronze bridge_customer_site."
+    description: "Cleansed bridge_customer_site. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_customer_site."
     columns:
       - name: customer_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_employee_site
-    description: "Cleaned 1:1 staging view over bronze bridge_employee_site."
+    description: "Cleansed bridge_employee_site. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_employee_site."
     columns:
       - name: employee_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_product_hierarchy
-    description: "Cleaned 1:1 staging view over bronze bridge_product_hierarchy."
+    description: "Cleansed bridge_product_hierarchy. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_product_hierarchy."
     columns:
       - name: product_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_route_site
-    description: "Cleaned 1:1 staging view over bronze bridge_route_site."
+    description: "Cleansed bridge_route_site. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_route_site."
     columns:
       - name: route_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_security_user_scope
-    description: "Cleaned 1:1 staging view over bronze bridge_security_user_scope."
+    description: "Cleansed bridge_security_user_scope. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_security_user_scope."
   - name: stg_bridge_site_hierarchy
-    description: "Cleaned 1:1 staging view over bronze bridge_site_hierarchy."
+    description: "Cleansed bridge_site_hierarchy. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_site_hierarchy."
     columns:
       - name: site_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_site_product
-    description: "Cleaned 1:1 staging view over bronze bridge_site_product."
+    description: "Cleansed bridge_site_product. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_site_product."
     columns:
       - name: site_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_site_promotion
-    description: "Cleaned 1:1 staging view over bronze bridge_site_promotion."
+    description: "Cleansed bridge_site_promotion. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_site_promotion."
     columns:
       - name: site_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_bridge_supplier_product
-    description: "Cleaned 1:1 staging view over bronze bridge_supplier_product."
+    description: "Cleansed bridge_supplier_product. Repaired, validated and deduplicated; rejected rows are in qtn_bridge_supplier_product."
     columns:
       - name: supplier_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_airline
-    description: "Cleaned 1:1 staging view over bronze dim_airline."
+    description: "Cleansed dim_airline. Repaired, validated and deduplicated; rejected rows are in qtn_dim_airline."
   - name: stg_dim_airport
-    description: "Cleaned 1:1 staging view over bronze dim_airport."
+    description: "Cleansed dim_airport. Repaired, validated and deduplicated; rejected rows are in qtn_dim_airport."
   - name: stg_dim_asset
-    description: "Cleaned 1:1 staging view over bronze dim_asset."
+    description: "Cleansed dim_asset. Repaired, validated and deduplicated; rejected rows are in qtn_dim_asset."
     columns:
       - name: asset_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_asset_type
-    description: "Cleaned 1:1 staging view over bronze dim_asset_type."
+    description: "Cleansed dim_asset_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_asset_type."
   - name: stg_dim_budget_version
-    description: "Cleaned 1:1 staging view over bronze dim_budget_version."
+    description: "Cleansed dim_budget_version. Repaired, validated and deduplicated; rejected rows are in qtn_dim_budget_version."
   - name: stg_dim_business_unit
-    description: "Cleaned 1:1 staging view over bronze dim_business_unit."
+    description: "Cleansed dim_business_unit. Repaired, validated and deduplicated; rejected rows are in qtn_dim_business_unit."
   - name: stg_dim_campaign
-    description: "Cleaned 1:1 staging view over bronze dim_campaign."
+    description: "Cleansed dim_campaign. Repaired, validated and deduplicated; rejected rows are in qtn_dim_campaign."
     columns:
       - name: campaign_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_carrier
-    description: "Cleaned 1:1 staging view over bronze dim_carrier."
+    description: "Cleansed dim_carrier. Repaired, validated and deduplicated; rejected rows are in qtn_dim_carrier."
     columns:
       - name: carrier_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_channel
-    description: "Cleaned 1:1 staging view over bronze dim_channel."
+    description: "Cleansed dim_channel. Repaired, validated and deduplicated; rejected rows are in qtn_dim_channel."
   - name: stg_dim_city
-    description: "Cleaned 1:1 staging view over bronze dim_city."
+    description: "Cleansed dim_city. Repaired, validated and deduplicated; rejected rows are in qtn_dim_city."
   - name: stg_dim_contract
-    description: "Cleaned 1:1 staging view over bronze dim_contract."
+    description: "Cleansed dim_contract. Repaired, validated and deduplicated; rejected rows are in qtn_dim_contract."
     columns:
       - name: contract_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_contract_type
-    description: "Cleaned 1:1 staging view over bronze dim_contract_type."
+    description: "Cleansed dim_contract_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_contract_type."
   - name: stg_dim_cost_centre
-    description: "Cleaned 1:1 staging view over bronze dim_cost_centre."
+    description: "Cleansed dim_cost_centre. Repaired, validated and deduplicated; rejected rows are in qtn_dim_cost_centre."
   - name: stg_dim_country
-    description: "Cleaned 1:1 staging view over bronze dim_country."
+    description: "Cleansed dim_country. Repaired, validated and deduplicated; rejected rows are in qtn_dim_country."
   - name: stg_dim_currency
-    description: "Cleaned 1:1 staging view over bronze dim_currency."
+    description: "Cleansed dim_currency. Repaired, validated and deduplicated; rejected rows are in qtn_dim_currency."
   - name: stg_dim_customer
-    description: "Cleaned 1:1 staging view over bronze dim_customer."
+    description: "Cleansed dim_customer. Repaired, validated and deduplicated; rejected rows are in qtn_dim_customer."
     columns:
       - name: customer_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_customer_sector
-    description: "Cleaned 1:1 staging view over bronze dim_customer_sector."
+    description: "Cleansed dim_customer_sector. Repaired, validated and deduplicated; rejected rows are in qtn_dim_customer_sector."
   - name: stg_dim_customer_segment
-    description: "Cleaned 1:1 staging view over bronze dim_customer_segment."
+    description: "Cleansed dim_customer_segment. Repaired, validated and deduplicated; rejected rows are in qtn_dim_customer_segment."
   - name: stg_dim_data_source
-    description: "Cleaned 1:1 staging view over bronze dim_data_source."
+    description: "Cleansed dim_data_source. Repaired, validated and deduplicated; rejected rows are in qtn_dim_data_source."
   - name: stg_dim_date
-    description: "Cleaned 1:1 staging view over bronze dim_date."
+    description: "Cleansed dim_date. Repaired, validated and deduplicated; rejected rows are in qtn_dim_date."
   - name: stg_dim_delivery_status
-    description: "Cleaned 1:1 staging view over bronze dim_delivery_status."
+    description: "Cleansed dim_delivery_status. Repaired, validated and deduplicated; rejected rows are in qtn_dim_delivery_status."
   - name: stg_dim_depot
-    description: "Cleaned 1:1 staging view over bronze dim_depot."
+    description: "Cleansed dim_depot. Repaired, validated and deduplicated; rejected rows are in qtn_dim_depot."
     columns:
       - name: depot_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_device
-    description: "Cleaned 1:1 staging view over bronze dim_device."
+    description: "Cleansed dim_device. Repaired, validated and deduplicated; rejected rows are in qtn_dim_device."
   - name: stg_dim_digital_user
-    description: "Cleaned 1:1 staging view over bronze dim_digital_user."
+    description: "Cleansed dim_digital_user. Repaired, validated and deduplicated; rejected rows are in qtn_dim_digital_user."
     columns:
       - name: digital_user_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_driver
-    description: "Cleaned 1:1 staging view over bronze dim_driver."
+    description: "Cleansed dim_driver. Repaired, validated and deduplicated; rejected rows are in qtn_dim_driver."
     columns:
       - name: driver_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_employee
-    description: "Cleaned 1:1 staging view over bronze dim_employee."
+    description: "Cleansed dim_employee. Repaired, validated and deduplicated; rejected rows are in qtn_dim_employee."
     columns:
       - name: employee_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_energy_source
-    description: "Cleaned 1:1 staging view over bronze dim_energy_source."
+    description: "Cleansed dim_energy_source. Repaired, validated and deduplicated; rejected rows are in qtn_dim_energy_source."
   - name: stg_dim_equipment
-    description: "Cleaned 1:1 staging view over bronze dim_equipment."
+    description: "Cleansed dim_equipment. Repaired, validated and deduplicated; rejected rows are in qtn_dim_equipment."
     columns:
       - name: equipment_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_ev_charger
-    description: "Cleaned 1:1 staging view over bronze dim_ev_charger."
+    description: "Cleansed dim_ev_charger. Repaired, validated and deduplicated; rejected rows are in qtn_dim_ev_charger."
     columns:
       - name: ev_charger_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_failure_mode
-    description: "Cleaned 1:1 staging view over bronze dim_failure_mode."
+    description: "Cleansed dim_failure_mode. Repaired, validated and deduplicated; rejected rows are in qtn_dim_failure_mode."
   - name: stg_dim_forecast_version
-    description: "Cleaned 1:1 staging view over bronze dim_forecast_version."
+    description: "Cleansed dim_forecast_version. Repaired, validated and deduplicated; rejected rows are in qtn_dim_forecast_version."
   - name: stg_dim_forecourt_lane
-    description: "Cleaned 1:1 staging view over bronze dim_forecourt_lane."
+    description: "Cleansed dim_forecourt_lane. Repaired, validated and deduplicated; rejected rows are in qtn_dim_forecourt_lane."
   - name: stg_dim_gl_account
-    description: "Cleaned 1:1 staging view over bronze dim_gl_account."
+    description: "Cleansed dim_gl_account. Repaired, validated and deduplicated; rejected rows are in qtn_dim_gl_account."
   - name: stg_dim_incident_severity
-    description: "Cleaned 1:1 staging view over bronze dim_incident_severity."
+    description: "Cleansed dim_incident_severity. Repaired, validated and deduplicated; rejected rows are in qtn_dim_incident_severity."
   - name: stg_dim_incident_type
-    description: "Cleaned 1:1 staging view over bronze dim_incident_type."
+    description: "Cleansed dim_incident_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_incident_type."
   - name: stg_dim_legal_entity
-    description: "Cleaned 1:1 staging view over bronze dim_legal_entity."
+    description: "Cleansed dim_legal_entity. Repaired, validated and deduplicated; rejected rows are in qtn_dim_legal_entity."
   - name: stg_dim_loyalty_member
-    description: "Cleaned 1:1 staging view over bronze dim_loyalty_member."
+    description: "Cleansed dim_loyalty_member. Repaired, validated and deduplicated; rejected rows are in qtn_dim_loyalty_member."
     columns:
       - name: loyalty_member_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_lpg_cylinder_type
-    description: "Cleaned 1:1 staging view over bronze dim_lpg_cylinder_type."
+    description: "Cleansed dim_lpg_cylinder_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_lpg_cylinder_type."
   - name: stg_dim_maintenance_type
-    description: "Cleaned 1:1 staging view over bronze dim_maintenance_type."
+    description: "Cleansed dim_maintenance_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_maintenance_type."
   - name: stg_dim_order_status
-    description: "Cleaned 1:1 staging view over bronze dim_order_status."
+    description: "Cleansed dim_order_status. Repaired, validated and deduplicated; rejected rows are in qtn_dim_order_status."
   - name: stg_dim_payment_method
-    description: "Cleaned 1:1 staging view over bronze dim_payment_method."
+    description: "Cleansed dim_payment_method. Repaired, validated and deduplicated; rejected rows are in qtn_dim_payment_method."
   - name: stg_dim_port
-    description: "Cleaned 1:1 staging view over bronze dim_port."
+    description: "Cleansed dim_port. Repaired, validated and deduplicated; rejected rows are in qtn_dim_port."
   - name: stg_dim_price_zone
-    description: "Cleaned 1:1 staging view over bronze dim_price_zone."
+    description: "Cleansed dim_price_zone. Repaired, validated and deduplicated; rejected rows are in qtn_dim_price_zone."
     columns:
       - name: price_zone_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_product
-    description: "Cleaned 1:1 staging view over bronze dim_product."
+    description: "Cleansed dim_product. Repaired, validated and deduplicated; rejected rows are in qtn_dim_product."
     columns:
       - name: product_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_product_brand
-    description: "Cleaned 1:1 staging view over bronze dim_product_brand."
+    description: "Cleansed dim_product_brand. Repaired, validated and deduplicated; rejected rows are in qtn_dim_product_brand."
   - name: stg_dim_product_category
-    description: "Cleaned 1:1 staging view over bronze dim_product_category."
+    description: "Cleansed dim_product_category. Repaired, validated and deduplicated; rejected rows are in qtn_dim_product_category."
   - name: stg_dim_profit_centre
-    description: "Cleaned 1:1 staging view over bronze dim_profit_centre."
+    description: "Cleansed dim_profit_centre. Repaired, validated and deduplicated; rejected rows are in qtn_dim_profit_centre."
   - name: stg_dim_promotion
-    description: "Cleaned 1:1 staging view over bronze dim_promotion."
+    description: "Cleansed dim_promotion. Repaired, validated and deduplicated; rejected rows are in qtn_dim_promotion."
     columns:
       - name: promotion_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_province
-    description: "Cleaned 1:1 staging view over bronze dim_province."
+    description: "Cleansed dim_province. Repaired, validated and deduplicated; rejected rows are in qtn_dim_province."
   - name: stg_dim_pump
-    description: "Cleaned 1:1 staging view over bronze dim_pump."
+    description: "Cleansed dim_pump. Repaired, validated and deduplicated; rejected rows are in qtn_dim_pump."
     columns:
       - name: pump_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_reason_code
-    description: "Cleaned 1:1 staging view over bronze dim_reason_code."
+    description: "Cleansed dim_reason_code. Repaired, validated and deduplicated; rejected rows are in qtn_dim_reason_code."
   - name: stg_dim_region
-    description: "Cleaned 1:1 staging view over bronze dim_region."
+    description: "Cleansed dim_region. Repaired, validated and deduplicated; rejected rows are in qtn_dim_region."
   - name: stg_dim_role
-    description: "Cleaned 1:1 staging view over bronze dim_role."
+    description: "Cleansed dim_role. Repaired, validated and deduplicated; rejected rows are in qtn_dim_role."
   - name: stg_dim_route
-    description: "Cleaned 1:1 staging view over bronze dim_route."
+    description: "Cleansed dim_route. Repaired, validated and deduplicated; rejected rows are in qtn_dim_route."
     columns:
       - name: route_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_scenario
-    description: "Cleaned 1:1 staging view over bronze dim_scenario."
+    description: "Cleansed dim_scenario. Repaired, validated and deduplicated; rejected rows are in qtn_dim_scenario."
   - name: stg_dim_shift
-    description: "Cleaned 1:1 staging view over bronze dim_shift."
+    description: "Cleansed dim_shift. Repaired, validated and deduplicated; rejected rows are in qtn_dim_shift."
   - name: stg_dim_site
-    description: "Cleaned 1:1 staging view over bronze dim_site."
+    description: "Cleansed dim_site. Repaired, validated and deduplicated; rejected rows are in qtn_dim_site."
     columns:
       - name: site_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_site_type
-    description: "Cleaned 1:1 staging view over bronze dim_site_type."
+    description: "Cleansed dim_site_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_site_type."
   - name: stg_dim_solar_asset
-    description: "Cleaned 1:1 staging view over bronze dim_solar_asset."
+    description: "Cleansed dim_solar_asset. Repaired, validated and deduplicated; rejected rows are in qtn_dim_solar_asset."
     columns:
       - name: solar_asset_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_supplier
-    description: "Cleaned 1:1 staging view over bronze dim_supplier."
+    description: "Cleansed dim_supplier. Repaired, validated and deduplicated; rejected rows are in qtn_dim_supplier."
     columns:
       - name: supplier_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_supplier_type
-    description: "Cleaned 1:1 staging view over bronze dim_supplier_type."
+    description: "Cleansed dim_supplier_type. Repaired, validated and deduplicated; rejected rows are in qtn_dim_supplier_type."
   - name: stg_dim_tank
-    description: "Cleaned 1:1 staging view over bronze dim_tank."
+    description: "Cleansed dim_tank. Repaired, validated and deduplicated; rejected rows are in qtn_dim_tank."
     columns:
       - name: tank_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_tax
-    description: "Cleaned 1:1 staging view over bronze dim_tax."
+    description: "Cleansed dim_tax. Repaired, validated and deduplicated; rejected rows are in qtn_dim_tax."
   - name: stg_dim_terminal
-    description: "Cleaned 1:1 staging view over bronze dim_terminal."
+    description: "Cleansed dim_terminal. Repaired, validated and deduplicated; rejected rows are in qtn_dim_terminal."
     columns:
       - name: terminal_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_time
-    description: "Cleaned 1:1 staging view over bronze dim_time."
+    description: "Cleansed dim_time. Repaired, validated and deduplicated; rejected rows are in qtn_dim_time."
   - name: stg_dim_unit_of_measure
-    description: "Cleaned 1:1 staging view over bronze dim_unit_of_measure."
+    description: "Cleansed dim_unit_of_measure. Repaired, validated and deduplicated; rejected rows are in qtn_dim_unit_of_measure."
   - name: stg_dim_vehicle
-    description: "Cleaned 1:1 staging view over bronze dim_vehicle."
+    description: "Cleansed dim_vehicle. Repaired, validated and deduplicated; rejected rows are in qtn_dim_vehicle."
     columns:
       - name: vehicle_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_vessel
-    description: "Cleaned 1:1 staging view over bronze dim_vessel."
+    description: "Cleansed dim_vessel. Repaired, validated and deduplicated; rejected rows are in qtn_dim_vessel."
   - name: stg_dim_warehouse
-    description: "Cleaned 1:1 staging view over bronze dim_warehouse."
+    description: "Cleansed dim_warehouse. Repaired, validated and deduplicated; rejected rows are in qtn_dim_warehouse."
     columns:
       - name: warehouse_id
-        description: "Business key."
+        description: "Business key. Unique and not null after cleansing -- if this fails, the cleansing layer is letting bad rows through."
         data_tests:
           - unique
           - not_null
   - name: stg_dim_weather
-    description: "Cleaned 1:1 staging view over bronze dim_weather."
+    description: "Cleansed dim_weather. Repaired, validated and deduplicated; rejected rows are in qtn_dim_weather."

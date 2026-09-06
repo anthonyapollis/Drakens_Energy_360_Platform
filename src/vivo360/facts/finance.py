@@ -43,21 +43,50 @@ def finance_revenue_cost(rng, ctx, profile):
 @fact("fact_general_ledger")
 def general_ledger(rng, ctx, profile):
     gl = ctx.gl_account
-    gl_codes = gl["gl_account_code"].to_numpy()
     gl_class = gl.set_index("gl_account_code")["account_class"]
+    # Double entry needs a plausible pair of accounts per journal: something
+    # credited and something debited for the same amount.
+    credit_codes = gl.loc[gl["account_class"] == "Revenue",
+                          "gl_account_code"].to_numpy()
+    debit_codes = gl.loc[gl["account_class"].isin(["COGS", "Opex", "Capex"]),
+                         "gl_account_code"].to_numpy()
 
     def make_chunk(offset, n):
-        ts = c.uniform_timestamps(rng, n).dt.normalize()
-        codes = rng.choice(gl_codes, n)
+        # Journals are emitted as balanced pairs: one credit line and one
+        # debit line of equal value sharing a journal_id. Posting lines
+        # independently produces a ledger where debits do not equal credits,
+        # which no finance function would accept and which the
+        # GL_DEBITS_EQUAL_CREDITS control in obs_reconciliation_controls
+        # correctly rejects.
+        pairs = (n + 1) // 2
+        ts_pair = c.uniform_timestamps(rng, pairs).dt.normalize()
+        amount_pair = rng.lognormal(10.6, 1.6, pairs).round(2)
+        journal_pair = c.seq_ids("JNL", offset // 2, pairs, 12)
+
+        # Interleave so each pair's two legs sit next to each other.
+        ts = pd.Series(np.repeat(ts_pair.to_numpy(), 2)[:n])
+        amount = np.repeat(amount_pair, 2)[:n]
+        journal = np.repeat(journal_pair, 2)[:n]
+        # Even positions are the credit leg, odd positions the debit leg.
+        is_credit = (np.arange(n) % 2) == 0
+        if n % 2:
+            # An odd chunk size would truncate the final debit leg and leave
+            # the ledger out of balance by that one amount. Zero it instead.
+            amount = amount.copy()
+            amount[-1] = 0.0
+
+        codes = np.where(
+            is_credit,
+            rng.choice(credit_codes, n),
+            rng.choice(debit_codes, n),
+        )
         classes = gl_class.loc[codes].to_numpy()
-        amount = rng.lognormal(10.6, 1.6, n)
-        # Revenue posts as a credit; everything else posts as a debit.
-        is_credit = classes == "Revenue"
+
         df = pd.DataFrame({
             "journal_line_id": c.seq_ids("GL", offset, n),
             "posting_date": ts,
             "date_key": c.date_key(ts),
-            "journal_id": c.seq_ids("JNL", offset // 4, n, 12),
+            "journal_id": journal,
             "gl_account_code": codes,
             "account_class": classes,
             "cost_centre_code": rng.choice(

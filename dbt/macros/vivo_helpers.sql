@@ -23,11 +23,19 @@
 
 
 {% macro safe_divide(numerator, denominator, default=0) %}
-    {#- Division that yields `default` rather than an error or infinity. -#}
-    case
-        when {{ denominator }} is null or {{ denominator }} = 0 then {{ default }}
-        else {{ numerator }} / nullif({{ denominator }}, 0)
-    end
+    {#-
+        Division that yields `default` rather than an error or infinity.
+
+        Both arguments are parenthesised. Without this, a call such as
+        safe_divide('a - b', 'c') expands to `a - b / c`, which SQL evaluates
+        as `a - (b / c)` -- a silent, plausible-looking wrong answer rather
+        than an error. The whole CASE is wrapped too, so a trailing `* 100`
+        multiplies the result and not just the ELSE branch.
+    -#}
+    (case
+        when ({{ denominator }}) is null or ({{ denominator }}) = 0 then ({{ default }})
+        else ({{ numerator }}) / nullif(({{ denominator }}), 0)
+    end)
 {% endmacro %}
 
 
