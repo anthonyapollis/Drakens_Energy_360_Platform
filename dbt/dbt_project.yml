@@ -33,11 +33,18 @@ models:
       relation: true
       columns: true
     staging:
-      +materialized: view
+      # Tables, not views. The cleansing expressions -- locale-aware numeric
+      # parsing, sentinel stripping, timestamp range checks -- are expensive,
+      # and as views every downstream query and every test re-parses the full
+      # 37-million-row landing zone. Materialising once turned a ~190s test
+      # into a sub-second one.
+      +materialized: table
       +schema: silver
       +tags: ["silver", "staging"]
     quarantine:
-      +materialized: view
+      # Same reasoning: the quarantine models re-run the same cleansing to
+      # decide what failed, so they pay the same cost as views.
+      +materialized: table
       +schema: quarantine
       +tags: ["quarantine", "data_quality"]
     intermediate:

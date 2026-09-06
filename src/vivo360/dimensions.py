@@ -12,7 +12,7 @@ from datetime import date, timedelta
 import numpy as np
 import pandas as pd
 
-from . import config, geography as geo, reference as ref
+from . import config, geography as geo, names, reference as ref
 from .writer import LakeWriter, logical_types
 
 
@@ -210,6 +210,14 @@ def build_geography_dims(rng) -> dict[str, pd.DataFrame]:
 # ==========================================================================
 # Network: sites, terminals, depots, warehouses
 # ==========================================================================
+def _site_name(rng, city: str, counts: dict[str, int]) -> str:
+    """Banner plus town, numbered only when the town has more than one site."""
+    counts[city] = counts.get(city, 0) + 1
+    banner = rng.choice(names.SITE_BANNERS)
+    n = counts[city]
+    return f"{banner} {city}" if n == 1 else f"{banner} {city} {n}"
+
+
 def build_dim_site(rng, profile: config.ScaleProfile) -> pd.DataFrame:
     n_za = profile.sites_za
     n_other = profile.sites_total - n_za
@@ -219,6 +227,9 @@ def build_dim_site(rng, profile: config.ScaleProfile) -> pd.DataFrame:
     picks = rng.choice(len(geo.SA_ANCHORS), n_za, p=weights)
 
     rows = []
+    # Sites are numbered within their own town, the way a real
+    # network is: "Kalahari Fuels Alberton 3", not a global counter.
+    city_counts: dict[str, int] = {}
     for i, idx in enumerate(picks, start=1):
         a = geo.SA_ANCHORS[idx]
         # Jitter is deliberate: roughly a 2-4 km scatter around the town
@@ -235,7 +246,7 @@ def build_dim_site(rng, profile: config.ScaleProfile) -> pd.DataFrame:
             site_type = "Truck Stop"
         rows.append((
             f"S{i:06d}",
-            f"{rng.choice(ref.SITE_BANNERS)} {a.city} {i:04d}",
+            _site_name(rng, a.city, city_counts),
             "ZA", a.province, a.city, a.urban_class,
             float(a.latitude + rng.normal(0, jitter)),
             float(a.longitude + rng.normal(0, jitter)),
@@ -252,7 +263,7 @@ def build_dim_site(rng, profile: config.ScaleProfile) -> pd.DataFrame:
         lat, lon = centroid[cc]
         rows.append((
             f"S{j:06d}",
-            f"{rng.choice(ref.SITE_BANNERS)} Site {j:05d}",
+            f"{rng.choice(names.SITE_BANNERS)} {cc} {j:05d}",
             cc, None, None, "Urban",
             float(lat + rng.normal(0, 0.45)),
             float(lon + rng.normal(0, 0.45)),
@@ -305,11 +316,11 @@ def build_dim_terminal(rng, profile) -> pd.DataFrame:
         if i <= len(towns):
             prov, city, seed_name = towns[i - 1]
             cc = "ZA"
-            name = f"Synthetic {seed_name} Terminal"
+            name = f"{seed_name} Fuel Terminal"
         else:
             cc = str(rng.choice([m[0] for m in geo.MARKETS]))
             prov = city = None
-            name = f"Synthetic Terminal {i:04d}"
+            name = f"{rng.choice(names.STEM_A)} Fuel Terminal"
         rows.append((f"T{i:04d}", name, cc, prov, city))
     t = pd.DataFrame(rows, columns=[
         "terminal_id", "terminal_name", "country_code", "province", "city"
@@ -330,7 +341,7 @@ def build_dim_depot(rng, profile, terminal) -> pd.DataFrame:
     d = pd.DataFrame({
         "depot_id": _ids("DEP", n, 4),
         "depot_key": np.arange(1, n + 1),
-        "depot_name": [f"Synthetic Depot {i:04d}" for i in range(1, n + 1)],
+        "depot_name": [f"{x} Depot" for x in rng.choice(names.STEM_A, n)],
         "parent_terminal_id": rng.choice(terminal["terminal_id"], n),
         "country_code": rng.choice(terminal["country_code"], n),
         "storage_capacity_litres": rng.integers(200_000, 9_000_000, n),
@@ -345,7 +356,8 @@ def build_dim_warehouse(rng, profile, depot) -> pd.DataFrame:
     return pd.DataFrame({
         "warehouse_id": _ids("WH", n, 4),
         "warehouse_key": np.arange(1, n + 1),
-        "warehouse_name": [f"Synthetic Warehouse {i:04d}" for i in range(1, n + 1)],
+        "warehouse_name": [f"{x} Distribution Centre"
+                           for x in rng.choice(names.STEM_A, n)],
         "linked_depot_id": rng.choice(depot["depot_id"], n),
         "pallet_positions": rng.integers(400, 9_000, n),
         "temperature_controlled": rng.random(n) < 0.2,
@@ -401,7 +413,7 @@ def build_dim_customer(rng, profile) -> pd.DataFrame:
     df = pd.DataFrame({
         "customer_id": _ids("C", n),
         "customer_key": np.arange(1, n + 1),
-        "customer_name": [f"Synthetic Customer {i:07d}" for i in range(1, n + 1)],
+        "customer_name": names.company_names(rng, sector, n),
         "sector": sector,
         "segment": segment,
         "country_code": rng.choice([m[0] for m in geo.MARKETS], n,
@@ -439,11 +451,12 @@ def _country_probs():
 
 def build_dim_supplier(rng, profile) -> pd.DataFrame:
     n = profile.suppliers
+    supplier_type = rng.choice(ref.SUPPLIER_TYPES, n)
     return pd.DataFrame({
         "supplier_id": _ids("SUP", n, 5),
         "supplier_key": np.arange(1, n + 1),
-        "supplier_name": [f"Synthetic Supplier {i:05d}" for i in range(1, n + 1)],
-        "supplier_type": rng.choice(ref.SUPPLIER_TYPES, n),
+        "supplier_name": names.supplier_names(rng, supplier_type, n),
+        "supplier_type": supplier_type,
         "country_code": rng.choice([m[0] for m in geo.MARKETS], n),
         "risk_rating": rng.choice(["Low", "Medium", "High"], n, p=[0.65, 0.28, 0.07]),
         "esg_score": np.round(rng.beta(6, 3, n) * 100, 1),
@@ -459,7 +472,7 @@ def build_dim_employee(rng, profile, site) -> pd.DataFrame:
     return pd.DataFrame({
         "employee_id": _ids("E", n, 7),
         "employee_key": np.arange(1, n + 1),
-        "employee_name": [f"Synthetic Employee {i:07d}" for i in range(1, n + 1)],
+        "employee_name": names.person_names(rng, n),
         "role": rng.choice(ref.ROLES, n),
         "home_site_id": rng.choice(site["site_id"], n),
         "business_unit_code": rng.choice([b[0] for b in ref.BUSINESS_UNITS], n),
@@ -484,7 +497,8 @@ def build_asset_dims(rng, profile, site) -> dict[str, pd.DataFrame]:
         "site_id": rng.choice(site_ids, n),
         "asset_type": rng.choice(ref.ASSET_TYPES, n),
         "manufacturer": rng.choice(
-            ["Synthetic OEM Alpha", "Synthetic OEM Beta", "Synthetic OEM Gamma"], n
+            ["Aurex Dispensing", "Meridian Fuel Systems",
+             "Corvus Industrial", "Talon Forecourt Systems"], n
         ),
         "model_code": [f"MDL-{x:04d}" for x in rng.integers(1000, 9999, n)],
         "install_date": pd.to_datetime(
@@ -569,7 +583,8 @@ def build_asset_dims(rng, profile, site) -> dict[str, pd.DataFrame]:
             rng.choice(pd.date_range("2021-01-01", "2026-06-30"), n_ev)
         ),
         "network_operator": rng.choice(
-            ["Synthetic Charge Co", "Synthetic E-Mobility"], n_ev
+            ["Voltway Charging", "Amperion E-Mobility",
+             "Zenith Charge Network"], n_ev
         ),
     })
 
@@ -604,7 +619,7 @@ def build_logistics_dims(rng, profile, site, terminal) -> dict[str, pd.DataFrame
     carrier = pd.DataFrame({
         "carrier_id": _ids("CAR", n_c, 4),
         "carrier_key": np.arange(1, n_c + 1),
-        "carrier_name": [f"Synthetic Carrier {i:04d}" for i in range(1, n_c + 1)],
+        "carrier_name": names.carrier_names(rng, n_c),
         "is_own_fleet": rng.random(n_c) < 0.35,
         "fleet_size": rng.integers(3, 260, n_c),
         "safety_rating": rng.choice(["A", "B", "C"], n_c, p=[0.5, 0.38, 0.12]),
@@ -630,7 +645,7 @@ def build_logistics_dims(rng, profile, site, terminal) -> dict[str, pd.DataFrame
     driver = pd.DataFrame({
         "driver_id": _ids("DRV", n_d, 6),
         "driver_key": np.arange(1, n_d + 1),
-        "driver_name": [f"Synthetic Driver {i:06d}" for i in range(1, n_d + 1)],
+        "driver_name": names.person_names(rng, n_d),
         "carrier_id": rng.choice(carrier["carrier_id"], n_d),
         "licence_class": rng.choice(["EC", "EB", "C1"], n_d, p=[0.72, 0.18, 0.10]),
         "hazmat_certified": rng.random(n_d) < 0.81,
@@ -644,7 +659,9 @@ def build_logistics_dims(rng, profile, site, terminal) -> dict[str, pd.DataFrame
         "route_id": _ids("RT", n_r, 6),
         "route_key": np.arange(1, n_r + 1),
         "origin_terminal_id": origin,
-        "route_name": [f"Synthetic Route {i:06d}" for i in range(1, n_r + 1)],
+        "route_name": [f"{a} - {b}" for a, b in
+                       zip(rng.choice(names.STEM_A, n_r),
+                           rng.choice(names.STEM_A, n_r))],
         "planned_distance_km": np.round(
             rng.gamma(2.3, 105, n_r).clip(4, 1500), 1),
         "route_class": rng.choice(["Urban", "Regional", "Long Haul"], n_r,
@@ -711,7 +728,11 @@ def build_commercial_dims(rng, profile, customer) -> dict[str, pd.DataFrame]:
     promo = pd.DataFrame({
         "promotion_id": _ids("PRM", n_promo, 5),
         "promotion_key": np.arange(1, n_promo + 1),
-        "promotion_name": [f"Synthetic Promotion {i:05d}" for i in range(1, n_promo + 1)],
+        "promotion_name": [f"{a} {b}" for a, b in zip(
+            rng.choice(["Summer", "Winter", "Payday", "Road Trip",
+                        "Weekend", "Fuel Up", "Commuter", "Holiday"], n_promo),
+            rng.choice(["Rewards", "Saver", "Bonus Points", "Cashback",
+                        "Double Points", "Value Deal"], n_promo))],
         "mechanic": rng.choice(
             ["Price Off", "Bundle", "Points Multiplier", "Free Item", "Fuel Voucher"],
             n_promo),
@@ -724,7 +745,7 @@ def build_commercial_dims(rng, profile, customer) -> dict[str, pd.DataFrame]:
     zone = pd.DataFrame({
         "price_zone_id": _ids("PZ", n_zone, 3),
         "price_zone_key": np.arange(1, n_zone + 1),
-        "zone_name": [f"Synthetic Magisterial Zone {i:02d}" for i in range(1, n_zone + 1)],
+        "zone_name": [f"Pricing Zone {i:02d}" for i in range(1, n_zone + 1)],
         "inland_or_coastal": rng.choice(["Inland", "Coastal"], n_zone, p=[0.62, 0.38]),
         "zone_differential_cents": np.round(rng.normal(0, 28, n_zone), 1),
     })
@@ -785,7 +806,11 @@ def build_digital_dims(rng, profile, site) -> dict[str, pd.DataFrame]:
     campaign = pd.DataFrame({
         "campaign_id": _ids("CMP", n_camp, 5),
         "campaign_key": np.arange(1, n_camp + 1),
-        "campaign_name": [f"Synthetic Campaign {i:05d}" for i in range(1, n_camp + 1)],
+        "campaign_name": [f"{a} {b}" for a, b in zip(
+            rng.choice(["Q1", "Q2", "Q3", "Q4", "Winter", "Summer",
+                        "Back to School", "Festive"], n_camp),
+            rng.choice(["Loyalty Drive", "App Adoption", "Fuel Rewards",
+                        "Shop Offer", "EV Launch", "Fleet Push"], n_camp))],
         "channel": rng.choice(ref.CAMPAIGN_CHANNELS, n_camp),
         "start_date": cstart,
         "end_date": cstart + pd.to_timedelta(rng.integers(5, 60, n_camp), unit="D"),
@@ -806,7 +831,8 @@ def build_finance_dims(rng, profile) -> dict[str, pd.DataFrame]:
     entity = pd.DataFrame({
         "legal_entity_code": [f"LE{i:02d}" for i in range(1, 13)],
         "legal_entity_key": np.arange(1, 13),
-        "legal_entity_name": [f"Synthetic Operating Entity {i:02d}" for i in range(1, 13)],
+        "legal_entity_name": [f"{x} Energy Holdings" for x in
+                              rng.choice(names.STEM_A, 12, replace=False)],
         "country_code": rng.choice([m[0] for m in geo.MARKETS], 12),
         "functional_currency": rng.choice(["ZAR", "USD", "EUR"], 12, p=[0.6, 0.3, 0.1]),
         "consolidation_method": rng.choice(["Full", "Equity"], 12, p=[0.85, 0.15]),
@@ -822,7 +848,10 @@ def build_finance_dims(rng, profile) -> dict[str, pd.DataFrame]:
     pc = pd.DataFrame({
         "profit_centre_code": [f"PC{i:03d}" for i in range(1, 21)],
         "profit_centre_key": np.arange(1, 21),
-        "profit_centre_name": [f"Synthetic Profit Centre {i:02d}" for i in range(1, 21)],
+        "profit_centre_name": [f"{a} {b}" for a, b in zip(
+            rng.choice(names.STEM_A, 20),
+            rng.choice(["Retail", "Commercial", "Supply", "Lubricants",
+                        "LPG", "New Energy"], 20))],
         "business_unit_code": rng.choice(bu["business_unit_code"], 20),
     })
 
@@ -962,7 +991,7 @@ def build_transport_node_dims(rng, profile) -> dict[str, pd.DataFrame]:
     airline = pd.DataFrame({
         "airline_code": [f"SY{i:02d}" for i in range(1, 19)],
         "airline_key": np.arange(1, 19),
-        "airline_name": [f"Synthetic Airline {i:02d}" for i in range(1, 19)],
+        "airline_name": names.AIRLINE_NAMES[:18],
         "airline_type": rng.choice(["Full Service", "Low Cost", "Cargo", "Charter"], 18),
         "is_contracted": rng.random(18) < 0.7,
     })
@@ -977,7 +1006,7 @@ def build_transport_node_dims(rng, profile) -> dict[str, pd.DataFrame]:
     vessel = pd.DataFrame({
         "vessel_imo": [f"IMO{9000000 + i}" for i in range(1, n_ves + 1)],
         "vessel_key": np.arange(1, n_ves + 1),
-        "vessel_name": [f"Synthetic Vessel {i:05d}" for i in range(1, n_ves + 1)],
+        "vessel_name": names.vessel_names(rng, n_ves),
         "vessel_class": rng.choice(
             ["Container", "Bulk Carrier", "Tanker", "Fishing", "Naval", "Offshore"],
             n_ves),

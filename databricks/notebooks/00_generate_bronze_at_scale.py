@@ -35,6 +35,7 @@ SEED = int(dbutils.widgets.get("seed"))
 
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
+from pyspark.sql.window import Window
 
 spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql("USE SCHEMA bronze")
@@ -202,13 +203,21 @@ sites_za = (
     .withColumn(
         "ownership_model",
         F.when(F.col("u2") < 0.12, "COCO").when(F.col("u2") < 0.70, "CODO").otherwise("DODO"))
+    # Fictional retail banners, matching src/vivo360/names.py. Invented so no
+    # generated site can be mistaken for a real branded station.
     .withColumn("banner", F.element_at(
         F.array(F.lit("Kalahari Fuels"), F.lit("Karoo Motion"),
-                F.lit("Highveld Energy"), F.lit("Cape Route Fuels")),
-        (F.col("u3") * 4).cast("int") + 1))
-    .withColumn("site_name", F.concat_ws(
-        " ", F.col("banner"), F.col("city"),
-        F.format_string("%04d", (F.col("site_seq") + 1).cast("int"))))
+                F.lit("Highveld Energy"), F.lit("Cape Route Fuels"),
+                F.lit("Zambesi Fuels"), F.lit("Drakens Petroleum")),
+        (F.col("u3") * 6).cast("int") + 1))
+    # Numbered within the town, the way a real network is.
+    .withColumn("site_in_city", F.row_number().over(
+        Window.partitionBy("city").orderBy("site_seq")))
+    .withColumn("site_name", F.when(
+        F.col("site_in_city") == 1,
+        F.concat_ws(" ", F.col("banner"), F.col("city")))
+        .otherwise(F.concat_ws(" ", F.col("banner"), F.col("city"),
+                               F.col("site_in_city").cast("string"))))
     .withColumn("has_convenience", F.col("u4") < 0.68)
     .withColumn("has_qsr", F.col("u5") < 0.31)
     .withColumn("has_ev_charging", F.col("u6") < 0.15)
@@ -285,16 +294,77 @@ product_schema = T.StructType([
 
 SECTORS = ["Road Transport", "Mining", "Construction", "Power Generation", "Aviation",
            "Marine", "Agriculture", "Manufacturing", "Government", "Reseller", "SME"]
+
+# Invented name stems, kept in step with src/vivo360/names.py.
+STEM_A = ["Thaba", "Rietkop", "Umzansi", "Kalahari", "Highveld", "Bosveld",
+          "Karoo", "Drakens", "Zambesi", "Maluti", "Overberg", "Vaalkop",
+          "Motheo", "Ntsika", "Khanya", "Ilanga", "Vukani", "Sondela",
+          "Bloukrans", "Waterkloof", "Sandspruit", "Groenvlei", "Rooiberg",
+          "Witkoppie", "Modderfontein", "Nkanyezi", "Amanzi", "Sekhaya",
+          "Tswelopele", "Lehlabile", "Mzansi", "Kopano", "Ubuntu", "Sizanani",
+          "Phakama", "Masakhane", "Lethabo", "Isibani", "Nkululeko", "Simunye",
+          "Silverstroom", "Blesbok", "Kudu", "Springbok", "Rooikrans",
+          "Duineveld", "Sandveld", "Hartland", "Vryheid", "Kameelkop"]
 SEGMENTS = ["Strategic", "Key Account", "Mid Market", "Small Business", "Spot"]
 
 customers = (
     spark.range(0, CFG["customers"])
     .withColumn("customer_id", F.format_string("C%07d", (F.col("id") + 1).cast("int")))
-    .withColumn("customer_name", F.format_string("Synthetic Customer %07d",
-                                                 (F.col("id") + 1).cast("int")))
     .withColumn("sector", F.element_at(
         F.array(*[F.lit(s) for s in SECTORS]),
         (F.rand(SEED + 20) * len(SECTORS)).cast("int") + 1))
+    # Invented stems combined with a sector-appropriate trade word, matching
+    # src/vivo360/names.py. Placeholder strings like "Customer 0112573" make a
+    # dashboard unreadable; these are recognisably South African business
+    # names that name no real company.
+    .withColumn("stem", F.element_at(
+        F.array(*[F.lit(x) for x in STEM_A]),
+        (F.rand(SEED + 28) * len(STEM_A)).cast("int") + 1))
+    .withColumn("trade_word",
+        F.when(F.col("sector") == "Road Transport", F.element_at(
+            F.array(F.lit("Logistics"), F.lit("Transport"), F.lit("Freight"),
+                    F.lit("Haulage"), F.lit("Carriers")),
+            (F.rand(SEED + 29) * 5).cast("int") + 1))
+         .when(F.col("sector") == "Mining", F.element_at(
+            F.array(F.lit("Minerals"), F.lit("Mining"), F.lit("Resources"),
+                    F.lit("Colliery"), F.lit("Ore Services")),
+            (F.rand(SEED + 29) * 5).cast("int") + 1))
+         .when(F.col("sector") == "Construction", F.element_at(
+            F.array(F.lit("Civils"), F.lit("Construction"), F.lit("Projects"),
+                    F.lit("Earthworks"), F.lit("Plant Hire")),
+            (F.rand(SEED + 29) * 5).cast("int") + 1))
+         .when(F.col("sector") == "Power Generation", F.element_at(
+            F.array(F.lit("Power"), F.lit("Energy"), F.lit("Generation")),
+            (F.rand(SEED + 29) * 3).cast("int") + 1))
+         .when(F.col("sector") == "Aviation", F.element_at(
+            F.array(F.lit("Aviation"), F.lit("Air Charter"), F.lit("Airways")),
+            (F.rand(SEED + 29) * 3).cast("int") + 1))
+         .when(F.col("sector") == "Marine", F.element_at(
+            F.array(F.lit("Marine"), F.lit("Shipping"), F.lit("Maritime")),
+            (F.rand(SEED + 29) * 3).cast("int") + 1))
+         .when(F.col("sector") == "Agriculture", F.element_at(
+            F.array(F.lit("Boerdery"), F.lit("Farms"), F.lit("Agri"),
+                    F.lit("Estates")),
+            (F.rand(SEED + 29) * 4).cast("int") + 1))
+         .when(F.col("sector") == "Manufacturing", F.element_at(
+            F.array(F.lit("Manufacturing"), F.lit("Industries"),
+                    F.lit("Works"), F.lit("Fabrication")),
+            (F.rand(SEED + 29) * 4).cast("int") + 1))
+         .when(F.col("sector") == "Government", F.element_at(
+            F.array(F.lit("Regional Services"), F.lit("District Works"),
+                    F.lit("Public Fleet")),
+            (F.rand(SEED + 29) * 3).cast("int") + 1))
+         .otherwise(F.element_at(
+            F.array(F.lit("Trading"), F.lit("Services"), F.lit("Enterprises"),
+                    F.lit("Supplies"), F.lit("Wholesale")),
+            (F.rand(SEED + 29) * 5).cast("int") + 1)))
+    .withColumn("legal_suffix", F.element_at(
+        F.array(F.lit(" (Pty) Ltd"), F.lit(" (Pty) Ltd"), F.lit(" CC"),
+                F.lit(" Group"), F.lit("")),
+        (F.rand(SEED + 31) * 5).cast("int") + 1))
+    .withColumn("customer_name", F.concat(
+        F.concat_ws(" ", F.col("stem"), F.col("trade_word")),
+        F.col("legal_suffix")))
     .withColumn("u", F.rand(SEED + 21))
     .withColumn("segment",
         F.when(F.col("u") < 0.02, "Strategic").when(F.col("u") < 0.10, "Key Account")
@@ -316,7 +386,7 @@ customers = (
         * F.exp(F.randn(SEED + 25) * 0.5), 4))
     .withColumn("country_code", F.when(F.rand(SEED + 26) < 0.4, "ZA").otherwise("KE"))
     .withColumn("is_active", F.rand(SEED + 27) < 0.93)
-    .drop("id", "u", "cb")
+    .drop("id", "u", "cb", "stem", "trade_word", "legal_suffix")
 )
 (customers.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
     .saveAsTable(f"{CATALOG}.bronze.dim_customer"))
