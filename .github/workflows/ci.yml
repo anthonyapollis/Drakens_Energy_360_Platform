@@ -1,0 +1,21 @@
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python src/generate_synthetic_data.py --output sample_data --scale demo --format csv --seed 42
+      - run: pytest -q
+      - run: dbt deps || true
+      - run: dbt parse --profiles-dir . || true

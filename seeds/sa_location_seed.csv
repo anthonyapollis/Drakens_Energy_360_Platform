@@ -1,0 +1,56 @@
+province,city,latitude,longitude,weight
+Western Cape,Cape Town,-33.9249,18.4241,15
+Western Cape,Bellville,-33.9,18.629,6
+Western Cape,Milnerton,-33.874,18.499,5
+Western Cape,Table View,-33.823,18.49,4
+Western Cape,Montague Gardens,-33.86,18.52,4
+Western Cape,Paarl,-33.7342,18.9621,4
+Western Cape,Stellenbosch,-33.9321,18.8602,4
+Western Cape,Somerset West,-34.0794,18.857,4
+Western Cape,George,-33.963,22.4617,3
+Western Cape,Mossel Bay,-34.1831,22.146,3
+Western Cape,Worcester,-33.6465,19.4485,2
+Western Cape,Vredenburg,-32.9072,17.989,2
+Gauteng,Johannesburg,-26.2041,28.0473,20
+Gauteng,Sandton,-26.1076,28.0567,12
+Gauteng,Alberton,-26.2679,28.1223,7
+Gauteng,Midrand,-25.9992,28.1263,8
+Gauteng,Centurion,-25.8603,28.1894,8
+Gauteng,Pretoria,-25.7479,28.2293,14
+Gauteng,Roodepoort,-26.1625,27.8725,6
+Gauteng,Soweto,-26.2485,27.854,10
+Gauteng,Boksburg,-26.2326,28.24,6
+Gauteng,Benoni,-26.1885,28.3208,5
+Gauteng,Germiston,-26.2259,28.1708,5
+KwaZulu-Natal,Durban,-29.8587,31.0218,16
+KwaZulu-Natal,Pinetown,-29.8167,30.85,5
+KwaZulu-Natal,Pietermaritzburg,-29.6006,30.3794,7
+KwaZulu-Natal,Richards Bay,-28.7807,32.0383,5
+KwaZulu-Natal,Newcastle,-27.7579,29.9318,4
+KwaZulu-Natal,Ladysmith,-28.5539,29.78,3
+KwaZulu-Natal,Ballito,-29.5389,31.2144,3
+Eastern Cape,Gqeberha,-33.9608,25.6022,8
+Eastern Cape,East London,-33.0153,27.9116,6
+Eastern Cape,Mthatha,-31.5889,28.7844,4
+Eastern Cape,Queenstown/Komani,-31.8976,26.8753,3
+Free State,Bloemfontein,-29.0852,26.1596,7
+Free State,Welkom,-27.9774,26.7351,4
+Free State,Bethlehem,-28.2308,28.3071,3
+Free State,Kroonstad,-27.6504,27.2349,3
+Mpumalanga,Mbombela,-25.4753,30.9694,6
+Mpumalanga,eMalahleni,-25.8728,29.2553,5
+Mpumalanga,Secunda,-26.55,29.1667,4
+Mpumalanga,Middelburg,-25.7751,29.4648,4
+Limpopo,Polokwane,-23.9045,29.4689,7
+Limpopo,Makhado,-23.0439,29.9032,3
+Limpopo,Mokopane,-24.1944,29.0097,3
+Limpopo,Tzaneen,-23.8332,30.1635,3
+Limpopo,Hoedspruit,-24.3512,30.9533,2
+North West,Rustenburg,-25.6676,27.2421,6
+North West,Klerksdorp,-26.8521,26.6667,5
+North West,Mahikeng,-25.8652,25.6442,4
+North West,Vryburg,-26.9566,24.7284,2
+Northern Cape,Kimberley,-28.7282,24.7499,5
+Northern Cape,Upington,-28.4478,21.2561,3
+Northern Cape,Kathu,-27.6957,23.0493,3
+Northern Cape,Springbok,-29.6643,17.8865,2

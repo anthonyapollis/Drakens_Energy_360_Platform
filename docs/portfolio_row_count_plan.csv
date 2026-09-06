@@ -1,0 +1,17 @@
+table_name,portfolio_row_count,cumulative_rows
+fact_retail_fuel_sales,5000000,5000000
+fact_shop_sales,3000000,8000000
+fact_commercial_orders,550000,8550000
+fact_inventory_snapshot,1200000,9750000
+fact_deliveries,300000,10050000
+fact_procurement_receipts,250000,10300000
+fact_aviation_sales,120000,10420000
+fact_marine_sales,90000,10510000
+fact_lpg_sales,400000,10910000
+fact_lubricant_sales,350000,11260000
+fact_loyalty_transactions,2000000,13260000
+fact_digital_events,1500000,14760000
+fact_ev_charging_sessions,150000,14910000
+fact_solar_generation,650000,15560000
+fact_maintenance_work_orders,80000,15640000
+fact_hsseq_incidents,15000,15655000

@@ -1,0 +1,54 @@
+
+flowchart TB
+    subgraph Sources
+      ERP[ERP / Finance]
+      POS[Forecourt & Shop POS]
+      CRM[CRM / Contracts]
+      APP[Digital App / Loyalty / Cards]
+      IOT[Tank / Pump / EV / Solar / GPS IoT]
+      EXT[Suppliers / Files / APIs]
+    end
+
+    subgraph Ingestion
+      ADF[Azure Data Factory]
+      AL[Databricks Auto Loader]
+      EH[Event Hubs]
+    end
+
+    subgraph Lakehouse
+      B[Bronze Delta]
+      S[Silver Delta]
+      G1[Gold Core]
+      G2[Gold Retail]
+      G3[Gold Commercial]
+      G4[Gold Operations]
+      G5[Gold Executive]
+    end
+
+    subgraph Consumption
+      PBI[Power BI]
+      ML[MLflow / Feature Store]
+      DS[Data Sharing / APIs]
+    end
+
+    ERP --> ADF
+    POS --> ADF
+    CRM --> ADF
+    APP --> ADF
+    EXT --> AL
+    IOT --> EH
+    ADF --> B
+    AL --> B
+    EH --> B
+    B --> S
+    S --> G1
+    S --> G2
+    S --> G3
+    S --> G4
+    G1 --> G5
+    G2 --> G5
+    G3 --> G5
+    G4 --> G5
+    G5 --> PBI
+    G5 --> ML
+    G5 --> DS

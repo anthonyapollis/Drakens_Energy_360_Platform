@@ -1,0 +1,43 @@
+
+digraph ARCH {
+  graph [rankdir=LR, bgcolor="white", pad="0.3", nodesep="0.35", ranksep="0.6"];
+  node [shape=box, style="rounded", fontname="Arial", fontsize=10, margin="0.12,0.08"];
+  edge [fontname="Arial", fontsize=8, arrowsize=0.7];
+
+  subgraph cluster_source {
+    label="SOURCES";
+    ERP [label="ERP / Finance / Procurement"];
+    POS [label="Forecourt + Shop POS"];
+    CRM [label="CRM / Commercial"];
+    APP [label="Digital App / Loyalty / Cards"];
+    IOT [label="Tank / Pump / GPS / EV / Solar IoT"];
+  }
+
+  subgraph cluster_ing {
+    label="INGESTION";
+    ADF [label="Azure Data Factory"];
+    AUTO [label="Databricks Auto Loader"];
+    EH [label="Event Hubs / Streaming"];
+  }
+
+  subgraph cluster_lake {
+    label="LAKEHOUSE";
+    B [label="BRONZE\nRaw / Append Only"];
+    S [label="SILVER\nConformed / DQ / SCD2"];
+    DBT [label="dbt\nTransform / Test / Docs"];
+    G [label="GOLD\nDomain Star Schemas"];
+  }
+
+  subgraph cluster_cons {
+    label="CONSUMPTION";
+    PBI [label="Power BI"];
+    ML [label="MLflow / Feature Store"];
+    SHARE [label="Data Sharing / APIs"];
+  }
+
+  ERP->ADF; POS->ADF; CRM->ADF; APP->ADF; IOT->EH;
+  ADF->B; AUTO->B; EH->B; B->S; S->DBT; DBT->G;
+  G->PBI; G->ML; G->SHARE;
+  UC [label="Unity Catalog\nRBAC • Lineage • Masking", shape=box];
+  UC->B [dir=none]; UC->S [dir=none]; UC->G [dir=none];
+}

@@ -1,0 +1,13 @@
+data/
+*.pyc
+__pycache__/
+.venv/
+venv/
+target/
+dbt_packages/
+logs/
+mlruns/
+.env
+.databrickscfg
+*.duckdb
+*.duckdb.wal
