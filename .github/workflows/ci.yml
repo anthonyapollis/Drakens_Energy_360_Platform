@@ -1,21 +1,225 @@
+name: CI
 
-name: ci
+# Independent synthetic portfolio project. No real company data or credentials.
+#
+# The pipeline is ordered so the cheapest thing that can fail, fails first.
+# Linting takes seconds, unit tests about a minute, and the full warehouse
+# build several minutes; running them the other way round wastes a developer's
+# afternoon discovering a formatting error.
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
 
 jobs:
-  quality:
+  # ------------------------------------------------------------------ lint
+  lint:
+    name: Lint and format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - run: pip install -r requirements.txt
-      - run: python src/generate_synthetic_data.py --output sample_data --scale demo --format csv --seed 42
-      - run: pytest -q
-      - run: dbt deps || true
-      - run: dbt parse --profiles-dir . || true
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install tooling
+        run: pip install ruff sqlfluff
+
+      - name: Ruff
+        run: ruff check src ml scripts tests
+
+      - name: SQLFluff (dbt models)
+        run: sqlfluff lint dbt/models --dialect duckdb --nofail
+        # nofail while the generated staging models settle; the parse itself
+        # still surfaces genuine syntax errors in the log.
+
+  # ----------------------------------------------------------------- infra
+  infrastructure:
+    name: Validate infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform format
+        run: terraform -chdir=infra/terraform fmt -check -recursive
+
+      - name: Terraform validate
+        run: |
+          terraform -chdir=infra/terraform init -backend=false -input=false
+          terraform -chdir=infra/terraform validate
+
+      - name: Bicep build
+        run: |
+          az bicep install
+          az bicep build --file infra/bicep/main.bicep --stdout > /dev/null
+
+  # ------------------------------------------------------------ unit tests
+  unit-tests:
+    name: Generator unit tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests
+        run: pytest tests/test_generator.py -v --cov=src/vivo360 --cov-report=term-missing
+
+  # -------------------------------------------------- build and validate DW
+  warehouse:
+    name: Build warehouse and run dbt
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt pytest dbt-core dbt-duckdb
+
+      # The `test` profile builds ~1.9M fact rows in about a minute, which is
+      # enough to exercise every model and test without a 20-minute CI run.
+      - name: Generate the dirty landing zone
+        run: |
+          PYTHONPATH=src python -m vivo360.build \
+            --profile test --output data/lake --defects realistic
+
+      - name: Regenerate the cleansing layer
+        run: |
+          python scripts/generate_dbt_staging.py \
+            --manifest data/lake/_manifest.json \
+            --out dbt/models/staging \
+            --quarantine-out dbt/models/quarantine
+
+      # A generated layer that drifts from what is committed means someone
+      # changed the model without regenerating, and the two will disagree.
+      - name: Fail if the generated models are stale
+        run: |
+          if ! git diff --quiet dbt/models/staging dbt/models/quarantine; then
+            echo "::error::Generated dbt models are out of date."
+            echo "Run scripts/generate_dbt_staging.py and commit the result."
+            git diff --stat dbt/models/staging dbt/models/quarantine
+            exit 1
+          fi
+
+      - name: dbt deps
+        working-directory: dbt
+        run: dbt deps
+
+      - name: dbt build
+        working-directory: dbt
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
+          VIVO_LAKE: ${{ github.workspace }}/data/lake
+          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+        run: dbt build --fail-fast
+
+      - name: Warehouse integration tests
+        env:
+          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+        run: pytest tests/test_warehouse.py -v
+
+      - name: dbt docs
+        working-directory: dbt
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
+          VIVO_LAKE: ${{ github.workspace }}/data/lake
+          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+        run: dbt docs generate
+
+      - name: Upload dbt artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: |
+            dbt/target/manifest.json
+            dbt/target/run_results.json
+            dbt/target/catalog.json
+          retention-days: 14
+
+  # ------------------------------------------------------- schema contracts
+  schema-contract:
+    name: Schema change detection
+    runs-on: ubuntu-latest
+    needs: warehouse
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      # A removed or retyped column breaks every downstream consumer silently.
+      # This surfaces it on the pull request, where it can still be discussed.
+      - name: Compare the model against the committed contract
+        run: python scripts/check_schema_contract.py --contract contracts/schema.json
+
+  # ------------------------------------------------------------------- ML
+  ml-smoke:
+    name: ML experiments smoke test
+    runs-on: ubuntu-latest
+    needs: warehouse
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt scikit-learn mlflow
+
+      - name: Rebuild the warehouse
+        run: |
+          PYTHONPATH=src python -m vivo360.build \
+            --profile test --output data/lake --defects realistic --quiet
+          pip install dbt-core dbt-duckdb
+          cd dbt && dbt deps && dbt build --quiet
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
+          VIVO_LAKE: ${{ github.workspace }}/data/lake
+          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+
+      # Each experiment must train and log without error. Model quality is not
+      # gated here -- a CI-scale sample cannot judge that honestly, and a
+      # threshold that fails on sample size teaches people to ignore CI.
+      - name: Train
+        env:
+          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+        run: |
+          for experiment in demand_forecast predictive_maintenance \
+                            stock_out_risk late_delivery fraud_anomaly; do
+            echo "::group::$experiment"
+            python ml/experiments/$experiment.py
+            echo "::endgroup::"
+          done

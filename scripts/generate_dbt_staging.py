@@ -137,92 +137,100 @@ def render_model(table: str, columns: list[str], types: dict,
     ts = pick_timestamp(columns)
     rules = quality_rules(table, columns, types, key)
 
-    out = [HEADER, "{{ config(", "    materialized='view'", ") }}", ""]
-    out.append("with source as (")
-    out.append(f"    select * from {{{{ source('lake_{layer}', '{table}') }}}}")
-    out.append("),")
-    out.append("")
-    out.append("-- Stage 1: repair. Trim, case-fold, parse numbers out of")
-    out.append("-- locale-formatted text, range-check timestamps.")
-    out.append("cleansed as (")
-    out.append("    select")
-    for col in columns:
-        expr = clean_expression(col, types.get(col, "text"))
-        out.append(f"        {expr} as {col},")
-    out.append("        1 as _dummy")
-    out.append("    from source")
-    out.append("),")
-    out.append("")
+    # Materialisation is deliberately not set here. It comes from
+    # dbt_project.yml, so the cleansing layer can be switched between table
+    # and view in one place rather than by regenerating 289 files.
+    out = [HEADER]
+
+    ctes: list[str] = []
+
+    src = ["with source as (",
+           f"    select * from {{{{ source('lake_{layer}', '{table}') }}}}",
+           ")"]
+    ctes.append("\n".join(src))
+
+    repair = ["-- Stage 1: repair. Trim, case-fold, parse numbers out of",
+              "-- locale-formatted text, range-check timestamps.",
+              "cleansed as (",
+              "    select"]
+    repair += [
+        f"        {clean_expression(col, types.get(col, 'text'))} as {col},"
+        for col in columns[:-1]
+    ]
+    last = columns[-1]
+    repair.append(
+        f"        {clean_expression(last, types.get(last, 'text'))} as {last}")
+    repair += ["    from source", ")"]
+    ctes.append("\n".join(repair))
 
     if rules:
-        out.append("-- Stage 2: assess. One boolean per rule, so a quarantined")
-        out.append("-- row records exactly why it was rejected.")
-        out.append("assessed as (")
-        out.append("    select")
-        out.append("        *,")
-        for name, expr in rules.items():
-            out.append(f"        ({expr}) as _dq_{name},")
+        assess = ["-- Stage 2: assess. One boolean per rule, so a quarantined",
+                  "-- row records exactly why it was rejected.",
+                  "assessed as (",
+                  "    select",
+                  "        *,"]
+        assess += [f"        ({expr}) as _dq_{name},"
+                   for name, expr in rules.items()]
         checks = " and ".join(f"coalesce(_dq_{n}, false)" for n in rules)
-        out.append(f"        ({checks}) as _dq_is_valid,")
-        out.append("        concat_ws(',',")
-        parts = [f"            case when not coalesce(_dq_{n}, false) "
-                 f"then '{n}' end" for n in rules]
-        out.append(",\n".join(parts))
-        out.append("        ) as _dq_failed_rules")
-        out.append("    from cleansed")
-        out.append("),")
-        out.append("")
-        stage = "assessed"
+        assess.append(f"        ({checks}) as _dq_is_valid,")
+        assess.append("        concat_ws(',',")
+        assess.append(",\n".join(
+            f"            case when not coalesce(_dq_{n}, false) then '{n}' end"
+            for n in rules))
+        assess.append("        ) as _dq_failed_rules")
+        assess += ["    from cleansed", ")"]
     else:
-        out.append("assessed as (")
-        out.append("    select *, true as _dq_is_valid,")
-        out.append("           cast('' as varchar) as _dq_failed_rules")
-        out.append("    from cleansed")
-        out.append("),")
-        out.append("")
-        stage = "assessed"
+        assess = ["assessed as (",
+                  "    select *,",
+                  "           true as _dq_is_valid,",
+                  "           cast('' as varchar) as _dq_failed_rules",
+                  "    from cleansed",
+                  ")"]
+    ctes.append("\n".join(assess))
+    stage = "assessed"
 
     if quarantine:
-        out.append("-- Rows that failed the contract. Kept, not dropped.")
-        out.append("select")
-        out.append(f"    '{table}' as _source_table,")
-        for col in columns:
-            out.append(f"    {col},")
-        out.append("    _dq_failed_rules,")
-        out.append("    {{ cleansing_layer_columns() }}")
-        out.append(f"from {stage}")
-        out.append("where not _dq_is_valid")
-        return "\n".join(out) + "\n"
-
-    if key:
-        out.append("-- Stage 3: deduplicate. Source systems replay batches, so")
-        out.append("-- the same business key can arrive more than once. Keep the")
-        out.append("-- most recently ingested version.")
-        out.append("deduplicated as (")
-        out.append("    select")
-        out.append("        *,")
+        final = ["-- Rows that failed the contract. Kept, not dropped: a",
+                 "-- silently discarded row becomes an unexplainable variance",
+                 "-- months later, and there is no way back from it.",
+                 "select",
+                 f"    '{table}' as _source_table,"]
+        final += [f"    {col}," for col in columns]
+        final += ["    _dq_failed_rules,",
+                  "    {{ cleansing_layer_columns() }}",
+                  f"from {stage}",
+                  "where not _dq_is_valid"]
+    elif key:
+        dedup = ["-- Stage 3: deduplicate. Source systems replay batches, so the",
+                 "-- same business key can arrive more than once. Keep the most",
+                 "-- recently ingested version.",
+                 "deduplicated as (",
+                 "    select",
+                 "        *,"]
         order_col = "ingested_at" if "ingested_at" in columns else (ts or key)
-        out.append(
+        dedup += [
             f"        row_number() over (partition by {key} "
-            f"order by {order_col} desc nulls last) as _row_rank")
-        out.append(f"    from {stage}")
-        out.append("    where _dq_is_valid")
-        out.append(")")
-        out.append("")
-        out.append("select")
-        for col in columns:
-            out.append(f"    {col},")
-        out.append("    {{ cleansing_layer_columns() }}")
-        out.append("from deduplicated")
-        out.append("where _row_rank = 1")
-    else:
-        out.append("select")
-        for col in columns:
-            out.append(f"    {col},")
-        out.append("    {{ cleansing_layer_columns() }}")
-        out.append(f"from {stage}")
-        out.append("where _dq_is_valid")
+            f"order by {order_col} desc nulls last) as _row_rank",
+            f"    from {stage}",
+            "    where _dq_is_valid",
+            ")"]
+        ctes.append("\n".join(dedup))
 
+        final = ["select"]
+        final += [f"    {col}," for col in columns]
+        final += ["    {{ cleansing_layer_columns() }}",
+                  "from deduplicated",
+                  "where _row_rank = 1"]
+    else:
+        final = ["select"]
+        final += [f"    {col}," for col in columns]
+        final += ["    {{ cleansing_layer_columns() }}",
+                  f"from {stage}",
+                  "where _dq_is_valid"]
+
+    out.append(",\n\n".join(ctes))
+    out.append("")
+    out.append("\n".join(final))
     return "\n".join(out) + "\n"
 
 

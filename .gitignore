@@ -11,3 +11,9 @@ mlruns/
 .databrickscfg
 *.duckdb
 *.duckdb.wal
+
+# Terraform working directories and provider binaries
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log

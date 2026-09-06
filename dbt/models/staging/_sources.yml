@@ -16,27 +16,27 @@ sources:
       - name: bridge_asset_site
         description: "Raw bridge_asset_site -- 50,000 rows as delivered by the source system."
       - name: bridge_customer_contract
-        description: "Raw bridge_customer_contract -- 224,666 rows as delivered by the source system."
+        description: "Raw bridge_customer_contract -- 225,069 rows as delivered by the source system."
       - name: bridge_customer_hierarchy
         description: "Raw bridge_customer_hierarchy -- 150,000 rows as delivered by the source system."
       - name: bridge_customer_site
-        description: "Raw bridge_customer_site -- 80,202 rows as delivered by the source system."
+        description: "Raw bridge_customer_site -- 79,634 rows as delivered by the source system."
       - name: bridge_employee_site
-        description: "Raw bridge_employee_site -- 64,337 rows as delivered by the source system."
+        description: "Raw bridge_employee_site -- 64,552 rows as delivered by the source system."
       - name: bridge_product_hierarchy
         description: "Raw bridge_product_hierarchy -- 31 rows as delivered by the source system."
       - name: bridge_route_site
-        description: "Raw bridge_route_site -- 12,278 rows as delivered by the source system."
+        description: "Raw bridge_route_site -- 12,137 rows as delivered by the source system."
       - name: bridge_security_user_scope
-        description: "Raw bridge_security_user_scope -- 90 rows as delivered by the source system."
+        description: "Raw bridge_security_user_scope -- 89 rows as delivered by the source system."
       - name: bridge_site_hierarchy
         description: "Raw bridge_site_hierarchy -- 4,200 rows as delivered by the source system."
       - name: bridge_site_product
-        description: "Raw bridge_site_product -- 25,323 rows as delivered by the source system."
+        description: "Raw bridge_site_product -- 25,248 rows as delivered by the source system."
       - name: bridge_site_promotion
-        description: "Raw bridge_site_promotion -- 7,132 rows as delivered by the source system."
+        description: "Raw bridge_site_promotion -- 7,267 rows as delivered by the source system."
       - name: bridge_supplier_product
-        description: "Raw bridge_supplier_product -- 9,069 rows as delivered by the source system."
+        description: "Raw bridge_supplier_product -- 9,225 rows as delivered by the source system."
       - name: dim_airline
         description: "Raw dim_airline -- 18 rows as delivered by the source system."
       - name: dim_airport
