@@ -88,7 +88,7 @@ measurable rather than merely asserted.
 
 The cleansing layer is generated from the manifest so it always matches what
 the generator actually wrote: 167 repair-and-assess models, 167 staging models
-and 122 quarantine models.
+and 128 quarantine models.
 
 ```bash
 python scripts/generate_dbt_staging.py --manifest data/lake/_manifest.json

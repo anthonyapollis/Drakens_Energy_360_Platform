@@ -54,7 +54,7 @@ only correct if it accounts for every defect that was introduced.
 
 The cleansing layer is generated in three stages: 167 `cln_` models repair
 every column and assess every row once, 167 `stg_` models take the valid rows
-and deduplicate them, and 122 `qtn_` models keep the rejected rows *with the
+and deduplicate them, and 128 `qtn_` models keep the rejected rows *with the
 rule that rejected them*. Rejected rows are never dropped: a silently dropped
 row becomes an unexplainable variance three months later, and there is no way
 back from it.
@@ -175,7 +175,7 @@ src/vivo360/          Synthetic data engine
 dbt/                  Transformation layer (DuckDB local, Databricks deployed)
   models/cleansed/      167 generated repair-and-assess models
   models/staging/       167 generated valid-and-deduplicated models
-  models/quarantine/    122 generated quarantine models
+  models/quarantine/    128 generated quarantine models
   models/marts/         Conformed dimensions, domain facts, aggregates
   macros/cleansing.sql  Repair rules used identically across every model
   snapshots/            Type-2 history

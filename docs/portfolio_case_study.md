@@ -103,7 +103,7 @@ into a measurement.
 
 The cleansing layer runs in three generated stages: 167 `cln_` models repair
 every column and assess every row, 167 `stg_` models take the valid rows and
-deduplicate them, and 122 `qtn_` models keep every rejected row alongside the
+deduplicate them, and 128 `qtn_` models keep every rejected row alongside the
 rule that rejected it.
 
 The reconciliation that has to hold:
