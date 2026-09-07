@@ -1,7 +1,6 @@
 # Power BI semantic model design
 
-> Independent synthetic portfolio project. No internal Vivo Energy, Engen,
-> Shell or Vitol data. All figures are generated.
+> Independent synthetic portfolio project. no data from any real company. All figures are generated.
 
 ## Design position
 

@@ -16,7 +16,7 @@ import mlflow
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = REPO_ROOT / "data" / "vivo360.duckdb"
+DEFAULT_DB = REPO_ROOT / "data" / "drakens360.duckdb"
 MLRUNS = REPO_ROOT / "mlruns"
 
 DISCLAIMER = (
@@ -26,11 +26,11 @@ DISCLAIMER = (
 
 
 def connect(db_path: Path | None = None) -> duckdb.DuckDBPyConnection:
-    path = Path(os.environ.get("VIVO_DUCKDB_PATH", db_path or DEFAULT_DB))
+    path = Path(os.environ.get("DRAKENS_DUCKDB_PATH", db_path or DEFAULT_DB))
     if not path.exists():
         raise FileNotFoundError(
             f"{path} not found. Build the warehouse first:\n"
-            f"  python -m vivo360.build --profile portfolio --output data/lake\n"
+            f"  python -m drakens360.build --profile portfolio --output data/lake\n"
             f"  cd dbt && dbt build"
         )
     return duckdb.connect(str(path), read_only=True)
@@ -44,17 +44,24 @@ def load(sql: str, db_path: Path | None = None) -> pd.DataFrame:
 def start_experiment(name: str) -> None:
     """Point MLflow at the local tracking store and select the experiment.
 
-    On Databricks this would be `mlflow.set_tracking_uri("databricks")` and a
-    workspace experiment path; the experiment code itself is unchanged.
+    SQLite rather than the filesystem store: MLflow 3 put the file backend
+    into maintenance mode and refuses to use it, and SQLite is the documented
+    replacement. Artefacts still go to a directory; only the metadata moves.
+
+    On Databricks this becomes `mlflow.set_tracking_uri("databricks")` with a
+    workspace experiment path. The experiment code itself does not change.
     """
     MLRUNS.mkdir(exist_ok=True)
-    mlflow.set_tracking_uri(f"file:///{MLRUNS.as_posix()}")
-    mlflow.set_experiment(f"/vivo_energy_360/{name}")
+    tracking_db = MLRUNS / "mlflow.db"
+    mlflow.set_tracking_uri(f"sqlite:///{tracking_db.as_posix()}")
+    mlflow.set_experiment(
+        f"drakens_energy_360_{name}",
+    )
 
 
 def log_common_tags(use_case: str, grain: str, target: str) -> None:
     mlflow.set_tags({
-        "project": "vivo_energy_360",
+        "project": "drakens_energy_360",
         "use_case": use_case,
         "grain": grain,
         "target": target,

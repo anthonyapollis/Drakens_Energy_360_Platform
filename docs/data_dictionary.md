@@ -1,6 +1,6 @@
 # Data dictionary
 
-> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen, Shell or Vitol data. Every value described here is generated.
+> **Independent synthetic portfolio project.** Drakens Energy is a fictional company; no real company's data is used. Every value described here is generated.
 
 Generated from `data/lake/_manifest.json` (profile `portfolio`). Regenerate with `python scripts/generate_data_dictionary.py` after changing the model; do not edit by hand.
 

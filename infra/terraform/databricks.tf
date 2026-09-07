@@ -29,11 +29,10 @@ resource "databricks_external_location" "lake" {
 }
 
 resource "databricks_catalog" "main" {
-  name    = "vivo_${var.environment}"
+  name    = "drakens_${var.environment}"
   comment = <<-EOT
-    Vivo Energy 360 synthetic downstream-energy platform (${var.environment}).
-    Independent portfolio project; contains no internal Vivo Energy, Engen,
-    Shell or Vitol data. All sites, customers, prices and coordinates are
+    Drakens Energy 360 synthetic downstream-energy platform (${var.environment}).
+    Independent portfolio project; contains no data from any real company. All sites, customers, prices and coordinates are
     generated.
   EOT
 
@@ -70,19 +69,19 @@ resource "databricks_grants" "catalog" {
   catalog = databricks_catalog.main.name
 
   grant {
-    principal  = "vivo_platform_engineers"
+    principal  = "drakens_platform_engineers"
     privileges = ["ALL_PRIVILEGES"]
   }
   grant {
-    principal  = "vivo_data_analysts"
+    principal  = "drakens_data_analysts"
     privileges = ["USE_CATALOG"]
   }
   grant {
-    principal  = "vivo_data_scientists"
+    principal  = "drakens_data_scientists"
     privileges = ["USE_CATALOG"]
   }
   grant {
-    principal  = "vivo_executives"
+    principal  = "drakens_executives"
     privileges = ["USE_CATALOG"]
   }
 }
@@ -91,15 +90,15 @@ resource "databricks_grants" "gold" {
   schema = "${databricks_catalog.main.name}.${databricks_schema.layer["gold"].name}"
 
   grant {
-    principal  = "vivo_data_analysts"
+    principal  = "drakens_data_analysts"
     privileges = ["USE_SCHEMA", "SELECT"]
   }
   grant {
-    principal  = "vivo_data_scientists"
+    principal  = "drakens_data_scientists"
     privileges = ["USE_SCHEMA", "SELECT"]
   }
   grant {
-    principal  = "vivo_commercial_team"
+    principal  = "drakens_commercial_team"
     privileges = ["USE_SCHEMA", "SELECT"]
   }
 }
@@ -110,7 +109,7 @@ resource "databricks_grants" "bronze" {
   schema = "${databricks_catalog.main.name}.${databricks_schema.layer["bronze"].name}"
 
   grant {
-    principal  = "vivo_platform_engineers"
+    principal  = "drakens_platform_engineers"
     privileges = ["ALL_PRIVILEGES"]
   }
 }
@@ -119,7 +118,7 @@ resource "databricks_grants" "bronze" {
 # Cluster policy - the main cost control
 #############################################################################
 resource "databricks_cluster_policy" "etl" {
-  name = "vivo360-${var.environment}-etl"
+  name = "drakens360-${var.environment}-etl"
 
   definition = jsonencode({
     "spark_version" : {
@@ -165,7 +164,7 @@ resource "databricks_cluster_policy" "etl" {
     },
     "custom_tags.project" : {
       "type" : "fixed",
-      "value" : "vivo-energy-360"
+      "value" : "drakens-energy-360"
     },
     "custom_tags.environment" : {
       "type" : "fixed",
@@ -197,7 +196,7 @@ resource "databricks_sql_endpoint" "bi" {
   tags {
     custom_tags {
       key   = "project"
-      value = "vivo-energy-360"
+      value = "drakens-energy-360"
     }
     custom_tags {
       key   = "environment"
@@ -210,7 +209,7 @@ resource "databricks_sql_endpoint" "bi" {
 # Secret scope backed by Key Vault
 #############################################################################
 resource "databricks_secret_scope" "kv" {
-  name = "vivo360"
+  name = "drakens360"
 
   keyvault_metadata {
     resource_id = azurerm_key_vault.main.id
@@ -222,7 +221,7 @@ resource "databricks_secret_scope" "kv" {
 # Jobs
 #############################################################################
 resource "databricks_job" "medallion" {
-  name        = "vivo360_medallion_${var.environment}"
+  name        = "drakens360_medallion_${var.environment}"
   description = "Bronze -> silver -> gold, then data quality and table maintenance."
 
   # A schedule with no timeout is a schedule that can pile up. This one is
@@ -324,7 +323,7 @@ resource "databricks_job" "medallion" {
 resource "databricks_job" "streaming" {
   count = var.enable_streaming ? 1 : 0
 
-  name        = "vivo360_streaming_${var.environment}"
+  name        = "drakens360_streaming_${var.environment}"
   description = "Continuous tank, GPS, EV and solar telemetry ingestion."
 
   continuous {

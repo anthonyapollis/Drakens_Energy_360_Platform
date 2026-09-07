@@ -2,12 +2,12 @@
 
 > Independent synthetic portfolio project. No real company data.
 
-Questions against the Vivo Energy 360 schema, ordered from intermediate to
+Questions against the Drakens Energy 360 schema, ordered from intermediate to
 staff level. Each states what it is actually testing, because the point of a
 technical question is to find out something specific rather than to see
 whether the candidate has memorised a syntax.
 
-Run them against `main_gold` in DuckDB, or `vivo_dev.gold` on Databricks.
+Run them against `main_gold` in DuckDB, or `drakens_dev.gold` on Databricks.
 
 ---
 

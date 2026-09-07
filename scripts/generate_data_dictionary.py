@@ -20,8 +20,9 @@ DICT_OUT = REPO / "docs" / "data_dictionary.md"
 BUS_OUT = REPO / "docs" / "bus_matrix.md"
 
 DISCLAIMER = (
-    "> **Independent synthetic portfolio project.** No internal Vivo Energy, "
-    "Engen, Shell or Vitol data. Every value described here is generated.\n"
+    "> **Independent synthetic portfolio project.** Drakens Energy is a "
+    "fictional company; no real company's data is used. Every value described "
+    "here is generated.\n"
 )
 
 # Which business domain each fact belongs to, by name prefix. Ordered, so the

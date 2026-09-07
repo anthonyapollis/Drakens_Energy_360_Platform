@@ -35,7 +35,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "vivo_dev", "Unity Catalog")
+dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 dbutils.widgets.text("vacuum_retention_hours", "168", "VACUUM retention (hours)")
 dbutils.widgets.dropdown("run_vacuum", "true", ["true", "false"], "Run VACUUM")
 

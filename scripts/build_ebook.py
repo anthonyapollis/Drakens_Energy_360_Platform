@@ -24,14 +24,15 @@ REPO = Path(__file__).resolve().parent.parent
 IMG = REPO / "docs" / "img"
 DOCS = REPO / "docs"
 MANIFEST = REPO / "data" / "lake" / "_manifest.json"
-DUCKDB = REPO / "data" / "vivo360.duckdb"
-OUT_HTML = DOCS / "Vivo_Energy_360_Ebook.html"
-OUT_PDF = DOCS / "Vivo_Energy_360_Ebook.pdf"
+DUCKDB = REPO / "data" / "drakens360.duckdb"
+OUT_HTML = DOCS / "Drakens_Energy_360_Ebook.html"
+OUT_PDF = DOCS / "Drakens_Energy_360_Ebook.pdf"
 
 DISCLAIMER = (
     "Independent synthetic portfolio project. This document and the platform "
-    "it describes contain no internal Vivo Energy, Engen, Shell or Vitol "
-    "data. Every site, customer, employee, supplier, asset, coordinate, "
+    "it describes contain no data from any real company. Drakens Energy is "
+    "a fictional company. Every site, customer, employee, supplier, asset, "
+    "coordinate, "
     "price, volume, margin and incident is randomly generated. Company and "
     "person names are invented; any resemblance to a real organisation or "
     "individual is coincidental and unintended. Site coordinates are town "
@@ -144,17 +145,17 @@ def databricks_facts(profile: str) -> dict:
     try:
         rows = q("""
             SELECT 'bronze.fact_retail_fuel_sales' t, count(*) n
-              FROM vivo_dev.bronze.fact_retail_fuel_sales
+              FROM drakens_dev.bronze.fact_retail_fuel_sales
             UNION ALL SELECT 'silver.fact_retail_fuel_sales', count(*)
-              FROM vivo_dev.silver.fact_retail_fuel_sales
+              FROM drakens_dev.silver.fact_retail_fuel_sales
             UNION ALL SELECT 'gold.fct_retail_fuel_sales', count(*)
-              FROM vivo_dev.gold.fct_retail_fuel_sales
+              FROM drakens_dev.gold.fct_retail_fuel_sales
             UNION ALL SELECT 'gold.agg_site_daily_fuel', count(*)
-              FROM vivo_dev.gold.agg_site_daily_fuel
+              FROM drakens_dev.gold.agg_site_daily_fuel
             UNION ALL SELECT 'gold.agg_executive_daily_kpi', count(*)
-              FROM vivo_dev.gold.agg_executive_daily_kpi
+              FROM drakens_dev.gold.agg_executive_daily_kpi
             UNION ALL SELECT 'gold.network_investment_scorecard', count(*)
-              FROM vivo_dev.gold.network_investment_scorecard
+              FROM drakens_dev.gold.network_investment_scorecard
         """)
         return {"medallion": [(r[0], int(r[1])) for r in rows],
                 "host": w.config.host}
@@ -351,10 +352,10 @@ def build_html(manifest: dict, wh: dict, dbx: dict) -> str:
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<title>Vivo Energy 360</title><style>{CSS}</style></head><body>
+<title>Drakens Energy 360</title><style>{CSS}</style></head><body>
 
 <div class="cover">
-  <h1>Vivo Energy 360</h1>
+  <h1>Drakens Energy 360</h1>
   <p class="subtitle">A synthetic end-to-end data engineering platform<br>
      for a downstream energy business</p>
   <div class="kpis">{kpis}</div>
@@ -614,7 +615,7 @@ production streaming experience on the strength of this.</p>
 <div class="disclaimer"><strong>Disclaimer.</strong> {DISCLAIMER}</div>
 
 <div class="footer">
-  Vivo Energy 360 &middot; independent synthetic portfolio project &middot;
+  Drakens Energy 360 &middot; independent synthetic portfolio project &middot;
   generated {date.today().isoformat()} from the build manifest, the warehouse
   and live workspace queries. No figure in this document was typed by hand.
 </div>

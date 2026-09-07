@@ -2,9 +2,9 @@
 
 **Accessed 2026-09-06.**
 
-This repository is an **independent synthetic portfolio project**. It contains
-no internal Vivo Energy, Engen, Shell or Vitol data, and has no affiliation
-with, endorsement from, or connection to any of them.
+**Drakens Energy is a fictional company invented for this project.** It does
+not exist. This repository contains no data from any real company and has no
+affiliation with, endorsement from, or connection to any real organisation.
 
 This note records exactly what public information was used, and — more
 importantly — what was *not* taken from it.
@@ -66,7 +66,7 @@ Energy*, *Cape Route Fuels*, *Zambesi Fuels*, *Drakens Petroleum* — are
 **invented for this project**. No generated site carries a real brand.
 
 Business names are constructed by combining an invented stem with a
-sector-appropriate trade word (`src/vivo360/names.py`), giving a namespace of
+sector-appropriate trade word (`src/drakens360/names.py`), giving a namespace of
 hundreds of thousands of combinations. Person names are drawn from South
 African given names and surnames across Afrikaans, English, Nguni,
 Sotho/Tswana, Venda/Tsonga and South African Indian naming traditions, so the
@@ -89,8 +89,8 @@ scatter of a few kilometres. `tests/test_generator.py` asserts that no
 generated site lands exactly on a centroid.
 
 **No coordinate in this repository represents a real service station**
-belonging to Vivo Energy, Engen, Shell, Vitol or anyone else. The map in the
-case study is a map of invented places.
+belonging to any real company. The map in the case study is a map of invented
+places.
 
 ---
 

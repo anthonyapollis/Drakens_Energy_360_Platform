@@ -83,7 +83,7 @@ jobs:
         run: pip install -r requirements.txt pytest pytest-cov
 
       - name: Run tests
-        run: pytest tests/test_generator.py -v --cov=src/vivo360 --cov-report=term-missing
+        run: pytest tests/test_generator.py -v --cov=src/drakens360 --cov-report=term-missing
 
   # -------------------------------------------------- build and validate DW
   warehouse:
@@ -104,7 +104,7 @@ jobs:
       # enough to exercise every model and test without a 20-minute CI run.
       - name: Generate the dirty landing zone
         run: |
-          PYTHONPATH=src python -m vivo360.build \
+          PYTHONPATH=src python -m drakens360.build \
             --profile test --output data/lake --defects realistic
 
       - name: Regenerate the cleansing layer
@@ -129,21 +129,21 @@ jobs:
         working-directory: dbt
         env:
           DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
-          VIVO_LAKE: ${{ github.workspace }}/data/lake
-          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+          DRAKENS_LAKE: ${{ github.workspace }}/data/lake
+          DRAKENS_DUCKDB_PATH: ${{ github.workspace }}/data/drakens360.duckdb
         run: dbt build --fail-fast
 
       - name: Warehouse integration tests
         env:
-          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+          DRAKENS_DUCKDB_PATH: ${{ github.workspace }}/data/drakens360.duckdb
         run: pytest tests/test_warehouse.py -v
 
       - name: dbt docs
         working-directory: dbt
         env:
           DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
-          VIVO_LAKE: ${{ github.workspace }}/data/lake
-          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+          DRAKENS_LAKE: ${{ github.workspace }}/data/lake
+          DRAKENS_DUCKDB_PATH: ${{ github.workspace }}/data/drakens360.duckdb
         run: dbt docs generate
 
       - name: Upload dbt artefacts
@@ -197,21 +197,21 @@ jobs:
 
       - name: Rebuild the warehouse
         run: |
-          PYTHONPATH=src python -m vivo360.build \
+          PYTHONPATH=src python -m drakens360.build \
             --profile test --output data/lake --defects realistic --quiet
           pip install dbt-core dbt-duckdb
           cd dbt && dbt deps && dbt build --quiet
         env:
           DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
-          VIVO_LAKE: ${{ github.workspace }}/data/lake
-          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+          DRAKENS_LAKE: ${{ github.workspace }}/data/lake
+          DRAKENS_DUCKDB_PATH: ${{ github.workspace }}/data/drakens360.duckdb
 
       # Each experiment must train and log without error. Model quality is not
       # gated here -- a CI-scale sample cannot judge that honestly, and a
       # threshold that fails on sample size teaches people to ignore CI.
       - name: Train
         env:
-          VIVO_DUCKDB_PATH: ${{ github.workspace }}/data/vivo360.duckdb
+          DRAKENS_DUCKDB_PATH: ${{ github.workspace }}/data/drakens360.duckdb
         run: |
           for experiment in demand_forecast predictive_maintenance \
                             stock_out_risk late_delivery fraud_anomaly; do

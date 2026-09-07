@@ -1,4 +1,4 @@
-"""Builds the 70 conformed dimensions of the Vivo Energy 360 model.
+"""Builds the 70 conformed dimensions of the Drakens Energy 360 model.
 
 Every name, identifier and coordinate produced here is synthetic. Site
 coordinates are city centroids plus random jitter and must not be read as any

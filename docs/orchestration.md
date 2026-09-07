@@ -1,7 +1,6 @@
 # Orchestration and SLAs
 
-> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen,
-> Shell or Vitol data.
+> **Independent synthetic portfolio project.** no data from any real company.
 
 ---
 
@@ -9,7 +8,7 @@
 
 ```
 02:00  Source extracts land in the bronze volume
-03:00  vivo360_medallion_prod starts
+03:00  drakens360_medallion_prod starts
        ├─ ingest_bronze     Auto Loader, ~8 min
        ├─ build_silver      contract, quarantine, dedup, SCD2, ~14 min
        ├─ build_gold        marts and aggregates, ~11 min

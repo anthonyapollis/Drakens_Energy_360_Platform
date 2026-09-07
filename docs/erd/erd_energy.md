@@ -1,6 +1,6 @@
 # ERD — New energy
 
-> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen, Shell or Vitol data.
+> **Independent synthetic portfolio project.** Drakens Energy is a fictional company; no real company's data is used.
 
 Generated from the build manifest by `scripts/generate_erd.py`.
 

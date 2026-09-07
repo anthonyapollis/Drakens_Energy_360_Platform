@@ -1,5 +1,5 @@
 #############################################################################
-# Vivo Energy 360 - Azure and Databricks infrastructure
+# Drakens Energy 360 - Azure and Databricks infrastructure
 #
 # Independent synthetic portfolio project. Provisions the platform that runs
 # the synthetic workload; no real company data is involved.
@@ -28,10 +28,10 @@ terraform {
   # Remote state with locking. Local state on a shared platform is how two
   # engineers destroy each other's resources.
   backend "azurerm" {
-    resource_group_name  = "rg-vivo360-tfstate"
-    storage_account_name = "stvivo360tfstate"
+    resource_group_name  = "rg-drakens360-tfstate"
+    storage_account_name = "stdrakens360tfstate"
     container_name       = "tfstate"
-    key                  = "vivo360.tfstate"
+    key                  = "drakens360.tfstate"
   }
 }
 
@@ -45,10 +45,10 @@ provider "azurerm" {
 }
 
 locals {
-  prefix = "vivo360-${var.environment}"
+  prefix = "drakens360-${var.environment}"
 
   tags = {
-    project     = "vivo-energy-360"
+    project     = "drakens-energy-360"
     environment = var.environment
     managed_by  = "terraform"
     data_class  = "synthetic"
@@ -279,7 +279,7 @@ resource "azurerm_log_analytics_workspace" "main" {
 resource "azurerm_monitor_action_group" "oncall" {
   name                = "ag-${local.prefix}-oncall"
   resource_group_name = azurerm_resource_group.main.name
-  short_name          = "vivo360"
+  short_name          = "drakens360"
 
   email_receiver {
     name          = "data-platform"

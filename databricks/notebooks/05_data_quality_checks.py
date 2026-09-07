@@ -15,7 +15,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "vivo_dev", "Unity Catalog")
+dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 dbutils.widgets.dropdown("fail_on_critical", "true", ["true", "false"],
                          "Fail the task on a critical breach")
 

@@ -17,9 +17,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from vivo360 import config, dimensions, dirty, geography, names, reference
-from vivo360.facts import _common as fc
-from vivo360.writer import LakeWriter
+from drakens360 import config, dimensions, dirty, geography, names, reference
+from drakens360.facts import _common as fc
+from drakens360.writer import LakeWriter
 
 
 # --------------------------------------------------------------------------
@@ -96,7 +96,7 @@ def test_model_has_seventy_dimensions_and_twelve_bridges(built):
 
 
 def test_every_planned_fact_has_a_generator():
-    from vivo360 import facts
+    from drakens360 import facts
     registry = facts.load_all()
     planned = config.planned_fact_rows(config.PORTFOLIO)
     missing = sorted(set(planned) - set(registry))

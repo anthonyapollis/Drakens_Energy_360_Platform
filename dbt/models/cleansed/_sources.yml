@@ -11,7 +11,7 @@ sources:
     schema: bronze
     meta:
       external_location: >-
-        read_parquet('{{ env_var('VIVO_LAKE', '../data/lake') }}/dimensions/{name}/*.parquet', union_by_name=true)
+        read_parquet('{{ env_var('DRAKENS_LAKE', '../data/lake') }}/dimensions/{name}/*.parquet', union_by_name=true)
     tables:
       - name: bridge_asset_site
         description: "Raw bridge_asset_site -- 50,000 rows as delivered by the source system."
@@ -186,7 +186,7 @@ sources:
     schema: bronze
     meta:
       external_location: >-
-        read_parquet('{{ env_var('VIVO_LAKE', '../data/lake') }}/facts/{name}/*.parquet', union_by_name=true)
+        read_parquet('{{ env_var('DRAKENS_LAKE', '../data/lake') }}/facts/{name}/*.parquet', union_by_name=true)
     tables:
       - name: fact_accounts_payable
         description: "Raw fact_accounts_payable -- 300,000 rows as delivered by the source system."

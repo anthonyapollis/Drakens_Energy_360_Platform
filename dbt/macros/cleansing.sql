@@ -2,7 +2,7 @@
     Cleansing macros.
 
     Each macro repairs one class of defect that the landing zone actually
-    contains (see src/vivo360/dirty.py for how each is produced). They are
+    contains (see src/drakens360/dirty.py for how each is produced). They are
     macros rather than inline SQL for one reason: the rule for "what counts as
     a null" has to be identical in all 167 staging models, or a sentinel that
     is stripped in one table survives in another and the two disagree.

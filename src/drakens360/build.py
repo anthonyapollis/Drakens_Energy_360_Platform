@@ -17,9 +17,9 @@ def writer_types(clean_chunk):
     return logical_types(clean_chunk(0, 1))
 
 DISCLAIMER = (
-    "Independent synthetic portfolio project. Contains no internal Vivo Energy, "
-    "Engen, Shell or Vitol data. All sites, customers, prices, volumes, assets "
-    "and coordinates are randomly generated."
+    "Independent synthetic portfolio project. Drakens Energy is a fictional "
+    "company; no real company's data is used. All sites, customers, prices, "
+    "volumes, assets and coordinates are randomly generated."
 )
 
 
@@ -123,8 +123,8 @@ def build(profile_name: str, output: Path, fmt: str = "parquet",
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="vivo360-build",
-        description="Generate the Vivo Energy 360 synthetic data lake.",
+        prog="drakens360-build",
+        description="Generate the Drakens Energy 360 synthetic data lake.",
         epilog=DISCLAIMER,
     )
     ap.add_argument("--profile", default="dev", choices=sorted(config.PROFILES))

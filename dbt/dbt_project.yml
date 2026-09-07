@@ -1,8 +1,8 @@
-name: vivo_energy_360
+name: drakens_energy_360
 version: 1.0.0
 config-version: 2
 
-profile: vivo_energy_360
+profile: drakens_energy_360
 
 model-paths: ["models"]
 seed-paths: ["seeds"]
@@ -28,7 +28,7 @@ vars:
   stock_out_cover_days: 1.5
 
 models:
-  vivo_energy_360:
+  drakens_energy_360:
     +persist_docs:
       relation: true
       columns: true
@@ -85,12 +85,12 @@ models:
         +tags: ["observability"]
 
 seeds:
-  vivo_energy_360:
+  drakens_energy_360:
     +schema: reference
     +tags: ["reference"]
 
 snapshots:
-  vivo_energy_360:
+  drakens_energy_360:
     +target_schema: silver_snapshots
     +tags: ["scd2"]
 

@@ -18,7 +18,7 @@ import duckdb
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-DB = Path(os.environ.get("VIVO_DUCKDB_PATH", REPO / "data" / "vivo360.duckdb"))
+DB = Path(os.environ.get("DRAKENS_DUCKDB_PATH", REPO / "data" / "drakens360.duckdb"))
 
 pytestmark = pytest.mark.skipif(
     not DB.exists(),

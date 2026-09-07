@@ -29,8 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import numpy as np
 
-from vivo360 import config, dimensions, dirty, facts
-from vivo360.writer import LakeWriter, logical_types
+from drakens360 import config, dimensions, dirty, facts
+from drakens360.writer import LakeWriter, logical_types
 
 REPO = Path(__file__).resolve().parent.parent
 DEFAULT_CONTRACT = REPO / "contracts" / "schema.json"

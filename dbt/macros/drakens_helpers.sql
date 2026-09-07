@@ -71,7 +71,7 @@
     {#- Emitted by on-run-end so pipeline duration lands in the run log. -#}
     {% if execute and results %}
         {% set failed = results | selectattr('status', 'in', ['error', 'fail']) | list %}
-        {{ log("vivo360: " ~ results | length ~ " nodes, "
+        {{ log("drakens360: " ~ results | length ~ " nodes, "
                ~ failed | length ~ " failed", info=true) }}
     {% endif %}
 {% endmacro %}

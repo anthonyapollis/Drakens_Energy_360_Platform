@@ -25,8 +25,8 @@ MANIFEST = REPO / "data" / "lake" / "_manifest.json"
 OUT = REPO / "docs" / "erd"
 
 DISCLAIMER = (
-    "> **Independent synthetic portfolio project.** No internal Vivo Energy, "
-    "Engen, Shell or Vitol data.\n"
+    "> **Independent synthetic portfolio project.** Drakens Energy is a "
+    "fictional company; no real company's data is used.\n"
 )
 
 # Foreign-key column -> the dimension it points at.
@@ -213,7 +213,7 @@ def render_conformed(tables: dict) -> str:
         lines.append(f"        int joins_{len(facts_using)}_fact_tables")
         lines.append("    }")
 
-    for slug, title, _ in DOMAINS:
+    for slug, _title, _ in DOMAINS:
         lines.append(f"    {slug.upper()}_FACTS {{")
         n = sum(1 for f in facts if domain_of(f) == slug)
         lines.append(f"        int {n}_tables")

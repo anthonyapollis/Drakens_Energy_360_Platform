@@ -1,4 +1,4 @@
-# Vivo Energy 360 - independent synthetic portfolio project.
+# Drakens Energy 360 - independent synthetic portfolio project.
 #
 # Lower bounds only. The generator and the dbt models are tested against
 # current releases; pinning exactly would mean this repository stops

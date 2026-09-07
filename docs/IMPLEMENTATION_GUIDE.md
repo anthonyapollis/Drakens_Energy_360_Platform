@@ -1,7 +1,7 @@
 # Implementation guide
 
 > **Independent synthetic portfolio project.** This repository contains no
-> internal Vivo Energy, Engen, Shell or Vitol data. Every site, customer,
+> data from any real company. Every site, customer,
 > employee, asset, coordinate, price, volume, margin and incident is randomly
 > generated. See [public_reference_notes.md](public_reference_notes.md).
 
@@ -45,7 +45,7 @@ edition is enough — the whole medallion has been run on one.
 the Azure CLI with the Bicep extension.
 
 ```bash
-git clone <this-repo> && cd Vivo_Energy_360_Platform
+git clone <this-repo> && cd Drakens_Energy_360_Platform
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 ### 2.1 Generate the landing zone
 
 ```bash
-PYTHONPATH=src python -m vivo360.build \
+PYTHONPATH=src python -m drakens360.build \
   --profile portfolio \
   --output data/lake \
   --defects realistic
@@ -107,8 +107,8 @@ have drifted from what this produces.
 ```bash
 cd dbt
 export DBT_PROFILES_DIR=$PWD
-export VIVO_LAKE=$(cd .. && pwd)/data/lake
-export VIVO_DUCKDB_PATH=$(cd .. && pwd)/data/vivo360.duckdb
+export DRAKENS_LAKE=$(cd .. && pwd)/data/lake
+export DRAKENS_DUCKDB_PATH=$(cd .. && pwd)/data/drakens360.duckdb
 
 dbt deps
 dbt build
@@ -158,8 +158,8 @@ python scripts/deploy_databricks.py \
   --run
 ```
 
-This creates the `vivo_dev` catalog and its seven schemas, uploads the
-notebooks, creates the `vivo360_medallion_dev` job and triggers it. Add
+This creates the `drakens_dev` catalog and its seven schemas, uploads the
+notebooks, creates the `drakens360_medallion_dev` job and triggers it. Add
 `--wait` to block until it finishes.
 
 ### 3.3 What runs
@@ -197,7 +197,7 @@ cd dbt && dbt build --target dev
 
 The models are unchanged. Cross-adapter differences — `current_timestamp` vs
 `current_timestamp()`, merge strategy, liquid clustering — are handled in
-`macros/vivo_helpers.sql`.
+`macros/drakens_helpers.sql`.
 
 ---
 
@@ -245,7 +245,7 @@ workspace is the most reliable way to produce a surprising invoice.
 ## 5. Train the models
 
 ```bash
-export VIVO_DUCKDB_PATH=$PWD/data/vivo360.duckdb
+export DRAKENS_DUCKDB_PATH=$PWD/data/drakens360.duckdb
 
 python ml/experiments/demand_forecast.py
 python ml/experiments/predictive_maintenance.py
@@ -296,7 +296,7 @@ rand stops earning.
 
 1. **Get data → Azure Databricks**, server hostname and HTTP path from the SQL
    warehouse.
-2. Catalog `vivo_prod`, schema `gold`.
+2. Catalog `drakens_prod`, schema `gold`.
 3. Set storage mode per table as in
    [powerbi/semantic_model.md](../powerbi/semantic_model.md) — Import for the
    aggregates, DirectQuery for the transaction fact.
@@ -369,7 +369,7 @@ only to fail a pipeline run.
 
 ### Daily
 
-The `vivo360_medallion_prod` job runs at 03:00 SAST, ahead of the 06:00
+The `drakens360_medallion_prod` job runs at 03:00 SAST, ahead of the 06:00
 dashboard refresh. On failure it emails the on-call address. There is no
 success notification: an alert that fires every day is an alert nobody reads
 by the second week.
@@ -415,7 +415,7 @@ looks wrong in a report.
 
 ## 10. Troubleshooting
 
-**`Catalog "vivo_dev" does not exist`** on a local dbt run — a model or
+**`Catalog "drakens_dev" does not exist`** on a local dbt run — a model or
 snapshot is hard-coding a Databricks catalog. The catalog must come from the
 profile target. Check for a stray `database:` in a source or snapshot config.
 

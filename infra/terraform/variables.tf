@@ -98,7 +98,7 @@ variable "budget_start_date" {
 variable "notebook_root" {
   type        = string
   description = "Workspace path the job notebooks are deployed to."
-  default     = "/Shared/vivo_energy_360"
+  default     = "/Shared/drakens_energy_360"
 }
 
 variable "github_account" {

@@ -2,13 +2,12 @@
 # MAGIC %md
 # MAGIC # 00 - Generate the bronze layer at scale (Spark native)
 # MAGIC
-# MAGIC **Independent synthetic portfolio project.** No internal Vivo Energy, Engen,
-# MAGIC Shell or Vitol data is used. Every site, customer, price, volume and
+# MAGIC **Independent synthetic portfolio project.** no data from any real company is used. Every site, customer, price, volume and
 # MAGIC coordinate below is randomly generated.
 # MAGIC
 # MAGIC ## Why generate in-platform rather than upload
 # MAGIC
-# MAGIC The local Python generator (`src/vivo360/`) is the reference implementation
+# MAGIC The local Python generator (`src/drakens360/`) is the reference implementation
 # MAGIC and is what CI runs. Uploading its 37-million-row output over a network
 # MAGIC connection is slow and pointless when the same distributions can be produced
 # MAGIC by Spark directly on the cluster in a couple of minutes.
@@ -22,7 +21,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "vivo_dev", "Unity Catalog")
+dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 dbutils.widgets.dropdown("scale", "portfolio",
                          ["demo", "portfolio", "enterprise"], "Scale profile")
 dbutils.widgets.text("seed", "3602026", "Random seed")
@@ -203,7 +202,7 @@ sites_za = (
     .withColumn(
         "ownership_model",
         F.when(F.col("u2") < 0.12, "COCO").when(F.col("u2") < 0.70, "CODO").otherwise("DODO"))
-    # Fictional retail banners, matching src/vivo360/names.py. Invented so no
+    # Fictional retail banners, matching src/drakens360/names.py. Invented so no
     # generated site can be mistaken for a real branded station.
     .withColumn("banner", F.element_at(
         F.array(F.lit("Kalahari Fuels"), F.lit("Karoo Motion"),
@@ -295,7 +294,7 @@ product_schema = T.StructType([
 SECTORS = ["Road Transport", "Mining", "Construction", "Power Generation", "Aviation",
            "Marine", "Agriculture", "Manufacturing", "Government", "Reseller", "SME"]
 
-# Invented name stems, kept in step with src/vivo360/names.py.
+# Invented name stems, kept in step with src/drakens360/names.py.
 STEM_A = ["Thaba", "Rietkop", "Umzansi", "Kalahari", "Highveld", "Bosveld",
           "Karoo", "Drakens", "Zambesi", "Maluti", "Overberg", "Vaalkop",
           "Motheo", "Ntsika", "Khanya", "Ilanga", "Vukani", "Sondela",
@@ -314,7 +313,7 @@ customers = (
         F.array(*[F.lit(s) for s in SECTORS]),
         (F.rand(SEED + 20) * len(SECTORS)).cast("int") + 1))
     # Invented stems combined with a sector-appropriate trade word, matching
-    # src/vivo360/names.py. Placeholder strings like "Customer 0112573" make a
+    # src/drakens360/names.py. Placeholder strings like "Customer 0112573" make a
     # dashboard unreadable; these are recognisably South African business
     # names that name no real company.
     .withColumn("stem", F.element_at(

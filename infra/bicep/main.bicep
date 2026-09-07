@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Vivo Energy 360 - Azure infrastructure (Bicep)
+// Drakens Energy 360 - Azure infrastructure (Bicep)
 //
 // Independent synthetic portfolio project. No real company data.
 //
@@ -43,11 +43,11 @@ param eventHubThroughputUnits int = 1
 @description('Days raw landed files are retained before deletion.')
 param bronzeRetentionDays int = 2555
 
-var prefix = 'vivo360-${environment}'
+var prefix = 'drakens360-${environment}'
 var isProd = environment == 'prod'
 
 var tags = {
-  project: 'vivo-energy-360'
+  project: 'drakens-energy-360'
   environment: environment
   managedBy: 'bicep'
   dataClass: 'synthetic'

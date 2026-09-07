@@ -1,8 +1,7 @@
 -- =====================================================================
--- Vivo Energy 360 - Unity Catalog structure
+-- Drakens Energy 360 - Unity Catalog structure
 --
--- Independent synthetic portfolio project. No internal Vivo Energy, Engen,
--- Shell or Vitol data is present in any object created here.
+-- Independent synthetic portfolio project. no data from any real company is present in any object created here.
 --
 -- One catalog per environment gives a hard isolation boundary: a dev job
 -- physically cannot write to prod, because the grant does not exist. The
@@ -12,10 +11,10 @@
 -- Usage:  set the ${env} parameter to dev | test | prod
 -- =====================================================================
 
-CREATE CATALOG IF NOT EXISTS vivo_${env}
-COMMENT 'Vivo Energy 360 synthetic downstream-energy platform - ${env}. Independent portfolio project; contains no real company data.';
+CREATE CATALOG IF NOT EXISTS drakens_${env}
+COMMENT 'Drakens Energy 360 synthetic downstream-energy platform - ${env}. Independent portfolio project; contains no real company data.';
 
-USE CATALOG vivo_${env};
+USE CATALOG drakens_${env};
 
 -- ---------------------------------------------------------------- bronze
 CREATE SCHEMA IF NOT EXISTS bronze

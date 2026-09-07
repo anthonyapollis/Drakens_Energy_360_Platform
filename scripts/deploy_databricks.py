@@ -1,4 +1,4 @@
-"""Deploy the Vivo Energy 360 platform to a Databricks workspace.
+"""Deploy the Drakens Energy 360 platform to a Databricks workspace.
 
 Creates the Unity Catalog structure, uploads the notebooks and (optionally)
 creates and runs the medallion job. Uses OAuth via the Databricks CLI profile,
@@ -32,9 +32,10 @@ SCHEMAS = {
 }
 
 CATALOG_COMMENT = (
-    "Vivo Energy 360 synthetic downstream-energy platform. Independent "
-    "portfolio project; contains no internal Vivo Energy, Engen, Shell or "
-    "Vitol data. All sites, customers, prices and coordinates are generated."
+    "Drakens Energy 360 synthetic downstream-energy platform. Independent "
+    "portfolio project. Drakens Energy is a fictional company; no real "
+    "company's data is used. All sites, customers, prices and coordinates "
+    "are generated."
 )
 
 
@@ -66,7 +67,7 @@ def ensure_warehouse(w: WorkspaceClient) -> str:
 
 
 def create_catalog(w: WorkspaceClient, warehouse_id: str, env: str) -> str:
-    catalog = f"vivo_{env}"
+    catalog = f"drakens_{env}"
     print(f"\n[1/3] Unity Catalog: {catalog}")
     run_sql(w, warehouse_id,
             f"CREATE CATALOG IF NOT EXISTS {catalog} COMMENT '{CATALOG_COMMENT}'")
@@ -97,8 +98,8 @@ def upload_notebooks(w: WorkspaceClient, base_path: str) -> list[str]:
 def create_job(w: WorkspaceClient, base_path: str, catalog: str,
                env: str, scale: str) -> int:
     """Create (or update) the medallion job and return its id."""
-    print(f"\n[3/3] Job: vivo360_medallion_{env}")
-    name = f"vivo360_medallion_{env}"
+    print(f"\n[3/3] Job: drakens360_medallion_{env}")
+    name = f"drakens360_medallion_{env}"
 
     params = {"catalog": catalog, "scale": scale, "seed": "3602026"}
     tasks = []
@@ -129,7 +130,7 @@ def create_job(w: WorkspaceClient, base_path: str, catalog: str,
         name=name,
         tasks=tasks,
         max_concurrent_runs=1,
-        tags={"project": "vivo_energy_360", "environment": env,
+        tags={"project": "drakens_energy_360", "environment": env,
               "data": "synthetic"},
     )
     if existing:
@@ -161,7 +162,7 @@ def main(argv=None):
     catalog = create_catalog(w, warehouse_id, args.env)
 
     user = w.current_user.me().user_name
-    base_path = f"/Users/{user}/vivo_energy_360"
+    base_path = f"/Users/{user}/drakens_energy_360"
     upload_notebooks(w, base_path)
 
     job_id = create_job(w, base_path, catalog, args.env, args.scale)

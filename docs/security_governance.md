@@ -1,7 +1,6 @@
 # Security and governance
 
-> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen,
-> Shell or Vitol data. Every customer, employee and loyalty member named in
+> **Independent synthetic portfolio project.** no data from any real company. Every customer, employee and loyalty member named in
 > this platform is generated. The controls below are modelled as they would be
 > in production, on synthetic data.
 
@@ -24,11 +23,11 @@ platform code. Five of them:
 
 | Group | Sees | Notably does not see |
 |---|---|---|
-| `vivo_platform_engineers` | Everything | — |
-| `vivo_data_analysts` | Gold, masked PII, own provinces | Bronze, silver, customer names |
-| `vivo_commercial_team` | Gold, unmasked customers | Bronze, silver |
-| `vivo_data_scientists` | Silver and gold, own the `ml` schema | Bronze |
-| `vivo_executives` | Two aggregate tables only | All transaction detail |
+| `drakens_platform_engineers` | Everything | — |
+| `drakens_data_analysts` | Gold, masked PII, own provinces | Bronze, silver, customer names |
+| `drakens_commercial_team` | Gold, unmasked customers | Bronze, silver |
+| `drakens_data_scientists` | Silver and gold, own the `ml` schema | Bronze |
+| `drakens_executives` | Two aggregate tables only | All transaction detail |
 
 **Analysts get no bronze access at all.** This is deliberate and occasionally
 unpopular. Raw data has no conformed definitions; any number taken from it will
@@ -44,8 +43,8 @@ everyone everything by default because of seniority.
 
 ## Isolation
 
-One Unity Catalog **catalog per environment** — `vivo_dev`, `vivo_test`,
-`vivo_prod` — with `isolation_mode = ISOLATED`.
+One Unity Catalog **catalog per environment** — `drakens_dev`, `drakens_test`,
+`drakens_prod` — with `isolation_mode = ISOLATED`.
 
 This is a hard boundary, not a convention. A development job physically cannot
 write to production because the grant does not exist. Schema names are
@@ -85,8 +84,8 @@ A regional analyst should not see another region's sites at all.
 ```sql
 CREATE OR REPLACE FUNCTION gold.province_row_filter(province STRING)
 RETURN
-    is_account_group_member('vivo_platform_engineers')
-    OR is_account_group_member('vivo_executives')
+    is_account_group_member('drakens_platform_engineers')
+    OR is_account_group_member('drakens_executives')
     OR EXISTS (
         SELECT 1 FROM gold.bridge_security_user_scope s
         WHERE s.user_principal = current_user()
@@ -131,7 +130,7 @@ pressure.
 - Storage access is via a system-assigned managed identity on the Databricks
   access connector. There is no key or SAS token to leak.
 - Event Hubs connection strings live in Key Vault, surfaced through a
-  Databricks secret scope and referenced as `{{secrets/vivo360/...}}`. The
+  Databricks secret scope and referenced as `{{secrets/drakens360/...}}`. The
   streaming notebook never sees the value.
 - Deployment authenticates by OAuth through the Databricks CLI.
   `scripts/deploy_databricks.py` never reads, writes or prints a token.

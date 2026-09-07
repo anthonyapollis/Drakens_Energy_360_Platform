@@ -23,7 +23,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "vivo_dev", "Unity Catalog")
+dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 dbutils.widgets.dropdown("mode", "demo", ["demo", "production"], "Mode")
 
 CATALOG = dbutils.widgets.get("catalog")
@@ -51,11 +51,11 @@ EVENTHUB_CONF = {
     # Populated from a Databricks secret scope; no credential is ever written
     # into notebook source or into a job definition.
     "kafka.bootstrap.servers":
-        "{{secrets/vivo360/eventhub_bootstrap}}",
+        "{{secrets/drakens360/eventhub_bootstrap}}",
     "kafka.sasl.jaas.config":
         'kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule '
         'required username="$ConnectionString" '
-        'password="{{secrets/vivo360/eventhub_connection}}";',
+        'password="{{secrets/drakens360/eventhub_connection}}";',
     "kafka.sasl.mechanism": "PLAIN",
     "kafka.security.protocol": "SASL_SSL",
     "startingOffsets": "latest",

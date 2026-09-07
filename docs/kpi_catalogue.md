@@ -1,7 +1,6 @@
 # KPI catalogue
 
-> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen,
-> Shell or Vitol data. All figures are generated.
+> **Independent synthetic portfolio project.** no data from any real company. All figures are generated.
 
 Every KPI below is computed **once**, in the gold layer, and read unchanged by
 Power BI, the ML feature sets and any ad-hoc query. That is the point of the

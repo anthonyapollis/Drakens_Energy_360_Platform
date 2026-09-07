@@ -1,7 +1,7 @@
 """Generate the dbt cleansing layer from the generated lake manifest.
 
 The landing zone has 167 tables and is deliberately dirty (see
-`src/vivo360/dirty.py`). Hand-writing a cleansing model per table would drift
+`src/drakens360/dirty.py`). Hand-writing a cleansing model per table would drift
 from the data within a week, so the models are derived from `_manifest.json`,
 which records each column's *intended* type -- captured before defect
 injection, so the generator knows what a column is supposed to be rather than
@@ -286,7 +286,7 @@ def render_sources(tables: dict[str, dict]) -> str:
             "    schema: bronze",
             "    meta:",
             "      external_location: >-",
-            "        read_parquet('{{ env_var('VIVO_LAKE', '../data/lake') }}/"
+            "        read_parquet('{{ env_var('DRAKENS_LAKE', '../data/lake') }}/"
             + folder + "/{name}/*.parquet', union_by_name=true)",
             "    tables:",
         ]

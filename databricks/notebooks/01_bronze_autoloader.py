@@ -26,7 +26,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "vivo_dev", "Unity Catalog")
+dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 dbutils.widgets.dropdown("mode", "batch", ["batch", "continuous"], "Trigger mode")
 
 CATALOG = dbutils.widgets.get("catalog")

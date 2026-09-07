@@ -238,7 +238,7 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   location: 'global'
   tags: tags
   properties: {
-    groupShortName: 'vivo360'
+    groupShortName: 'drakens360'
     enabled: true
     emailReceivers: [
       {

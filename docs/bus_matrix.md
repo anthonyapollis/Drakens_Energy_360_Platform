@@ -1,6 +1,6 @@
 # Kimball bus matrix
 
-> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen, Shell or Vitol data. Every value described here is generated.
+> **Independent synthetic portfolio project.** Drakens Energy is a fictional company; no real company's data is used. Every value described here is generated.
 
 Which conformed dimensions each business process uses. Generated from the actual model, so it cannot drift from the tables that exist.
 

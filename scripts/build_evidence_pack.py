@@ -28,7 +28,7 @@ from matplotlib.ticker import FuncFormatter
 REPO = Path(__file__).resolve().parent.parent
 IMG = REPO / "docs" / "img"
 MANIFEST = REPO / "data" / "lake" / "_manifest.json"
-DUCKDB = REPO / "data" / "vivo360.duckdb"
+DUCKDB = REPO / "data" / "drakens360.duckdb"
 
 # A restrained palette: one accent, one warning, greys for everything else.
 INK = "#1c1c1c"
@@ -357,17 +357,17 @@ def fig_databricks_medallion(profile: str):
 
     rows = q("""
         SELECT 'bronze' layer, 'fact_retail_fuel_sales' t, count(*) n
-          FROM vivo_dev.bronze.fact_retail_fuel_sales
+          FROM drakens_dev.bronze.fact_retail_fuel_sales
         UNION ALL SELECT 'silver', 'fact_retail_fuel_sales', count(*)
-          FROM vivo_dev.silver.fact_retail_fuel_sales
+          FROM drakens_dev.silver.fact_retail_fuel_sales
         UNION ALL SELECT 'gold', 'fct_retail_fuel_sales', count(*)
-          FROM vivo_dev.gold.fct_retail_fuel_sales
+          FROM drakens_dev.gold.fct_retail_fuel_sales
         UNION ALL SELECT 'gold', 'agg_site_daily_fuel', count(*)
-          FROM vivo_dev.gold.agg_site_daily_fuel
+          FROM drakens_dev.gold.agg_site_daily_fuel
         UNION ALL SELECT 'gold', 'agg_executive_daily_kpi', count(*)
-          FROM vivo_dev.gold.agg_executive_daily_kpi
+          FROM drakens_dev.gold.agg_executive_daily_kpi
         UNION ALL SELECT 'gold', 'network_investment_scorecard', count(*)
-          FROM vivo_dev.gold.network_investment_scorecard
+          FROM drakens_dev.gold.network_investment_scorecard
     """)
     df = pd.DataFrame(rows, columns=["layer", "table", "n"])
     df["n"] = df.n.astype(int)

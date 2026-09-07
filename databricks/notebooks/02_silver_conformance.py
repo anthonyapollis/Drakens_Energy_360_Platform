@@ -18,7 +18,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "vivo_dev", "Unity Catalog")
+dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 CATALOG = dbutils.widgets.get("catalog")
 
 from pyspark.sql import functions as F
