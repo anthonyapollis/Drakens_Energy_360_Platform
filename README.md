@@ -90,8 +90,9 @@ WHERE raw_rows <> cleansed_rows + quarantined_rows + duplicates_removed;
                                           └ lineage                  Investment engine
 ```
 
-Full diagrams: [docs/architecture.png](docs/architecture.png) ·
-[docs/erd_full.png](docs/erd_full.png)
+Entity-relationship diagrams, generated from the build manifest so they cannot
+drift from the model: **[docs/erd/](docs/erd/)** — a conformed-dimension
+overview plus one star schema per business domain.
 
 ---
 

@@ -331,7 +331,7 @@ SELECT * FROM main_platform.obs_quarantine_reasons ORDER BY failure_count DESC L
 Every row is accounted for. Nothing was dropped; rejected rows are in
 `main_quarantine` with the rule that rejected them.
 
-**3. The model (2 min).** `docs/erd_full.png`. 70 conformed dimensions, 85
+**3. The model (2 min).** `docs/erd/`. 70 conformed dimensions, 85
 facts, one bus matrix. Conformed dimensions are the point: `dim_site` joins
 retail, supply, maintenance and safety, so the same site means the same thing
 in every domain.
