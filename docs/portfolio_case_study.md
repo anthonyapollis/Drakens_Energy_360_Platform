@@ -101,8 +101,10 @@ into a measurement.
 
 ## 3. The cleansing has to account for everything
 
-167 generated staging models repair, validate and deduplicate. 122 quarantine
-models keep every rejected row alongside the rule that rejected it.
+The cleansing layer runs in three generated stages: 167 `cln_` models repair
+every column and assess every row, 167 `stg_` models take the valid rows and
+deduplicate them, and 122 `qtn_` models keep every rejected row alongside the
+rule that rejected it.
 
 The reconciliation that has to hold:
 
@@ -246,10 +248,12 @@ margin percentage are computed once. A definition that lives in the BI layer
 gets reimplemented by whoever builds the next report, and two dashboards
 eventually disagree in front of an executive.
 
-**The staging layer is materialised as tables.** As views, the expensive
-cleansing expressions re-ran on every downstream query and every test — single
-tests were taking 190 seconds against the 37-million-row landing zone. This
-was found by watching the CI clock, not by reasoning about it in advance.
+**The cleansing layer is split so the parsing is paid for once.** The first
+version had `stg_` and `qtn_` each running the full repair-and-assess pipeline
+over the same source, so every row was parsed twice and a single quarantine
+model took 500 seconds. Splitting repair into a materialised stage that both
+read from fixed it. Found by watching the clock, not by reasoning about it in
+advance.
 
 **The cleansing layer is generated, not hand-written.** 289 models derived
 from the build manifest, which records each column's *intended* type — read

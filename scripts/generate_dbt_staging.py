@@ -64,8 +64,13 @@ UNIT_CORRECTIONS = {
 # Columns that must be present for the row to mean anything.
 def required_columns(table: str, columns: list[str], key: str | None) -> list[str]:
     req = [c for c in (key,) if c]
+    # Foreign keys a row cannot be interpreted without, plus country_code:
+    # a site or customer with no country cannot be placed on a map, rolled up
+    # to a market, or priced in the right currency, so a row missing it is
+    # unusable rather than merely incomplete.
     for c in columns:
-        if c in ("site_id", "product_id", "customer_id") and c not in req:
+        if c in ("site_id", "product_id", "customer_id", "country_code") \
+                and c not in req:
             req.append(c)
     return req
 

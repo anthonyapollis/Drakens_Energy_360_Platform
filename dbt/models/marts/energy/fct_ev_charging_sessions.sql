@@ -69,7 +69,7 @@ select
 
     e.source_system_code,
     e.ingested_at,
-    e._dbt_loaded_at
+    e._cleansed_at
 
 from sessions e
 left join site s on e.site_id = s.site_id

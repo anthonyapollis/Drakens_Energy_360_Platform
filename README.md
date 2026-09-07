@@ -52,10 +52,12 @@ only correct if it accounts for every defect that was introduced.
 
 ### The cleansing is measurable
 
-167 generated staging models repair, validate and deduplicate. 122 quarantine
-models keep the rejected rows *with the rule that rejected them* — a silently
-dropped row becomes an unexplainable variance three months later, and there is
-no way back from it.
+The cleansing layer is generated in three stages: 167 `cln_` models repair
+every column and assess every row once, 167 `stg_` models take the valid rows
+and deduplicate them, and 122 `qtn_` models keep the rejected rows *with the
+rule that rejected them*. Rejected rows are never dropped: a silently dropped
+row becomes an unexplainable variance three months later, and there is no way
+back from it.
 
 ```sql
 SELECT table_name, raw_rows, cleansed_rows, quarantined_rows, duplicates_removed
@@ -161,7 +163,8 @@ src/vivo360/          Synthetic data engine
   build.py              Orchestrator and CLI
 
 dbt/                  Transformation layer (DuckDB local, Databricks deployed)
-  models/staging/       167 generated cleansing models
+  models/cleansed/      167 generated repair-and-assess models
+  models/staging/       167 generated valid-and-deduplicated models
   models/quarantine/    122 generated quarantine models
   models/marts/         Conformed dimensions, domain facts, aggregates
   macros/cleansing.sql  Repair rules used identically across every model
@@ -224,9 +227,11 @@ eventually disagree in front of an executive with no way to say which is right.
 **Rejected rows are quarantined, not dropped.** With the rule that rejected
 them, so a rejection rate that moves can be diagnosed rather than guessed at.
 
-**The staging layer is materialised as tables.** As views, the expensive
-cleansing expressions re-ran on every downstream query and every test, turning
-single tests into 190-second operations.
+**The cleansing layer is split so parsing is paid for once.** Repair and
+assessment happen in a materialised `cln_` stage; the clean and quarantined
+views both read from it. Before the split, a single quarantine model took 500
+seconds because it re-parsed the whole landing zone that `stg_` had just
+parsed.
 
 **ML features exclude anything unknown at prediction time.** It is trivially
 easy to build a demand forecast that scores brilliantly by including the day's

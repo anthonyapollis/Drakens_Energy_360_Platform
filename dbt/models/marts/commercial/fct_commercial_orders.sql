@@ -85,7 +85,7 @@ select
 
     o.source_system_code,
     o.ingested_at,
-    o._dbt_loaded_at
+    o._cleansed_at
 
 from orders o
 left join customer c on o.customer_id = c.customer_id

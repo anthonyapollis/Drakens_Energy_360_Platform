@@ -110,7 +110,7 @@ joined as (
 
         f.source_system_code,
         f.ingested_at,
-        f._dbt_loaded_at
+        f._cleansed_at
 
     from fuel_sales f
     left join site s on f.site_id = s.site_id

@@ -81,7 +81,7 @@ select
 
     d.source_system_code,
     d.ingested_at,
-    d._dbt_loaded_at
+    d._cleansed_at
 
 from deliveries d
 left join site s on d.destination_site_id = s.site_id

@@ -72,7 +72,7 @@ select
 
     w.source_system_code,
     w.ingested_at,
-    w._dbt_loaded_at
+    w._cleansed_at
 
 from work_orders w
 left join site s on w.site_id = s.site_id

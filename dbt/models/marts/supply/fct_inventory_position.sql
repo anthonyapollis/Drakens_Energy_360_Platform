@@ -68,7 +68,7 @@ select
 
     s.source_system_code,
     s.ingested_at,
-    s._dbt_loaded_at
+    s._cleansed_at
 
 from snapshots s
 left join site si on s.site_id = si.site_id

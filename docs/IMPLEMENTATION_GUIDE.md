@@ -86,15 +86,18 @@ measurable rather than merely asserted.
 
 ### 2.2 Regenerate the cleansing layer
 
-The 167 staging models and 122 quarantine models are generated from the
-manifest, so they always match what the generator actually wrote:
+The cleansing layer is generated from the manifest so it always matches what
+the generator actually wrote: 167 repair-and-assess models, 167 staging models
+and 122 quarantine models.
 
 ```bash
-python scripts/generate_dbt_staging.py \
-  --manifest data/lake/_manifest.json \
-  --out dbt/models/staging \
-  --quarantine-out dbt/models/quarantine
+python scripts/generate_dbt_staging.py --manifest data/lake/_manifest.json
 ```
+
+The layer is split in three because the repair work is expensive and must be
+done once: `cln_` repairs every column and assesses every row, `stg_` takes
+the valid rows and deduplicates, and `qtn_` keeps the rejected ones with their
+failing rules.
 
 Only necessary after changing the data model. CI fails if the committed models
 have drifted from what this produces.
@@ -112,7 +115,7 @@ dbt build
 ```
 
 `dbt build` runs models, tests, snapshots and seeds in dependency order and
-stops at the first failure with `--fail-fast`. Expect roughly 640 nodes.
+stops at the first failure with `--fail-fast`. Expect roughly 800 nodes.
 
 ### 2.4 Verify
 
@@ -416,9 +419,10 @@ looks wrong in a report.
 snapshot is hard-coding a Databricks catalog. The catalog must come from the
 profile target. Check for a stray `database:` in a source or snapshot config.
 
-**dbt tests take minutes each** — the staging layer has reverted to views.
-Cleansing expressions are expensive; as views, every test re-parses the full
-landing zone. `staging` and `quarantine` must be materialised as tables.
+**dbt tests take minutes each** — the `cleansed` layer has reverted to views,
+or `stg_`/`qtn_` are reading the raw source rather than `cln_`. The repair
+expressions are expensive and must be materialised once, with everything
+downstream reading the materialised result.
 
 **`CONFIG_NOT_AVAILABLE` on Databricks** — serverless manages Spark configs
 and rejects setting them. The notebooks wrap `spark.conf.set` in try/except

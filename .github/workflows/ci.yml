@@ -108,20 +108,16 @@ jobs:
             --profile test --output data/lake --defects realistic
 
       - name: Regenerate the cleansing layer
-        run: |
-          python scripts/generate_dbt_staging.py \
-            --manifest data/lake/_manifest.json \
-            --out dbt/models/staging \
-            --quarantine-out dbt/models/quarantine
+        run: python scripts/generate_dbt_staging.py --manifest data/lake/_manifest.json
 
       # A generated layer that drifts from what is committed means someone
       # changed the model without regenerating, and the two will disagree.
       - name: Fail if the generated models are stale
         run: |
-          if ! git diff --quiet dbt/models/staging dbt/models/quarantine; then
+          if ! git diff --quiet dbt/models/cleansed dbt/models/staging dbt/models/quarantine; then
             echo "::error::Generated dbt models are out of date."
             echo "Run scripts/generate_dbt_staging.py and commit the result."
-            git diff --stat dbt/models/staging dbt/models/quarantine
+            git diff --stat dbt/models/cleansed dbt/models/staging dbt/models/quarantine
             exit 1
           fi
 

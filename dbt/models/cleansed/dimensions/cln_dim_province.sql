@@ -21,10 +21,16 @@ cleansed as (
     from source
 ),
 
+-- Stage 2: assess. One boolean per rule, so a quarantined
+-- row records exactly why it was rejected.
 assessed as (
-    select *,
-           true as _dq_is_valid,
-           cast('' as varchar) as _dq_failed_rules
+    select
+        *,
+        (country_code is not null) as _dq_country_code_present,
+        (coalesce(_dq_country_code_present, false)) as _dq_is_valid,
+        concat_ws(',',
+            case when not coalesce(_dq_country_code_present, false) then 'country_code_present' end
+        ) as _dq_failed_rules
     from cleansed
 )
 

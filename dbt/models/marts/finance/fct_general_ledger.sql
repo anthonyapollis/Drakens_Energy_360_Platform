@@ -69,7 +69,7 @@ select
 
     g.source_system_code,
     g.ingested_at,
-    g._dbt_loaded_at
+    g._cleansed_at
 
 from gl g
 left join account a on g.gl_account_code = a.gl_account_code

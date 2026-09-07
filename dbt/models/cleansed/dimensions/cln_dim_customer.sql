@@ -41,10 +41,12 @@ assessed as (
     select
         *,
         (customer_id is not null) as _dq_customer_id_present,
+        (country_code is not null) as _dq_country_code_present,
         (credit_limit_zar >= 0) as _dq_credit_limit_zar_non_negative,
-        (coalesce(_dq_customer_id_present, false) and coalesce(_dq_credit_limit_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_customer_id_present, false) and coalesce(_dq_country_code_present, false) and coalesce(_dq_credit_limit_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_customer_id_present, false) then 'customer_id_present' end,
+            case when not coalesce(_dq_country_code_present, false) then 'country_code_present' end,
             case when not coalesce(_dq_credit_limit_zar_non_negative, false) then 'credit_limit_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed

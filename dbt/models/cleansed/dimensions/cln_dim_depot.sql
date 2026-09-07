@@ -30,9 +30,11 @@ assessed as (
     select
         *,
         (depot_id is not null) as _dq_depot_id_present,
-        (coalesce(_dq_depot_id_present, false)) as _dq_is_valid,
+        (country_code is not null) as _dq_country_code_present,
+        (coalesce(_dq_depot_id_present, false) and coalesce(_dq_country_code_present, false)) as _dq_is_valid,
         concat_ws(',',
-            case when not coalesce(_dq_depot_id_present, false) then 'depot_id_present' end
+            case when not coalesce(_dq_depot_id_present, false) then 'depot_id_present' end,
+            case when not coalesce(_dq_country_code_present, false) then 'country_code_present' end
         ) as _dq_failed_rules
     from cleansed
 )
