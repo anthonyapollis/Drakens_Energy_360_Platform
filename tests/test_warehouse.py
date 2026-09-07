@@ -28,7 +28,13 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture(scope="module")
 def con():
-    c = duckdb.connect(str(DB), read_only=True)
+    try:
+        c = duckdb.connect(str(DB), read_only=True)
+    except duckdb.IOException as exc:
+        # The file exists but cannot be opened -- almost always because a dbt
+        # build is holding it. Skipping is right: erroring here produces a wall
+        # of identical tracebacks that hides whatever else is failing.
+        pytest.skip(f"warehouse at {DB} is not readable: {str(exc)[:120]}")
     yield c
     c.close()
 
