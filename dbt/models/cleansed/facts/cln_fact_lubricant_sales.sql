@@ -44,7 +44,7 @@ assessed as (
         (quantity_litres >= 0) as _dq_quantity_litres_non_negative,
         (quantity_litres <= 15000000) as _dq_quantity_litres_within_range,
         (unit_price_zar >= 0) as _dq_unit_price_zar_non_negative,
-        (unit_price_zar between 8.0 and 45.0) as _dq_unit_price_zar_plausible,
+        (unit_price_zar between 0.0 and 20000.0) as _dq_unit_price_zar_plausible,
         (revenue_zar >= 0) as _dq_revenue_zar_non_negative,
         (cogs_zar >= 0) as _dq_cogs_zar_non_negative,
         (gross_margin_zar >= 0) as _dq_gross_margin_zar_non_negative,

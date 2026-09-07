@@ -20,29 +20,32 @@
     by the specific rule that failed.
 */
 
-{% set monitored = [
-    'fact_retail_fuel_sales',
-    'fact_shop_sales',
-    'fact_commercial_orders',
-    'fact_deliveries',
-    'fact_inventory_snapshot',
-    'fact_tank_dips',
-    'fact_pump_meter_readings',
-    'fact_ev_charging_sessions',
-    'fact_solar_generation',
-    'fact_general_ledger',
-    'fact_maintenance_work_orders',
-    'fact_hsseq_incidents',
-    'fact_loyalty_transactions',
-    'fact_digital_events'
-] %}
+{#-
+    The tables counted here come from a generated macro, not from a list kept
+    by hand and not from the dbt graph.
+
+    The hand-kept version named fourteen tables. The landing zone has 167
+    cleansed tables, so the observability that exists to prove the cleansing is
+    measurable was measuring 8% of it -- and the eight percent was whichever
+    tables someone had thought to add, which is the least useful sample
+    available. It also went stale silently: a new fact landed, nobody added it,
+    and its rejection rate stayed invisible until someone asked a question it
+    would have answered.
+
+    Reading `graph` here instead is the obvious fix and it does not compile:
+    `graph` is only populated at execute time, so the `ref()` calls built from
+    it sit inside a conditional and dbt cannot infer this model's dependencies
+    while parsing. A macro is evaluated during parsing, so its refs resolve
+    normally.
+-#}
+{% set monitored = monitored_tables() %}
 
 with counted as (
 
-{% for table in monitored %}
+{% for source_name, table in monitored %}
     select
         '{{ table }}' as table_name,
-        (select count(*) from {{ source('lake_facts', table) }}) as raw_rows,
+        (select count(*) from {{ source(source_name, table) }}) as raw_rows,
         (select count(*) from {{ ref('stg_' ~ table) }}) as cleansed_rows,
         (select count(*) from {{ ref('qtn_' ~ table) }}) as quarantined_rows
     {% if not loop.last %}union all{% endif %}

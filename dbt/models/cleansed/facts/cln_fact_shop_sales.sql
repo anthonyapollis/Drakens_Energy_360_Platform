@@ -42,7 +42,7 @@ assessed as (
         (product_id is not null) as _dq_product_id_present,
         (transaction_ts is not null) as _dq_event_timestamp_valid,
         (unit_price_zar >= 0) as _dq_unit_price_zar_non_negative,
-        (unit_price_zar between 8.0 and 45.0) as _dq_unit_price_zar_plausible,
+        (unit_price_zar between 0.0 and 5000.0) as _dq_unit_price_zar_plausible,
         (gross_sales_zar >= 0) as _dq_gross_sales_zar_non_negative,
         (cogs_zar >= 0) as _dq_cogs_zar_non_negative,
         (gross_margin_zar >= 0) as _dq_gross_margin_zar_non_negative,

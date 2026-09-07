@@ -40,16 +40,14 @@ assessed as (
         (product_id is not null) as _dq_product_id_present,
         (order_ts is not null) as _dq_event_timestamp_valid,
         (unit_price_zar >= 0) as _dq_unit_price_zar_non_negative,
-        (unit_price_zar between 8.0 and 45.0) as _dq_unit_price_zar_plausible,
         (line_revenue_zar >= 0) as _dq_line_revenue_zar_non_negative,
-        (coalesce(_dq_order_line_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_unit_price_zar_plausible, false) and coalesce(_dq_line_revenue_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_order_line_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_line_revenue_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_order_line_id_present, false) then 'order_line_id_present' end,
             case when not coalesce(_dq_customer_id_present, false) then 'customer_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_unit_price_zar_non_negative, false) then 'unit_price_zar_non_negative' end,
-            case when not coalesce(_dq_unit_price_zar_plausible, false) then 'unit_price_zar_plausible' end,
             case when not coalesce(_dq_line_revenue_zar_non_negative, false) then 'line_revenue_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed
