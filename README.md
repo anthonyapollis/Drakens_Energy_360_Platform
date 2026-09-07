@@ -147,15 +147,6 @@ Trained on the generated warehouse, reported against a baseline:
 Both numbers are modest and real. A demand forecast that claimed 97% accuracy
 would mean a feature had leaked.
 
-| Layer | Table | Rows |
-|---|---|---:|
-| bronze | `fact_retail_fuel_sales` | 5,000,000 |
-| silver | `fact_retail_fuel_sales` | 5,000,000 |
-| gold | `fct_retail_fuel_sales` | 5,000,000 |
-| gold | `agg_site_daily_fuel` | 975,354 |
-| gold | `agg_executive_daily_kpi` | 8,766 |
-| gold | `network_investment_scorecard` | 1,050 |
-
 ### Network investment recommendation
 
 | Recommendation | Sites | Avg score |
