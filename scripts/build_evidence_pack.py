@@ -18,11 +18,12 @@ from pathlib import Path
 
 import duckdb
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt          # noqa: E402
-import numpy as np                        # noqa: E402
-import pandas as pd                       # noqa: E402
-from matplotlib.ticker import FuncFormatter  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.ticker import FuncFormatter
 
 REPO = Path(__file__).resolve().parent.parent
 IMG = REPO / "docs" / "img"
@@ -92,7 +93,7 @@ def fig_build_scale(manifest: dict):
     ax.xaxis.set_major_formatter(FuncFormatter(thousands))
     ax.set_xlabel("rows")
     ax.set_title("Largest fact tables in the portfolio build")
-    for b, v in zip(bars, top.values):
+    for b, v in zip(bars, top.values, strict=False):
         ax.text(v * 1.01, b.get_y() + b.get_height() / 2, f"{v:,}",
                 va="center", fontsize=7.5, color=GREY)
     ax.margins(x=0.16)
@@ -187,7 +188,7 @@ def fig_cleansing(con):
             from main_platform.obs_cleansing_summary
             order by raw_rows desc
         """).df()
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         print("  skipping cleansing figure: obs_cleansing_summary not built")
         return None
     if df.empty:
@@ -220,7 +221,7 @@ def fig_quarantine_reasons(con):
             from main_platform.obs_quarantine_reasons
             group by 1, 2 order by n desc limit 12
         """).df()
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         print("  skipping quarantine-reasons figure: model not built")
         return None
     if df.empty:
@@ -333,9 +334,10 @@ def fig_province_performance(con):
 def fig_databricks_medallion(profile: str):
     """Live row counts through bronze, silver and gold on Databricks."""
     try:
+        import time
+
         from databricks.sdk import WorkspaceClient
         from databricks.sdk.service.sql import StatementState
-        import time
     except ImportError:
         print("  skipping Databricks figure: SDK not installed")
         return None
@@ -373,7 +375,7 @@ def fig_databricks_medallion(profile: str):
     fig, ax = plt.subplots(figsize=(7.8, 4.2))
     colors = {"bronze": "#a8703c", "silver": "#9aa0a6", "gold": GOLD}
     labels = [f"{r.layer}.{r.table}" for _, r in df.iterrows()]
-    ax.barh(labels[::-1], df.n[::-1], color=[colors[l] for l in df.layer[::-1]])
+    ax.barh(labels[::-1], df.n[::-1], color=[colors[layer] for layer in df.layer[::-1]])
     ax.set_xscale("log")
     ax.set_xlabel("rows (log scale)")
     ax.set_title("Databricks: rows through the medallion, portfolio scale")
@@ -410,7 +412,7 @@ def main(argv=None):
                        fig_province_performance):
                 try:
                     fn(con)
-                except Exception as exc:                     # noqa: BLE001
+                except Exception as exc:
                     print(f"  skipped {fn.__name__}: {exc}")
         finally:
             con.close()
@@ -420,7 +422,7 @@ def main(argv=None):
     if args.databricks:
         try:
             fig_databricks_medallion(args.profile)
-        except Exception as exc:                             # noqa: BLE001
+        except Exception as exc:
             print(f"  skipped Databricks figure: {exc}")
 
     print("done")

@@ -21,14 +21,22 @@ import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.inspection import permutation_importance
-from sklearn.metrics import (average_precision_score, classification_report,
-                             roc_auc_score)
+from sklearn.metrics import (
+    average_precision_score,
+    classification_report,
+    roc_auc_score,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import load, log_common_tags, start_experiment, summarise, time_split  # noqa: E402
+from common import (
+    load,
+    log_common_tags,
+    start_experiment,
+    summarise,
+    time_split,
+)
 
 # Three consecutive months with no order is the churn definition. It is long
 # enough to survive a customer's ordinary ordering rhythm and short enough

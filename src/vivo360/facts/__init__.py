@@ -6,7 +6,7 @@ that closure repeatedly so a 5-million-row table is produced in bounded memory.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import pandas as pd
 
@@ -31,8 +31,16 @@ def fact(name: str):
 def load_all() -> dict[str, Builder]:
     """Import every domain module so the registry is fully populated."""
     from . import (  # noqa: F401
-        retail, commercial, supply, logistics, products,
-        digital, energy, assets, hsseq, finance,
+        assets,
+        commercial,
+        digital,
+        energy,
+        finance,
+        hsseq,
+        logistics,
+        products,
+        retail,
+        supply,
     )
 
     return REGISTRY

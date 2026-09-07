@@ -44,12 +44,14 @@ STRING_SENTINELS = ["", " ", "NULL", "null", "N/A", "n/a", "#N/A", "-", "?",
 NUMERIC_SENTINELS = [-999, -9999, 0, 999999999]
 
 # Text that a UTF-8 payload decoded as Latin-1 turns into. These are the
-# actual byte-level results, not invented strings.
+# actual byte-level results, not invented strings, which is why the
+# "ambiguous unicode" warnings below are suppressed rather than corrected:
+# correcting them would destroy the defect this table exists to reproduce.
 MOJIBAKE = {
     "Gqeberha": "GqeberhaÂ",
     "Mbombela": "MbombelaÂ ",
-    "eMalahleni": "eMalahleniÃ‚",
-    "Cote d'Ivoire": "CÃ´te d'Ivoire",
+    "eMalahleni": "eMalahleniÃ‚",  # noqa: RUF001
+    "Cote d'Ivoire": "CÃ´te d'Ivoire",  # noqa: RUF001
     "Reunion": "RÃ©union",
 }
 
@@ -301,7 +303,7 @@ class DefectInjector:
                 pad = self.rng.choice([" {} ", "{}  ", "  {}", "\t{}"], k)
                 df.loc[m, col] = [
                     f.format(v) if isinstance(v, str) else v
-                    for f, v in zip(pad, values[m])
+                    for f, v in zip(pad, values[m], strict=False)
                 ]
                 self._bump(table, "whitespace_padding", k)
 

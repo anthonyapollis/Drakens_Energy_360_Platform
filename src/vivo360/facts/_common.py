@@ -10,7 +10,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .. import config, reference as ref
+from .. import config
+from .. import reference as ref
 
 _DAY_CACHE: dict[tuple, tuple[np.ndarray, np.ndarray]] = {}
 

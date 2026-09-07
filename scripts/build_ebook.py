@@ -62,7 +62,7 @@ def warehouse_facts() -> dict:
         try:
             df = con.execute(sql).df()
             out[key] = df.iloc[0, 0] if single and not df.empty else df
-        except Exception as exc:                             # noqa: BLE001
+        except Exception as exc:
             print(f"  skipped {key}: {str(exc)[:90]}")
 
     try:
@@ -111,16 +111,17 @@ def warehouse_facts() -> dict:
 
 def databricks_facts(profile: str) -> dict:
     try:
+        import time
+
         from databricks.sdk import WorkspaceClient
         from databricks.sdk.service.sql import StatementState
-        import time
     except ImportError:
         return {}
 
     try:
         w = WorkspaceClient(profile=profile)
         wid = next(x.id for x in w.warehouses.list())
-    except Exception as exc:                                 # noqa: BLE001
+    except Exception as exc:
         print(f"  skipped Databricks: {str(exc)[:90]}")
         return {}
 
@@ -151,7 +152,7 @@ def databricks_facts(profile: str) -> dict:
         """)
         return {"medallion": [(r[0], int(r[1])) for r in rows],
                 "host": w.config.host}
-    except Exception as exc:                                 # noqa: BLE001
+    except Exception as exc:
         print(f"  skipped Databricks query: {str(exc)[:90]}")
         return {}
 
@@ -624,10 +625,10 @@ def render_pdf(html_path: Path, pdf_path: Path) -> bool:
     desktop, so it is the practical fallback rather than the exception.
     """
     try:
-        from weasyprint import HTML                          # noqa: PLC0415
+        from weasyprint import HTML
         HTML(filename=str(html_path)).write_pdf(pdf_path)
         return True
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         pass
 
     candidates = [
@@ -640,8 +641,8 @@ def render_pdf(html_path: Path, pdf_path: Path) -> bool:
     if browser is None:
         return False
 
-    import subprocess                                        # noqa: PLC0415
-    import tempfile                                          # noqa: PLC0415
+    import subprocess
+    import tempfile
 
     with tempfile.TemporaryDirectory() as profile:
         cmd = [
@@ -654,7 +655,7 @@ def render_pdf(html_path: Path, pdf_path: Path) -> bool:
         try:
             subprocess.run(cmd, check=True, timeout=300,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception as exc:                             # noqa: BLE001
+        except Exception as exc:
             print(f"  PDF render failed: {str(exc)[:120]}")
             return False
     return pdf_path.exists() and pdf_path.stat().st_size > 0

@@ -30,7 +30,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import RobustScaler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import load, log_common_tags, start_experiment, summarise  # noqa: E402
+from common import load, log_common_tags, start_experiment, summarise
 
 QUERY = """
 with shift_sales as (

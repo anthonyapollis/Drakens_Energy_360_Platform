@@ -9,4 +9,4 @@ randomly generated. See docs/public_reference_notes.md.
 """
 
 __version__ = "1.0.0"
-__all__ = ["config", "geography", "reference", "dimensions", "facts", "writer"]
+__all__ = ["config", "dimensions", "facts", "geography", "reference", "writer"]

@@ -166,7 +166,7 @@ def render_dictionary(manifest: dict) -> str:
         by_domain[domain_for(f)].append(f)
 
     lines += ["## Fact tables by domain", ""]
-    for domain, _ in DOMAINS + [("Other", ())]:
+    for domain, _ in [*DOMAINS, ("Other", ())]:
         members = sorted(by_domain.get(domain, []),
                          key=lambda t: -tables[t]["rows"])
         if not members:
@@ -269,7 +269,7 @@ def render_bus_matrix(manifest: dict) -> str:
     for f in facts:
         by_domain[domain_for(f)].append(f)
 
-    for domain, _ in DOMAINS + [("Other", ())]:
+    for domain, _ in [*DOMAINS, ("Other", ())]:
         members = sorted(by_domain.get(domain, []))
         if not members:
             continue

@@ -238,5 +238,5 @@ def planned_fact_rows(profile: ScaleProfile) -> dict[str, int]:
     """Full planned row count for every fact table in the model."""
     plan = dict(profile.facts)
     for name, base in SECONDARY_FACTS.items():
-        plan[name] = max(1, int(round(base * profile.secondary_scale)))
+        plan[name] = max(1, round(base * profile.secondary_scale))
     return plan

@@ -23,10 +23,20 @@ import mlflow
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, r2_score
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+    r2_score,
+)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import load, log_common_tags, start_experiment, summarise, time_split  # noqa: E402
+from common import (
+    load,
+    log_common_tags,
+    start_experiment,
+    summarise,
+    time_split,
+)
 
 QUERY = """
 select

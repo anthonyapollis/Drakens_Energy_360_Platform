@@ -27,9 +27,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-import numpy as np                                          # noqa: E402
-from vivo360 import config, dimensions, dirty, facts        # noqa: E402
-from vivo360.writer import LakeWriter, logical_types        # noqa: E402
+import numpy as np
+
+from vivo360 import config, dimensions, dirty, facts
+from vivo360.writer import LakeWriter, logical_types
 
 REPO = Path(__file__).resolve().parent.parent
 DEFAULT_CONTRACT = REPO / "contracts" / "schema.json"

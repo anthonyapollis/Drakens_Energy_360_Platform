@@ -37,7 +37,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import load  # noqa: E402
+from common import load
 
 # --------------------------------------------------------------------------
 # Intervention catalogue
@@ -277,7 +277,7 @@ def main(argv=None) -> int:
     plan.to_csv(args.output, index=False)
     summary = {
         "budget_zar": args.budget_zar,
-        "funded_projects": int(len(funded)),
+        "funded_projects": len(funded),
         "capital_committed_zar": float(spend),
         "expected_annual_uplift_zar": float(uplift),
         "portfolio_roi_pct": float(uplift / spend * 100) if spend else 0.0,

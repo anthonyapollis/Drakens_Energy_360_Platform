@@ -12,16 +12,16 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from . import fact
-from . import _common as c
 from .. import reference as ref
+from . import _common as c
+from . import fact
 
 
 @fact("fact_retail_fuel_sales")
 def retail_fuel_sales(rng, ctx, profile):
     # Forecourt grades: the four road fuels plus paraffin, which is still a
     # meaningful retail line in South Africa.
-    fuel_ids = np.array(ref.ROAD_FUEL_IDS + ["F008"])
+    fuel_ids = np.array([*ref.ROAD_FUEL_IDS, "F008"])
     # Diesel dominates litres; the 93/95 split varies inland vs coastal.
     grade_p = np.array([0.24, 0.19, 0.41, 0.14, 0.02])
     grade_p = grade_p / grade_p.sum()

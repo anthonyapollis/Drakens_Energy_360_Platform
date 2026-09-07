@@ -251,7 +251,7 @@ SA_PORTS: list[tuple[str, str, str, str]] = [
 
 def province_weights() -> dict[str, int]:
     """Total anchor weight per province, used for sanity checks and docs."""
-    out: dict[str, int] = {p: 0 for p in SA_PROVINCES}
+    out: dict[str, int] = dict.fromkeys(SA_PROVINCES, 0)
     for a in SA_ANCHORS:
         out[a.province] += a.weight
     return out

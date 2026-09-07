@@ -8,7 +8,6 @@ demand curve that flattens out, or a ledger that stops balancing.
 """
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -18,9 +17,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from vivo360 import config, dimensions, dirty, geography, names, reference  # noqa: E402
-from vivo360.facts import _common as fc  # noqa: E402
-from vivo360.writer import LakeWriter  # noqa: E402
+from vivo360 import config, dimensions, dirty, geography, names, reference
+from vivo360.facts import _common as fc
+from vivo360.writer import LakeWriter
 
 
 # --------------------------------------------------------------------------

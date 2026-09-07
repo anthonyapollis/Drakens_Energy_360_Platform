@@ -1,0 +1,61 @@
+[project]
+name = "vivo-energy-360"
+version = "1.0.0"
+description = """
+Independent synthetic portfolio project: an end-to-end data engineering
+platform for a downstream energy business. Contains no internal Vivo Energy,
+Engen, Shell or Vitol data.
+"""
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src", "ml", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "W",    # warnings
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+]
+
+ignore = [
+    # The data generators are full of statistical parameters that read better
+    # as literals in context than as named constants defined 200 lines away.
+    "PLR2004",
+    # `dict(a=1)` is used in a few places where it reads more clearly than a
+    # literal, particularly for scikit-learn parameter blocks.
+    "C408",
+    # Broad excepts are deliberate where a missing optional dependency or an
+    # unsupported runtime feature must not fail the run. Each one is commented.
+    "BLE001",
+    # Long lines are already bounded by line-length; a URL or a long SQL string
+    # occasionally exceeds it and wrapping would hurt readability.
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The ML experiments and tests adjust sys.path before importing local modules,
+# which is the standard pattern for a repository that is not pip-installed.
+"ml/experiments/*.py" = ["E402"]
+"tests/*.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+# Databricks notebooks are executed cell by cell in a runtime that provides
+# `spark`, `dbutils` and `display` as globals, so the usual import and
+# undefined-name rules do not apply.
+"databricks/notebooks/*.py" = ["E402", "F821", "F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["vivo360"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"

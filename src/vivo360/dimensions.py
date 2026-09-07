@@ -7,12 +7,14 @@ company's real network.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 
 import numpy as np
 import pandas as pd
 
-from . import config, geography as geo, names, reference as ref
+from . import config, names
+from . import geography as geo
+from . import reference as ref
 from .writer import LakeWriter, logical_types
 
 
@@ -76,7 +78,6 @@ def _ids(prefix: str, n: int, width: int = 7) -> np.ndarray:
 
 def _scd2_columns(df: pd.DataFrame, rng, effective_from: date) -> pd.DataFrame:
     """Attach Type-2 slowly changing dimension control columns."""
-    n = len(df)
     df = df.copy()
     df["effective_from_date"] = pd.Timestamp(effective_from)
     df["effective_to_date"] = pd.Timestamp("9999-12-31")
@@ -544,7 +545,6 @@ def build_asset_dims(rng, profile, site) -> dict[str, pd.DataFrame]:
     })
 
     n_t = profile.tanks
-    za_sites = site.loc[site["country_code"] == "ZA", "site_id"].to_numpy()
     tank = pd.DataFrame({
         "tank_id": _ids("TK", n_t, 6),
         "tank_key": np.arange(1, n_t + 1),
@@ -661,7 +661,7 @@ def build_logistics_dims(rng, profile, site, terminal) -> dict[str, pd.DataFrame
         "origin_terminal_id": origin,
         "route_name": [f"{a} - {b}" for a, b in
                        zip(rng.choice(names.STEM_A, n_r),
-                           rng.choice(names.STEM_A, n_r))],
+                           rng.choice(names.STEM_A, n_r), strict=False)],
         "planned_distance_km": np.round(
             rng.gamma(2.3, 105, n_r).clip(4, 1500), 1),
         "route_class": rng.choice(["Urban", "Regional", "Long Haul"], n_r,
@@ -732,7 +732,7 @@ def build_commercial_dims(rng, profile, customer) -> dict[str, pd.DataFrame]:
             rng.choice(["Summer", "Winter", "Payday", "Road Trip",
                         "Weekend", "Fuel Up", "Commuter", "Holiday"], n_promo),
             rng.choice(["Rewards", "Saver", "Bonus Points", "Cashback",
-                        "Double Points", "Value Deal"], n_promo))],
+                        "Double Points", "Value Deal"], n_promo), strict=False)],
         "mechanic": rng.choice(
             ["Price Off", "Bundle", "Points Multiplier", "Free Item", "Fuel Voucher"],
             n_promo),
@@ -810,7 +810,7 @@ def build_digital_dims(rng, profile, site) -> dict[str, pd.DataFrame]:
             rng.choice(["Q1", "Q2", "Q3", "Q4", "Winter", "Summer",
                         "Back to School", "Festive"], n_camp),
             rng.choice(["Loyalty Drive", "App Adoption", "Fuel Rewards",
-                        "Shop Offer", "EV Launch", "Fleet Push"], n_camp))],
+                        "Shop Offer", "EV Launch", "Fleet Push"], n_camp), strict=False)],
         "channel": rng.choice(ref.CAMPAIGN_CHANNELS, n_camp),
         "start_date": cstart,
         "end_date": cstart + pd.to_timedelta(rng.integers(5, 60, n_camp), unit="D"),
@@ -851,7 +851,7 @@ def build_finance_dims(rng, profile) -> dict[str, pd.DataFrame]:
         "profit_centre_name": [f"{a} {b}" for a, b in zip(
             rng.choice(names.STEM_A, 20),
             rng.choice(["Retail", "Commercial", "Supply", "Lubricants",
-                        "LPG", "New Energy"], 20))],
+                        "LPG", "New Energy"], 20), strict=False)],
         "business_unit_code": rng.choice(bu["business_unit_code"], 20),
     })
 

@@ -8,9 +8,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from . import fact
-from . import _common as c
 from .. import reference as ref
+from . import _common as c
+from . import fact
 
 
 @fact("fact_maintenance_work_orders")

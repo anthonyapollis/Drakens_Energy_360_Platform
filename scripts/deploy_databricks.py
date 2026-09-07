@@ -113,7 +113,7 @@ def create_job(w: WorkspaceClient, base_path: str, catalog: str,
         nb_path = f"{base_path}/{notebook}"
         try:
             w.workspace.get_status(nb_path)
-        except Exception:                                    # noqa: BLE001
+        except Exception:
             print(f"  skip {task_key}: {notebook} not uploaded")
             continue
         tasks.append(jobs.Task(
