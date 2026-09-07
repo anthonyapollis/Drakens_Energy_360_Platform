@@ -1,4 +1,5 @@
 {
-  "version": "4.2",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definition/1.0.0/schema.json",
+  "version": "1.0",
   "settings": {}
 }

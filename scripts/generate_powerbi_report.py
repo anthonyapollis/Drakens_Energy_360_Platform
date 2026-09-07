@@ -763,10 +763,10 @@ def write(pages) -> None:
     (DEFN / "pages").mkdir(parents=True)
 
     (REPORT_DIR / "definition.pbir").write_text(json.dumps({
-        "version": "4.0",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/1.0.0/schema.json",
+        "version": "1.0",
         "datasetReference": {
             "byPath": {"path": f"../{PROJECT}.SemanticModel"},
-            "byConnection": None,
         },
     }, indent=2), encoding="utf-8")
 
@@ -821,6 +821,7 @@ def write(pages) -> None:
     }, indent=2), encoding="utf-8")
 
     (PBI / f"{PROJECT}.pbip").write_text(json.dumps({
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/pbip/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [{"report": {"path": f"{PROJECT}.Report"}}],
         "settings": {"enableAutoRecovery": True},

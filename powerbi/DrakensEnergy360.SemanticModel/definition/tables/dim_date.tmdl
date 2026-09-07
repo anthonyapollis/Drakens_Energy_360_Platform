@@ -1,5 +1,4 @@
 table dim_date
-
 	dataCategory: Time
 
 	column 'Date Key'

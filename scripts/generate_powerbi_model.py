@@ -157,38 +157,42 @@ def resolve_dax(expression: str, columns: dict[str, set[str]]) -> str:
 RELATIONSHIPS = [
     # (name, fromTable, fromColumn, toTable, toColumn, crossFilter)
     ("rel_retail_date", "fct_retail_fuel_sales", "date_key",
-     "dim_date", "date_key", "singleDirection"),
+     "dim_date", "date_key", "oneDirection"),
     ("rel_retail_site", "fct_retail_fuel_sales", "site_key",
-     "dim_site", "site_key", "singleDirection"),
+     "dim_site", "site_key", "oneDirection"),
     ("rel_retail_product", "fct_retail_fuel_sales", "product_key",
-     "dim_product", "product_key", "singleDirection"),
+     "dim_product", "product_key", "oneDirection"),
     ("rel_aggsite_date", "agg_site_daily_fuel", "date_key",
-     "dim_date", "date_key", "singleDirection"),
+     "dim_date", "date_key", "oneDirection"),
     ("rel_aggsite_site", "agg_site_daily_fuel", "site_key",
-     "dim_site", "site_key", "singleDirection"),
+     "dim_site", "site_key", "oneDirection"),
     ("rel_exec_date", "agg_executive_daily_kpi", "date_key",
-     "dim_date", "date_key", "singleDirection"),
+     "dim_date", "date_key", "oneDirection"),
     ("rel_deliveries_date", "fct_deliveries", "date_key",
-     "dim_date", "date_key", "singleDirection"),
+     "dim_date", "date_key", "oneDirection"),
     ("rel_deliveries_site", "fct_deliveries", "destination_site_key",
-     "dim_site", "site_key", "singleDirection"),
+     "dim_site", "site_key", "oneDirection"),
     ("rel_orders_date", "fct_commercial_orders", "date_key",
-     "dim_date", "date_key", "singleDirection"),
+     "dim_date", "date_key", "oneDirection"),
     ("rel_orders_customer", "fct_commercial_orders", "customer_key",
-     "dim_customer", "customer_key", "singleDirection"),
+     "dim_customer", "customer_key", "oneDirection"),
     ("rel_wo_date", "fct_maintenance_work_orders", "date_key",
-     "dim_date", "date_key", "singleDirection"),
+     "dim_date", "date_key", "oneDirection"),
     ("rel_wo_site", "fct_maintenance_work_orders", "site_key",
-     "dim_site", "site_key", "singleDirection"),
+     "dim_site", "site_key", "oneDirection"),
     ("rel_scorecard_site", "network_investment_scorecard", "site_key",
-     "dim_site", "site_key", "singleDirection"),
+     "dim_site", "site_key", "oneDirection"),
 ]
 
-# Every relationship is single-direction on purpose. Bidirectional filtering
-# is convenient once and ambiguous forever: with more than one path between
-# two tables the engine picks one and the answer depends on which. Where a
-# report genuinely needs reverse filtering, CROSSFILTER in the measure makes
-# it visible at the point of use.
+# Every relationship filters in one direction on purpose. Bidirectional
+# filtering is convenient once and ambiguous forever: with more than one path
+# between two tables the engine picks one and the answer depends on which.
+# Where a report genuinely needs reverse filtering, CROSSFILTER in the measure
+# makes it visible at the point of use.
+#
+# The value is `oneDirection`. TMSL calls the same thing `singleDirection`,
+# and TMDL rejects it -- one of several places where the JSON vocabulary and
+# the text vocabulary differ by a word.
 
 MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
     # table: [(name, expression, formatString, displayFolder)]
@@ -409,9 +413,13 @@ def render_column(name: str, sql_type: str, table: str) -> str:
 
 def render_table(table: str, columns: list[tuple[str, str]], cfg: dict,
                  colmap: dict[str, set[str]]) -> str:
-    parts = [f"table {table}", ""]
+    # No blank line between the declaration and its own properties: TMDL
+    # treats that as the end of the object's body and rejects the property
+    # that follows.
+    parts = [f"table {table}"]
     if table == "dim_date":
-        parts += ["\tdataCategory: Time", ""]
+        parts.append("\tdataCategory: Time")
+    parts.append("")
 
     for name, sql_type in columns:
         parts.append(render_column(name, sql_type, table))
@@ -467,23 +475,38 @@ def render_role(name: str, table: str, expr: str,
 
 
 def render_model(tables: list[str], roles: list[str]) -> str:
+    """The model header, its refs, and nothing between them.
+
+    TMDL is stricter than it looks, and both rules that matter here produce a
+    parse error naming a line number rather than a cause:
+
+      * `///` is a *description*, bound to the object declared on the next
+        line. It is not a free-standing comment. A `///` block sitting in the
+        middle of a body, or followed by a blank line, is a description of
+        nothing and fails to parse.
+      * A declaration and its properties cannot be separated by a blank line.
+
+    So the commentary that would naturally sit inside the body is written as
+    the model's own description, above the declaration, where it is both valid
+    and visible in Desktop's model view.
+    """
     refs = [f"ref table {t}" for t in tables]
     refs += [f"ref role '{n}'" for n in roles]
     return "\n".join([
+        "/// Drakens Energy 360 semantic model.",
+        "///",
+        "/// Independent synthetic portfolio project. Generated data; no data",
+        "/// from any real company.",
+        "///",
+        "/// Auto date/time is off. It creates a hidden date table per date",
+        "/// column, none of which is the conformed dim_date, and the model",
+        "/// then disagrees with itself about what a fiscal year is.",
         "model Model",
-        "\tculture: en-ZA",
-        "\tdefaultPowerBIDataSourceVersion: powerBI_V3",
-        "\tdiscourageImplicitMeasures",
+        "	culture: en-ZA",
+        "	defaultPowerBIDataSourceVersion: powerBI_V3",
+        "	discourageImplicitMeasures",
         "",
-        "\t/// Drakens Energy 360 semantic model.",
-        "\t/// Independent synthetic portfolio project. Generated data;",
-        "\t/// no data from any real company.",
-        "",
-        "\tannotation __PBI_TimeIntelligenceEnabled = 0",
-        "",
-        "\t/// Auto date/time is off. It creates a hidden date table per date",
-        "\t/// column, none of which is the conformed dim_date, and the model",
-        "\t/// then disagrees with itself about what a fiscal year is.",
+        "	annotation __PBI_TimeIntelligenceEnabled = 0",
         "",
         *refs,
         "",
@@ -498,7 +521,12 @@ def write_project_files() -> None:
     small descriptor. Without these three files the model is only readable by
     a tool that already knows what it is looking at.
     """
+    # Version fields are the ones the current schemas expect. They looked
+    # like free text and are not: Desktop refuses a project whose scaffolding
+    # declares a version it does not recognise, and does it by opening blank
+    # rather than by saying so.
     (PBI / f"{PROJECT}.pbip").write_text(json.dumps({
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/pbip/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [
             {"report": {"path": f"{PROJECT}.Report"}},
@@ -507,7 +535,8 @@ def write_project_files() -> None:
     }, indent=2), encoding="utf-8")
 
     (MODEL_DIR / "definition.pbism").write_text(json.dumps({
-        "version": "4.2",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definition/1.0.0/schema.json",
+        "version": "1.0",
         "settings": {},
     }, indent=2), encoding="utf-8")
 

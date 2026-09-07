@@ -1,64 +1,64 @@
 relationship rel_retail_date
 	fromColumn: fct_retail_fuel_sales.'Date Key'
 	toColumn: dim_date.'Date Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_retail_site
 	fromColumn: fct_retail_fuel_sales.'Site Key'
 	toColumn: dim_site.'Site Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_retail_product
 	fromColumn: fct_retail_fuel_sales.'Product Key'
 	toColumn: dim_product.'Product Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_aggsite_date
 	fromColumn: agg_site_daily_fuel.'Date Key'
 	toColumn: dim_date.'Date Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_aggsite_site
 	fromColumn: agg_site_daily_fuel.'Site Key'
 	toColumn: dim_site.'Site Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_exec_date
 	fromColumn: agg_executive_daily_kpi.'Date Key'
 	toColumn: dim_date.'Date Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_deliveries_date
 	fromColumn: fct_deliveries.'Date Key'
 	toColumn: dim_date.'Date Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_deliveries_site
 	fromColumn: fct_deliveries.'Destination Site Key'
 	toColumn: dim_site.'Site Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_orders_date
 	fromColumn: fct_commercial_orders.'Date Key'
 	toColumn: dim_date.'Date Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_orders_customer
 	fromColumn: fct_commercial_orders.'Customer Key'
 	toColumn: dim_customer.'Customer Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_wo_date
 	fromColumn: fct_maintenance_work_orders.'Date Key'
 	toColumn: dim_date.'Date Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_wo_site
 	fromColumn: fct_maintenance_work_orders.'Site Key'
 	toColumn: dim_site.'Site Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection
 
 relationship rel_scorecard_site
 	fromColumn: network_investment_scorecard.'Site Key'
 	toColumn: dim_site.'Site Key'
-	crossFilteringBehavior: singleDirection
+	crossFilteringBehavior: oneDirection

@@ -1,17 +1,17 @@
+/// Drakens Energy 360 semantic model.
+///
+/// Independent synthetic portfolio project. Generated data; no data
+/// from any real company.
+///
+/// Auto date/time is off. It creates a hidden date table per date
+/// column, none of which is the conformed dim_date, and the model
+/// then disagrees with itself about what a fiscal year is.
 model Model
 	culture: en-ZA
 	defaultPowerBIDataSourceVersion: powerBI_V3
 	discourageImplicitMeasures
 
-	/// Drakens Energy 360 semantic model.
-	/// Independent synthetic portfolio project. Generated data;
-	/// no data from any real company.
-
 	annotation __PBI_TimeIntelligenceEnabled = 0
-
-	/// Auto date/time is off. It creates a hidden date table per date
-	/// column, none of which is the conformed dim_date, and the model
-	/// then disagrees with itself about what a fiscal year is.
 
 ref table dim_date
 ref table dim_site
