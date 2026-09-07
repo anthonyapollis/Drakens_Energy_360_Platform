@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common import (
     load,
     log_common_tags,
+    log_sklearn_model,
     start_experiment,
     summarise,
     time_split,
@@ -154,7 +155,7 @@ def main() -> int:
             (metrics["baseline_mae"] - metrics["mae"]) / metrics["baseline_mae"] * 100
         )
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(model, name="model")
+        log_sklearn_model(model)
 
         summarise("Demand forecast (site x day litres)", metrics)
         if metrics["mae_improvement_pct"] <= 0:

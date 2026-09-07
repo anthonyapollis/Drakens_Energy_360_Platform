@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common import (
     load,
     log_common_tags,
+    log_sklearn_model,
     start_experiment,
     summarise,
     time_split,
@@ -134,7 +135,7 @@ def main() -> int:
         metrics["recall_at_threshold"] = float(recall[best])
 
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(pipeline, name="model")
+        log_sklearn_model(pipeline)
 
         summarise("Stock-out risk", metrics)
         print("\n" + classification_report(

@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common import (
     load,
     log_common_tags,
+    log_sklearn_model,
     start_experiment,
     summarise,
     time_split,
@@ -141,7 +142,7 @@ def main() -> int:
                 y_test.iloc[top_idx].mean() / max(y_test.mean(), 1e-9))
 
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(pipeline, name="model")
+        log_sklearn_model(pipeline)
 
         summarise("Predictive maintenance (breakdown probability)", metrics)
         print("\n" + classification_report(

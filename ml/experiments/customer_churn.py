@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common import (
     load,
     log_common_tags,
+    log_sklearn_model,
     start_experiment,
     summarise,
     time_split,
@@ -173,7 +174,7 @@ def main() -> int:
             metrics[f"revenue_at_risk_top_{k}pct_zar"] = float(
                 test.iloc[top]["revenue_zar"].sum())
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(pipeline, name="model")
+        log_sklearn_model(pipeline)
 
         summarise("Customer churn", metrics)
         print("\n" + classification_report(

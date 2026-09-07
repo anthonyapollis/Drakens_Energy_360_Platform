@@ -59,6 +59,22 @@ def start_experiment(name: str) -> None:
     )
 
 
+def log_sklearn_model(model, name: str = "model"):
+    """Log a scikit-learn model, working around MLflow 3's default serialiser.
+
+    MLflow 3 serialises sklearn models with skops, which refuses to write
+    anything referencing types it does not consider safe -- and a plain
+    HistGradientBoosting pipeline trips that on `functools.partial`. Cloudpickle
+    is the documented alternative and is what the Databricks runtime uses, so
+    this keeps local and workspace runs producing the same artefact.
+    """
+    return mlflow.sklearn.log_model(
+        model,
+        name=name,
+        serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_CLOUDPICKLE,
+    )
+
+
 def log_common_tags(use_case: str, grain: str, target: str) -> None:
     mlflow.set_tags({
         "project": "drakens_energy_360",

@@ -30,7 +30,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import RobustScaler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import load, log_common_tags, start_experiment, summarise
+from common import load, log_common_tags, log_sklearn_model, start_experiment, summarise
 
 QUERY = """
 with shift_sales as (
@@ -141,7 +141,7 @@ def main() -> int:
             "value_flagged_zar": float(flagged.sales_zar.sum()),
         }
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(model, name="model")
+        log_sklearn_model(model)
 
         summarise("Forecourt anomaly detection", metrics)
         print("\nTop 10 shifts by anomaly score:")
