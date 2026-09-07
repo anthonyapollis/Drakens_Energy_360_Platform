@@ -42,6 +42,7 @@ second week.
 | Failure | Behaviour | Reasoning |
 |---|---|---|
 | A source file is missing | Task succeeds, freshness records a breach | One late feed should not block the other thirteen |
+| A table holds only historical data | Recorded as `Backfill`, no SLA applied | A backfill is not a late feed; alerting on it trains people to ignore the alert |
 | A reconciliation control fails | Task **fails**, warehouse does not publish | A wrong number is worse than a late one |
 | Quarantine rate exceeds 5% | Recorded as `Critical`, job continues | Needs investigation, not necessarily a halt |
 | A schema change appears | New column lands in bronze via schema evolution | Bronze must never lose data it was sent |

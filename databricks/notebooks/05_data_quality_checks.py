@@ -88,10 +88,21 @@ freshness = spark.createDataFrame(rows, """
     max_ingested_at timestamp, ingestion_lag_minutes double, sla_minutes int
 """)
 
+# A backfill is not a late feed, and reporting it as one trains people to
+# ignore the alert. If the newest event in a table is days old, the table was
+# loaded historically: the lag measures how old the data is, not how slowly
+# the pipeline ran. Only tables receiving recent events are held to an SLA.
+BACKFILL_THRESHOLD_MINUTES = 24 * 60
+
 freshness = (freshness
-    .withColumn("is_sla_breached", F.col("ingestion_lag_minutes") > F.col("sla_minutes"))
+    .withColumn("is_backfill",
+                F.col("ingestion_lag_minutes") > BACKFILL_THRESHOLD_MINUTES)
+    .withColumn("is_sla_breached",
+                (~F.col("is_backfill"))
+                & (F.col("ingestion_lag_minutes") > F.col("sla_minutes")))
     .withColumn("sla_status",
         F.when(F.col("ingestion_lag_minutes").isNull(), "Unknown")
+         .when(F.col("is_backfill"), "Backfill")
          .when(F.col("ingestion_lag_minutes") <= F.col("sla_minutes"), "Within SLA")
          .when(F.col("ingestion_lag_minutes") <= F.col("sla_minutes") * 2, "Degraded")
          .otherwise("Breached"))
@@ -103,7 +114,7 @@ freshness = (freshness
     .saveAsTable(f"{CATALOG}.platform.obs_table_freshness"))
 
 display(freshness.select("table_name", "row_count", "ingestion_lag_minutes",
-                         "sla_minutes", "sla_status"))
+                         "sla_minutes", "is_backfill", "sla_status"))
 
 # COMMAND ----------
 
@@ -249,10 +260,12 @@ if profile_rows:
 failed_controls = [r for r in control_rows if not r[8]]
 breached = freshness.filter("sla_status = 'Breached'").count()
 degraded = freshness.filter("sla_status = 'Degraded'").count()
+backfilled = freshness.filter("sla_status = 'Backfill'").count()
 
 print(f"controls:  {len(control_rows) - len(failed_controls)}/"
       f"{len(control_rows)} passing")
-print(f"freshness: {breached} breached, {degraded} degraded")
+print(f"freshness: {breached} breached, {degraded} degraded, "
+      f"{backfilled} historical backfill (SLA not applied)")
 
 if failed_controls:
     print("\nFAILING CONTROLS")
