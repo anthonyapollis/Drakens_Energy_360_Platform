@@ -97,6 +97,25 @@ models:
         data_tests:
           - accepted_values:
               arguments: {values: ['0-5', '5-10', '10-15', '15+']}
+      - name: asset_type
+        description: >
+          A controlled vocabulary of twelve asset classes. Warns rather than
+          errors: values outside the list are referential drift on a
+          categorical attribute, which is a real signal about an upstream feed
+          and not a reason to fail a build over seven rows in four thousand.
+          Erroring here would push someone to widen the list until it stops
+          meaning anything; warning keeps the drift countable and visible in
+          every run's output.
+        data_tests:
+          - accepted_values:
+              config:
+                severity: warn
+              arguments:
+                values: ['Underground Tank', 'Aboveground Tank',
+                         'Dispensing Pump', 'Forecourt Controller',
+                         'POS Terminal', 'Canopy Lighting', 'Compressor',
+                         'Generator', 'Car Wash Unit', 'EV Charger',
+                         'Solar Inverter', 'Fire Suppression System']
       - name: is_breakdown
         data_tests: [not_null]
 

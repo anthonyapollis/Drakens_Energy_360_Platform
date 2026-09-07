@@ -1,0 +1,4 @@
+role 'Regional Analyst'
+	modelPermission: read
+
+	tablePermission dim_site = VAR UserScope = CALCULATETABLE ( VALUES ( bridge_security_user_scope[Scope Value] ), bridge_security_user_scope[User Principal] = USERPRINCIPALNAME () ) RETURN dim_site[Province] IN UserScope || "all" IN CALCULATETABLE ( VALUES ( bridge_security_user_scope[Scope Type] ), bridge_security_user_scope[User Principal] = USERPRINCIPALNAME () )

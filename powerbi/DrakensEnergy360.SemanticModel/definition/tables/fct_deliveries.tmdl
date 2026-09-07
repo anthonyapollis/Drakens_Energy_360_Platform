@@ -41,6 +41,12 @@ table fct_deliveries
 		isHidden
 		annotation SummarizationSetBy = "Automatic"
 
+	column 'Is Unmatched Destination'
+		dataType: boolean
+		sourceColumn: is_unmatched_destination
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
 	column 'Route ID'
 		dataType: string
 		sourceColumn: route_id

@@ -122,6 +122,18 @@ table fct_retail_fuel_sales
 		summarizeBy: none
 		annotation SummarizationSetBy = "Automatic"
 
+	column 'Is Unmatched Site'
+		dataType: boolean
+		sourceColumn: is_unmatched_site
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Unmatched Product'
+		dataType: boolean
+		sourceColumn: is_unmatched_product
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
 	column 'Pump Number'
 		dataType: int64
 		sourceColumn: pump_number

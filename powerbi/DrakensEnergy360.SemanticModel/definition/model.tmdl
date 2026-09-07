@@ -24,4 +24,6 @@ ref table network_investment_scorecard
 ref table fct_deliveries
 ref table fct_commercial_orders
 ref table fct_maintenance_work_orders
+ref table bridge_security_user_scope
+ref role 'Regional Analyst'
 ref role 'Executive'

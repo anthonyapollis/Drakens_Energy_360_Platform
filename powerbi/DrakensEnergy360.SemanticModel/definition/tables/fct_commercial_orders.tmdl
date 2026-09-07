@@ -34,6 +34,12 @@ table fct_commercial_orders
 		isHidden
 		annotation SummarizationSetBy = "Automatic"
 
+	column 'Is Unmatched Customer'
+		dataType: boolean
+		sourceColumn: is_unmatched_customer
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
 	column 'Customer ID'
 		dataType: string
 		sourceColumn: customer_id
