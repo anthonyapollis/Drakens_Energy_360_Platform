@@ -139,6 +139,31 @@ CALCULATE (
 )
 ```
 
+## Asset reliability
+
+```dax
+Breakdown Rate % =
+-- Share of work orders that were unplanned. The maintenance planner's single
+-- headline number, and the target the predictive-maintenance model is scored
+-- against, so it is defined once here and not restated per report.
+DIVIDE (
+    CALCULATE ( COUNTROWS ( fct_maintenance_work_orders ),
+                fct_maintenance_work_orders[is_breakdown] = TRUE () ),
+    COUNTROWS ( fct_maintenance_work_orders )
+)
+
+Downtime Hours =
+SUM ( network_investment_scorecard[downtime_hours] )
+
+Downtime Lost Revenue =
+SUM ( network_investment_scorecard[downtime_lost_revenue_zar] )
+
+Average Asset Age (yrs) =
+-- Weighted by site rather than by asset: the question the network planner
+-- asks is which sites are ageing, not which asset classes are.
+AVERAGE ( network_investment_scorecard[avg_asset_age_years] )
+```
+
 ## New energy
 
 ```dax

@@ -140,3 +140,169 @@ A query grouped by month and province is answered from the aggregate without
 touching the transaction fact. A query that also slices by payment method
 falls through to DirectQuery automatically, because payment method is not in
 the aggregate. This is what makes a 5-million-row model feel like a small one.
+
+---
+
+## Geospatial design
+
+A downstream network is a geographic business. Where a site sits relative to a
+corridor, a metro and its neighbours determines what it earns, so the map is
+not decoration on this model — it is the primary navigation surface, and the
+one page an executive opens first.
+
+### Why Azure Maps and not the default map visual
+
+Power BI ships three map visuals and they are not interchangeable.
+
+| Visual | Used here for | Why not the others |
+|---|---|---|
+| **Azure Maps** | The network page: bubble layer, heat layer, reference layer | The only built-in visual supporting multiple simultaneous layers, GeoJSON reference layers and traffic/road context |
+| **Shape map** | Province choropleth on the executive page | Deterministic — binds on a key in the supplied TopoJSON, so it cannot geocode a province to the wrong country |
+| **Filled/bubble map (Bing)** | Not used | Geocodes text at render time. "Nelspruit" resolves to more than one place worldwide, and a silently mis-geocoded site is worse than no map |
+
+The rule underneath all three: **never let a visual geocode.** Every site
+carries `latitude` and `longitude` from `dim_site`, set to *Data category:
+Latitude / Longitude* and summarisation *Don't summarize*. Leaving
+summarisation on Sum is the single most common cause of a map that renders one
+bubble in the Southern Ocean, because it averages nothing and sums everything.
+
+### Layer stack on the network page
+
+Azure Maps renders bottom to top; the order is what makes the page readable
+rather than a wash of colour.
+
+| # | Layer | Encoding | Answers |
+|---|---|---|---|
+| 1 | Reference layer | Province TopoJSON, filled by `[Margin per Site]` | Which regions earn |
+| 2 | Heat map layer | Weighted by `[Fuel Volume (L)]`, radius 22px | Where demand concentrates, independent of site count |
+| 3 | Bubble layer | Size = `[Gross Margin]`, colour = `Investment Recommendation` | Which individual sites to act on |
+| 4 | Traffic / road overlay | Azure Maps roads | Corridor position, without shipping route geometry |
+
+Layers 2 and 3 deliberately encode different things. The heat layer is
+volume-weighted and ignores how many sites produce it, so a single very large
+site and a cluster of small ones look different — which is exactly the
+distinction a network planner needs and a bubble layer alone hides.
+
+### Bubble encoding
+
+```
+Size    →  [Gross Margin]        continuous, area-proportional
+Colour  →  Investment Recommendation   7-band ordered scale, invest → divest
+Border  →  On National Route           white ring on corridor sites
+Tooltip →  report page tooltip (below)
+```
+
+Colour is bound to the mart column, not to a DAX `SWITCH` written in the
+report. Binding in the report means the next report rebuilds the bands from
+memory and the two pages disagree about which sites are divestment
+candidates — the same argument the gold layer exists to prevent.
+
+The ordered palette runs dark green (`Invest - Maintain Leadership`) through
+gold (`Hold - Strategic Coverage`) to red (`Divest Candidate`), so the two
+categories that need explaining in a capital meeting — a strategically
+protected site and a divestment candidate — are the two that do not look like
+anything else on the page.
+
+### Drill path
+
+```
+Province  →  Metro / urban class  →  City  →  Site
+```
+
+Drill is configured on a hierarchy in `dim_site`, so drilling the map
+cross-filters every other visual on the page through the existing
+relationships rather than through visual-level interactions. Drill-through
+targets a per-site detail page carrying throughput, asset condition, incident
+history and the site's own scorecard components.
+
+Because the scorecard exposes each component as a named column
+(`r_contribution`, `r_throughput`, `r_growth`, `r_non_fuel`, `r_reliability`,
+`r_uptime`, `r_safety`, `r_asset_condition`), the drill-through page can show
+*why* a site scored what it did. A map that shows a red bubble and cannot
+explain it produces an argument, not a decision.
+
+### Report page tooltip
+
+A custom report page tooltip (320 × 240 px), rather than the default field
+list:
+
+- Site name, city, province, urban class
+- Sparkline: 13-week litres trend
+- `[Gross Margin]`, `[Margin per Litre (c)]`, `[Non-Fuel Margin Share %]`
+- `[Breakdown Rate %]` and `[Downtime Hours]`
+- Investment score with its quartile
+
+Hover-level answers are what keep an executive on the map instead of paging
+through a table.
+
+### The measures the map binds to
+
+```dax
+Margin per Site =
+DIVIDE (
+    [Gross Margin],
+    DISTINCTCOUNT ( dim_site[site_key] )
+)
+
+Corridor Coverage Gap =
+-- Corridor sites with no neighbouring site within the same city.
+-- These are the sites the capital plan protects from divestment
+-- regardless of score, so the map has to show them as a category.
+VAR CorridorSites =
+    CALCULATETABLE (
+        VALUES ( dim_site[site_key] ),
+        dim_site[on_national_route] = TRUE ()
+    )
+VAR SoleCoverage =
+    FILTER (
+        CorridorSites,
+        CALCULATE ( DISTINCTCOUNT ( dim_site[site_key] ),
+                    ALLEXCEPT ( dim_site, dim_site[city] ) ) = 1
+    )
+RETURN
+    COUNTROWS ( SoleCoverage )
+
+Network Reach km2 =
+-- Rough bounding extent of the sites currently in filter context.
+-- Deliberately approximate: it is a scale indicator on the map header,
+-- not a spatial statistic, and it is labelled as such on the page.
+VAR LatSpan = MAX ( dim_site[latitude] ) - MIN ( dim_site[latitude] )
+VAR LonSpan = MAX ( dim_site[longitude] ) - MIN ( dim_site[longitude] )
+RETURN
+    LatSpan * 111 * LonSpan * 111 * COS ( RADIANS ( 28 ) )
+```
+
+### Performance
+
+A bubble layer with one mark per site is fine at roughly a thousand sites and
+is not fine at a hundred thousand. Three things keep the page responsive:
+
+- The map binds to `network_investment_scorecard` — **one row per site,
+  already aggregated in gold** — never to the transaction fact. Rendering a
+  map from 37 million rows and letting the visual group them is the most
+  reliable way to build a page nobody waits for.
+- The scorecard is in Import mode. It is small, it changes daily, and
+  DirectQuery would put a geocode-free but still round-tripping query behind
+  every hover.
+- The heat layer reads the daily aggregate `agg_site_daily_fuel`, so the
+  volume weighting resolves through the user-defined aggregation rather than
+  the detail fact.
+
+### Row-level security and the map
+
+The province row filter (see *Row-level security*) applies to `dim_site`,
+which the map's tables reach through the existing relationships — so a
+regional analyst sees their own provinces and the map extent re-fits to them.
+
+Two consequences worth stating, because both are easy to get wrong:
+
+- **`[Margin per Site]` is a ratio and is therefore safe under RLS**; a
+  regional analyst sees their own provinces' figure, not a filtered numerator
+  over a network-wide denominator. This works only because the denominator is
+  `DISTINCTCOUNT` over the filtered `dim_site`, not a hard-coded site count.
+- **The reference layer must be filtered too.** A TopoJSON province shape is
+  drawn by the visual whether or not any data survives the filter, so a
+  restricted user would otherwise see nine provinces outlined with only two
+  filled — which discloses the shape of what they cannot see. The reference
+  layer is bound to the same filtered table so unauthorised provinces do not
+  render at all.

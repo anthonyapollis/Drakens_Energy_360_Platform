@@ -149,6 +149,69 @@ wrong direction.
 
 ---
 
+## Network and coverage
+
+The geographic KPIs behind the network map. These are the ones a capital
+committee argues about, so each is computed in gold and exposed as a named
+column rather than assembled in the report.
+
+| KPI | Definition | Computed in |
+|---|---|---|
+| Margin per site | Total margin ÷ distinct trading sites | derived over `network_investment_scorecard` |
+| Litres per site per day | Volume ÷ (sites × trading days) | `network_investment_scorecard.avg_daily_litres` |
+| Corridor site share % | Sites on a national route ÷ all sites | `dim_site.on_national_route` |
+| Sole-coverage corridor sites | Corridor sites that are the only site in their city | derived |
+| Province margin concentration | Share of network margin in the top two provinces | derived |
+| Metro margin share % | Metro sites' margin ÷ network margin | `dim_site.urban_class` |
+| Network reach | Bounding extent of sites in filter context | derived, map header only |
+
+**Sole-coverage corridor sites are a constraint, not a metric.** They are the
+sites the capital plan refuses to divest regardless of score, because losing
+the only site in a town on a national route removes coverage that cannot be
+bought back later at the same price. The number exists so the constraint is
+visible on the map rather than buried in the optimiser.
+
+**Network reach is deliberately approximate** — a bounding extent, not a
+spatial statistic. It is labelled as such on the page. A precise-looking
+number that is not precise is worse than an obviously rough one.
+
+---
+
+## Machine learning
+
+Every model is judged on the decision it supports, not on the metric that
+flatters it. A model without a stated baseline is a claim, not a result.
+
+| Model | Decision it supports | Metric that matters | Baseline it must beat |
+|---|---|---|---|
+| Demand forecast | How much to deliver, and when | MAE in litres | Seasonal naive — last week, same weekday |
+| Predictive maintenance | Which assets to visit this week | Precision and lift in the top 5% of the ranked queue | The base breakdown rate |
+| Customer churn | Which accounts to call | Average precision; precision at top 5% | Prevalence |
+| Stock-out risk | Which deliveries to bring forward | Recall at the chosen operating threshold | Prevalence |
+| Late delivery | Which slots to re-plan | Lift in the top 10% | The overall late rate |
+| Fraud / anomaly | Which transactions to review | Flagged-vs-normal separation on cash share and fill ratio | The population profile |
+
+Four rules apply to all six, and each exists because breaking it produces a
+model that scores well and is useless:
+
+- **Chronological split, never random.** A random split lets the model see the
+  future of the same site it is predicting.
+- **No feature unknown at decision time.** Cost and labour hours are outcomes
+  of a work order, not predictors of one. `days_of_cover` defines the
+  stock-out target, so it is excluded from the stock-out model.
+- **A stated baseline, reported next to the result.** A demand forecast
+  claiming 97% accuracy means a feature has leaked.
+- **The operating threshold comes from the cost asymmetry, not from 0.5.**
+  Missing a stock-out costs roughly four times an unnecessary early delivery,
+  so the stock-out threshold is chosen on F-beta with beta = 2.
+
+Targets are read from the gold layer, not redefined in the notebook, so the
+alert on the dashboard and the model's target are the same thing by
+construction. When the `stock_out_cover_days` project variable changes, both
+move together.
+
+---
+
 ## Data platform
 
 | KPI | Definition | Computed in |

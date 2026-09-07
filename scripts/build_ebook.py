@@ -331,8 +331,14 @@ def build_html(manifest: dict, wh: dict, dbx: dict) -> str:
          "a missing site code means a broken upstream join, a negative "
          "amount usually means credit notes on the wrong feed."),
         ("06_network_map.png",
-         "The synthetic South African network, scored for investment. "
-         "Coordinates are town centroids plus random jitter and do not "
+         "The synthetic South African network. Provinces are shaded by margin "
+         "per site; bubble area is total margin and colour is the investment "
+         "recommendation, so a large red bubble -- a high-margin site "
+         "recommended for divestment -- is visible without a sort. The N1, N2 "
+         "and N3 are drawn because corridor sites are protected from "
+         "divestment regardless of score. Shaded areas are the convex hull of "
+         "each province's synthetic sites, not a province boundary; "
+         "coordinates are town centroids plus random jitter and do not "
          "represent any real service station."),
         ("07_investment_mix.png",
          "Capital recommendation and margin concentration across the network."),

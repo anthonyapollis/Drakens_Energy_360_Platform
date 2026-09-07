@@ -78,10 +78,27 @@ select
     latitude, longitude,
     investment_score, investment_quartile, investment_recommendation,
     avg_daily_litres, total_margin_zar, total_revenue_zar,
-    demand_volatility, trading_days
+    transaction_count, demand_volatility, trading_days
 from main_gold.network_investment_scorecard
 where country_code = 'ZA'
 """
+
+# --------------------------------------------------------------------------
+# Sampling correction
+# --------------------------------------------------------------------------
+# The transaction fact is a *sample* of forecourt activity, not a complete
+# record: it holds roughly 1.2 fills per site per day where a real forecourt
+# serves several hundred. Capital costs, by contrast, are stated in real rands.
+# Comparing the two directly produces a meaningless payback, so the observed
+# margin has to be put on a real-money footing before any ROI is computed.
+#
+# Rather than invent a throughput assumption *and* inherit the generator's
+# margin per litre -- two unstated numbers multiplying together -- the
+# correction is anchored on a single benchmark that can be challenged on its
+# own terms: what a mid-sized site in a network of this size earns in fuel
+# gross margin in a year. Relative differences between sites are untouched;
+# only the overall level is rebased.
+BENCHMARK_ANNUAL_FUEL_MARGIN_ZAR = 6_000_000.0
 
 
 def eligible_interventions(row) -> list[Intervention]:
@@ -104,15 +121,45 @@ def eligible_interventions(row) -> list[Intervention]:
     return out
 
 
+def annualise_margin(df: pd.DataFrame) -> tuple[pd.DataFrame, float]:
+    """Put the observed sample margin on a real-money annual footing.
+
+    Two steps:
+
+      1. **Annualise.** `total_margin_zar` covers the whole modelled window,
+         not a year, and sites have different trading histories.
+      2. **Rebase to the benchmark.** The annualised figures are scaled by a
+         single factor so the network *median* site earns
+         `BENCHMARK_ANNUAL_FUEL_MARGIN_ZAR`. The median is used rather than
+         the mean so a handful of very large metro sites cannot drag the whole
+         network's economics upward.
+
+    The rank order of sites, and every ratio between them, is unchanged. Only
+    the level moves.
+
+    Returns the frame with `annual_margin_zar` added and the scaling factor
+    applied, so the caller can report it rather than hide it.
+    """
+    df = df.copy()
+    years = df["trading_days"].clip(lower=1) / 365.25
+    raw_annual = df["total_margin_zar"].clip(lower=0) / years
+
+    median_raw = float(raw_annual.median())
+    scale = BENCHMARK_ANNUAL_FUEL_MARGIN_ZAR / max(median_raw, 1e-9)
+
+    df["annual_margin_zar"] = raw_annual * scale
+    return df, scale
+
+
 def build_candidates(df: pd.DataFrame) -> pd.DataFrame:
     """One row per (site, intervention) with its cost and expected return."""
     rows = []
     for row in df.itertuples():
         for iv in eligible_interventions(row):
-            # Uplift is applied to the site's existing margin, so a strong
-            # site earns more from the same spend than a weak one. Scaling by
-            # score as well would double-count the same signal.
-            annual_uplift = max(row.total_margin_zar, 0) * iv.margin_uplift_pct
+            # Uplift is applied to the site's existing annual margin, so a
+            # strong site earns more from the same spend than a weak one.
+            # Scaling by score as well would double-count the same signal.
+            annual_uplift = max(row.annual_margin_zar, 0) * iv.margin_uplift_pct
             rows.append({
                 "site_id": row.site_id,
                 "site_name": row.site_name,
@@ -120,7 +167,7 @@ def build_candidates(df: pd.DataFrame) -> pd.DataFrame:
                 "urban_class": row.urban_class,
                 "on_national_route": row.on_national_route,
                 "investment_score": row.investment_score,
-                "current_margin_zar": row.total_margin_zar,
+                "annual_margin_zar": row.annual_margin_zar,
                 "intervention_code": iv.code,
                 "intervention": iv.name,
                 "capex_zar": iv.capex_zar,
@@ -229,6 +276,14 @@ def main(argv=None) -> int:
         print("network_investment_scorecard is empty; run dbt build first")
         return 1
     print(f"loaded {len(sites):,} South African sites")
+
+    sites, scale = annualise_margin(sites)
+    print(f"sampling correction: annualised margins rebased {scale:,.0f}x so "
+          f"the median site earns "
+          f"R{BENCHMARK_ANNUAL_FUEL_MARGIN_ZAR/1e6:,.1f}m of fuel gross "
+          f"margin a year")
+    print(f"median site annual margin after correction: "
+          f"R{sites.annual_margin_zar.median()/1e6:,.2f}m\n")
 
     candidates = build_candidates(sites)
     print(f"{len(candidates):,} eligible site/intervention combinations")
