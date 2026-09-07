@@ -27,7 +27,21 @@ from datetime import datetime
 from pyspark.sql import functions as F
 
 spark.sql(f"USE CATALOG {CATALOG}")
-RUN_ID = spark.conf.get("spark.databricks.job.runId", "interactive")
+
+
+def current_run_id() -> str:
+    """The job run id, or "interactive" outside a job.
+
+    `spark.conf.get` raises on serverless for job-scoped keys even when a
+    default is supplied, so this cannot be a one-liner with a fallback value.
+    """
+    try:
+        return spark.conf.get("spark.databricks.job.runId")
+    except Exception:                                        # noqa: BLE001
+        return "interactive"
+
+
+RUN_ID = current_run_id()
 RUN_TS = datetime.utcnow()
 
 # COMMAND ----------

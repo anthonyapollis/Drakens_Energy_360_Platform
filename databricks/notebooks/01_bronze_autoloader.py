@@ -40,6 +40,19 @@ SCHEMAS = f"/Volumes/{CATALOG}/bronze/schemas"
 
 spark.sql(f"USE CATALOG {CATALOG}")
 
+
+def current_run_id() -> str:
+    """The job run id, or "interactive" outside a job.
+
+    `spark.conf.get` raises on serverless for job-scoped keys even when a
+    default is supplied, so this cannot be a one-liner with a fallback value.
+    """
+    try:
+        return spark.conf.get("spark.databricks.job.runId")
+    except Exception:                                        # noqa: BLE001
+        return "interactive"
+
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -93,7 +106,7 @@ def ingest(feed: dict):
         .withColumn("_source_file_modified", F.col("_metadata.file_modification_time"))
         .withColumn("_ingested_at", F.current_timestamp())
         .withColumn("_source_system_code", F.lit(feed["source"]))
-        .withColumn("_ingest_batch_id", F.lit(spark.conf.get("spark.databricks.job.runId", "interactive")))
+        .withColumn("_ingest_batch_id", F.lit(current_run_id()))
     )
 
     writer = (
