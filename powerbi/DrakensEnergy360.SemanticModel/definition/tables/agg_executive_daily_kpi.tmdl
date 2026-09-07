@@ -1,0 +1,204 @@
+table agg_executive_daily_kpi
+
+	column 'Date Key'
+		dataType: int64
+		sourceColumn: date_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Full Date'
+		dataType: dateTime
+		sourceColumn: full_date
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Day Name'
+		dataType: string
+		sourceColumn: day_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Month Name'
+		dataType: string
+		sourceColumn: month_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Calendar Year'
+		dataType: int64
+		sourceColumn: calendar_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Year'
+		dataType: int64
+		sourceColumn: fiscal_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Quarter'
+		dataType: int64
+		sourceColumn: fiscal_quarter
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Weekend'
+		dataType: boolean
+		sourceColumn: is_weekend
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Public Holiday ZA'
+		dataType: boolean
+		sourceColumn: is_public_holiday_za
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Province'
+		dataType: string
+		sourceColumn: province
+		summarizeBy: none
+		dataCategory: StateOrProvince
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Trading Sites'
+		dataType: int64
+		sourceColumn: trading_sites
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fuel Litres'
+		dataType: double
+		sourceColumn: fuel_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fuel Revenue (R)'
+		dataType: decimal
+		sourceColumn: fuel_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fuel Margin (R)'
+		dataType: decimal
+		sourceColumn: fuel_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fuel Transactions'
+		dataType: int64
+		sourceColumn: fuel_transactions
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Shop Revenue (R)'
+		dataType: decimal
+		sourceColumn: shop_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Shop Margin (R)'
+		dataType: decimal
+		sourceColumn: shop_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Revenue (R)'
+		dataType: decimal
+		sourceColumn: total_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Margin (R)'
+		dataType: decimal
+		sourceColumn: total_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Delivery Count'
+		dataType: int64
+		sourceColumn: delivery_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'OTIF Deliveries'
+		dataType: int64
+		sourceColumn: otif_deliveries
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'OTIF %'
+		dataType: double
+		sourceColumn: otif_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Incident Count'
+		dataType: int64
+		sourceColumn: incident_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Reportable Incidents'
+		dataType: int64
+		sourceColumn: reportable_incidents
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Lost Time Injuries'
+		dataType: int64
+		sourceColumn: lost_time_injuries
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'EV Sessions'
+		dataType: int64
+		sourceColumn: ev_sessions
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'EV kWh'
+		dataType: double
+		sourceColumn: ev_kwh
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Gross Margin %'
+		dataType: double
+		sourceColumn: gross_margin_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Non Fuel Margin Share %'
+		dataType: double
+		sourceColumn: non_fuel_margin_share_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Litres Per Site'
+		dataType: double
+		sourceColumn: litres_per_site
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	partition agg_executive_daily_kpi = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="agg_executive_daily_kpi"]}[Data]
+				in
+				    Table

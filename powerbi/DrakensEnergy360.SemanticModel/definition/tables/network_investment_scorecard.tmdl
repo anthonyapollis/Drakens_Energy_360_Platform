@@ -1,0 +1,417 @@
+table network_investment_scorecard
+
+	column 'Site Key'
+		dataType: int64
+		sourceColumn: site_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site ID'
+		dataType: string
+		sourceColumn: site_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Name'
+		dataType: string
+		sourceColumn: site_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Country Code'
+		dataType: string
+		sourceColumn: country_code
+		summarizeBy: none
+		dataCategory: Country
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Province'
+		dataType: string
+		sourceColumn: province
+		summarizeBy: none
+		dataCategory: StateOrProvince
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'City'
+		dataType: string
+		sourceColumn: city
+		summarizeBy: none
+		dataCategory: City
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Urban Class'
+		dataType: string
+		sourceColumn: urban_class
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Type'
+		dataType: string
+		sourceColumn: site_type
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Ownership Model'
+		dataType: string
+		sourceColumn: ownership_model
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Status'
+		dataType: string
+		sourceColumn: site_status
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'On National Route'
+		dataType: boolean
+		sourceColumn: on_national_route
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Offer Tier'
+		dataType: string
+		sourceColumn: offer_tier
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'New Energy Profile'
+		dataType: string
+		sourceColumn: new_energy_profile
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Has Convenience'
+		dataType: boolean
+		sourceColumn: has_convenience
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Has EV Charging'
+		dataType: boolean
+		sourceColumn: has_ev_charging
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Has Solar'
+		dataType: boolean
+		sourceColumn: has_solar
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Age Years'
+		dataType: double
+		sourceColumn: site_age_years
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Latitude'
+		dataType: double
+		sourceColumn: latitude
+		summarizeBy: none
+		dataCategory: Latitude
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Longitude'
+		dataType: double
+		sourceColumn: longitude
+		summarizeBy: none
+		dataCategory: Longitude
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Demand Band'
+		dataType: string
+		sourceColumn: demand_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Trading Days'
+		dataType: int64
+		sourceColumn: trading_days
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Litres Total'
+		dataType: double
+		sourceColumn: litres_total
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Avg Daily Litres'
+		dataType: double
+		sourceColumn: avg_daily_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fuel Revenue (R)'
+		dataType: decimal
+		sourceColumn: fuel_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fuel Margin (R)'
+		dataType: decimal
+		sourceColumn: fuel_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Transaction Count'
+		dataType: int64
+		sourceColumn: transaction_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Shop Revenue (R)'
+		dataType: double
+		sourceColumn: shop_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Shop Margin (R)'
+		dataType: double
+		sourceColumn: shop_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'EV Session Count'
+		dataType: int64
+		sourceColumn: ev_session_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'EV Margin (R)'
+		dataType: double
+		sourceColumn: ev_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Solar kWh'
+		dataType: double
+		sourceColumn: solar_kwh
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'CO2 Avoided kg'
+		dataType: double
+		sourceColumn: co2_avoided_kg
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Work Order Count'
+		dataType: int64
+		sourceColumn: work_order_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Breakdown Count'
+		dataType: int64
+		sourceColumn: breakdown_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Maintenance Cost (R)'
+		dataType: double
+		sourceColumn: maintenance_cost_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Avg Asset Age Years'
+		dataType: double
+		sourceColumn: avg_asset_age_years
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Downtime Hours'
+		dataType: double
+		sourceColumn: downtime_hours
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Downtime Lost Revenue (R)'
+		dataType: double
+		sourceColumn: downtime_lost_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Incident Count'
+		dataType: int64
+		sourceColumn: incident_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Reportable Incident Count'
+		dataType: int64
+		sourceColumn: reportable_incident_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Incident Cost (R)'
+		dataType: double
+		sourceColumn: incident_cost_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Volume Growth %'
+		dataType: double
+		sourceColumn: volume_growth_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Demand Volatility'
+		dataType: double
+		sourceColumn: demand_volatility
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Margin (R)'
+		dataType: double
+		sourceColumn: total_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Revenue (R)'
+		dataType: double
+		sourceColumn: total_revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Site Cost (R)'
+		dataType: double
+		sourceColumn: total_site_cost_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Contribution (R)'
+		dataType: double
+		sourceColumn: contribution_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Non Fuel Margin Share %'
+		dataType: double
+		sourceColumn: non_fuel_margin_share_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Breakdown Rate %'
+		dataType: double
+		sourceColumn: breakdown_rate_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Contribution'
+		dataType: double
+		sourceColumn: r_contribution
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Throughput'
+		dataType: double
+		sourceColumn: r_throughput
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Growth'
+		dataType: double
+		sourceColumn: r_growth
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Non Fuel'
+		dataType: double
+		sourceColumn: r_non_fuel
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Reliability'
+		dataType: double
+		sourceColumn: r_reliability
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Uptime'
+		dataType: double
+		sourceColumn: r_uptime
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Safety'
+		dataType: double
+		sourceColumn: r_safety
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'R Asset Condition'
+		dataType: double
+		sourceColumn: r_asset_condition
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Investment Score'
+		dataType: double
+		sourceColumn: investment_score
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Investment Quartile'
+		dataType: int64
+		sourceColumn: investment_quartile
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Investment Recommendation'
+		dataType: string
+		sourceColumn: investment_recommendation
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Sites Scored' = COUNTROWS ( network_investment_scorecard )
+		formatString: #,0
+		displayFolder: Network
+
+	measure 'Average Investment Score' = AVERAGE ( network_investment_scorecard[Investment Score] )
+		formatString: #,0.0
+		displayFolder: Network
+
+	measure 'Divest Candidates' = CALCULATE ( [Sites Scored], CONTAINSSTRING ( network_investment_scorecard[Investment Recommendation], "Divest" ) )
+		formatString: #,0
+		displayFolder: Network
+
+	measure 'Margin at Risk' = CALCULATE ( SUM ( network_investment_scorecard[Total Margin (R)] ), CONTAINSSTRING ( network_investment_scorecard[Investment Recommendation], "Divest" ) )
+		formatString: "R"#,0
+		displayFolder: Network
+
+	measure 'Downtime Hours' = SUM ( network_investment_scorecard[Downtime Hours] )
+		formatString: #,0
+		displayFolder: Assets
+
+	measure 'Corridor Sites' = CALCULATE ( DISTINCTCOUNT ( dim_site[Site Key] ), dim_site[On National Route] = TRUE () )
+		formatString: #,0
+		displayFolder: Network
+
+	partition network_investment_scorecard = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="network_investment_scorecard"]}[Data]
+				in
+				    Table

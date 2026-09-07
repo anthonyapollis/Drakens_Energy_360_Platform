@@ -1,0 +1,4 @@
+role 'Executive'
+	modelPermission: read
+
+	tablePermission dim_site = TRUE ()

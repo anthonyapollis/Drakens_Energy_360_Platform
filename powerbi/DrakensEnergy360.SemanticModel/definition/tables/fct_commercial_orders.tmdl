@@ -1,0 +1,262 @@
+table fct_commercial_orders
+
+	column 'Order ID'
+		dataType: string
+		sourceColumn: order_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Order Timestamp'
+		dataType: dateTime
+		sourceColumn: order_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Date Key'
+		dataType: int64
+		sourceColumn: date_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Customer Key'
+		dataType: int64
+		sourceColumn: customer_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Product Key'
+		dataType: int64
+		sourceColumn: product_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Customer ID'
+		dataType: string
+		sourceColumn: customer_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Contract ID'
+		dataType: string
+		sourceColumn: contract_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Product ID'
+		dataType: string
+		sourceColumn: product_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Customer Name'
+		dataType: string
+		sourceColumn: customer_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Sector'
+		dataType: string
+		sourceColumn: sector
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Segment'
+		dataType: string
+		sourceColumn: segment
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Credit Band'
+		dataType: string
+		sourceColumn: credit_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Credit Risk Tier'
+		dataType: string
+		sourceColumn: credit_risk_tier
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Service Model'
+		dataType: string
+		sourceColumn: service_model
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Industrial'
+		dataType: boolean
+		sourceColumn: is_industrial
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Product Name'
+		dataType: string
+		sourceColumn: product_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Reporting Line'
+		dataType: string
+		sourceColumn: reporting_line
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Channel'
+		dataType: string
+		sourceColumn: channel
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Order Status'
+		dataType: string
+		sourceColumn: order_status
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Requested Delivery Date'
+		dataType: dateTime
+		sourceColumn: requested_delivery_date
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Payment Terms Days'
+		dataType: int64
+		sourceColumn: payment_terms_days
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Volume Litres'
+		dataType: double
+		sourceColumn: volume_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'List Price (R)'
+		dataType: double
+		sourceColumn: list_price_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Discount Cents Per Litre'
+		dataType: double
+		sourceColumn: discount_cents_per_litre
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Net Price (R)'
+		dataType: double
+		sourceColumn: net_price_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Revenue (R)'
+		dataType: decimal
+		sourceColumn: revenue_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cogs (R)'
+		dataType: decimal
+		sourceColumn: cogs_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Gross Margin (R)'
+		dataType: decimal
+		sourceColumn: gross_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Discount Value (R)'
+		dataType: decimal
+		sourceColumn: discount_value_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Margin %'
+		dataType: double
+		sourceColumn: margin_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Margin Cents Per Litre'
+		dataType: double
+		sourceColumn: margin_cents_per_litre
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Open Order'
+		dataType: boolean
+		sourceColumn: is_open_order
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Cancelled'
+		dataType: boolean
+		sourceColumn: is_cancelled
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Order Size Band'
+		dataType: string
+		sourceColumn: order_size_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Source System Code'
+		dataType: string
+		sourceColumn: source_system_code
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Ingested At'
+		dataType: dateTime
+		sourceColumn: ingested_at
+		summarizeBy: none
+		isHidden
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cleansed At'
+		dataType: dateTime
+		sourceColumn: _cleansed_at
+		summarizeBy: none
+		isHidden
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Commercial Revenue' = SUM ( fct_commercial_orders[Revenue (R)] )
+		formatString: "R"#,0
+		displayFolder: Commercial
+
+	measure 'Commercial Margin' = SUM ( fct_commercial_orders[Gross Margin (R)] )
+		formatString: "R"#,0
+		displayFolder: Commercial
+
+	measure 'Unmatched Customer Revenue %' = DIVIDE ( CALCULATE ( [Commercial Revenue], fct_commercial_orders[Customer Key] = -1 ), [Commercial Revenue] )
+		formatString: 0.00%
+		displayFolder: Data quality
+
+	partition fct_commercial_orders = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="fct_commercial_orders"]}[Data]
+				in
+				    Table

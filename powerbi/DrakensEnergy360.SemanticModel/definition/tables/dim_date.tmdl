@@ -1,0 +1,155 @@
+table dim_date
+
+	dataCategory: Time
+
+	column 'Date Key'
+		dataType: int64
+		sourceColumn: date_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Full Date'
+		dataType: dateTime
+		sourceColumn: full_date
+		summarizeBy: none
+		isKey
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Day Of Month'
+		dataType: int64
+		sourceColumn: day_of_month
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Day Of Week'
+		dataType: int64
+		sourceColumn: day_of_week
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Day Name'
+		dataType: string
+		sourceColumn: day_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Day Of Year'
+		dataType: int64
+		sourceColumn: day_of_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Week Of Year'
+		dataType: int64
+		sourceColumn: week_of_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Month Number'
+		dataType: int64
+		sourceColumn: month_number
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Month Name'
+		dataType: string
+		sourceColumn: month_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Quarter Number'
+		dataType: int64
+		sourceColumn: quarter_number
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Quarter Name'
+		dataType: string
+		sourceColumn: quarter_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Calendar Year'
+		dataType: int64
+		sourceColumn: calendar_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Year'
+		dataType: int64
+		sourceColumn: fiscal_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Quarter'
+		dataType: int64
+		sourceColumn: fiscal_quarter
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Period'
+		dataType: int64
+		sourceColumn: fiscal_period
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Weekend'
+		dataType: boolean
+		sourceColumn: is_weekend
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Public Holiday ZA'
+		dataType: boolean
+		sourceColumn: is_public_holiday_za
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Trading Day'
+		dataType: boolean
+		sourceColumn: is_trading_day
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Season Southern'
+		dataType: string
+		sourceColumn: season_southern
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'School Holiday ZA'
+		dataType: boolean
+		sourceColumn: school_holiday_za
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Year Month'
+		dataType: string
+		sourceColumn: year_month
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Year Label'
+		dataType: string
+		sourceColumn: fiscal_year_label
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Non Working Day'
+		dataType: boolean
+		sourceColumn: is_non_working_day
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="dim_date"]}[Data]
+				in
+				    Table

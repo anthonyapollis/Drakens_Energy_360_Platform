@@ -1,0 +1,222 @@
+table fct_maintenance_work_orders
+
+	column 'Work Order ID'
+		dataType: string
+		sourceColumn: work_order_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Raised Timestamp'
+		dataType: dateTime
+		sourceColumn: raised_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Completed Timestamp'
+		dataType: dateTime
+		sourceColumn: completed_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Date Key'
+		dataType: int64
+		sourceColumn: date_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Key'
+		dataType: int64
+		sourceColumn: site_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Asset ID'
+		dataType: string
+		sourceColumn: asset_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site ID'
+		dataType: string
+		sourceColumn: site_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Province'
+		dataType: string
+		sourceColumn: province
+		summarizeBy: none
+		dataCategory: StateOrProvince
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Urban Class'
+		dataType: string
+		sourceColumn: urban_class
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Demand Band'
+		dataType: string
+		sourceColumn: demand_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Asset Type'
+		dataType: string
+		sourceColumn: asset_type
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Criticality'
+		dataType: string
+		sourceColumn: criticality
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Asset Age Years'
+		dataType: double
+		sourceColumn: asset_age_years
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Maintenance Type'
+		dataType: string
+		sourceColumn: maintenance_type
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Failure Mode'
+		dataType: string
+		sourceColumn: failure_mode
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Priority'
+		dataType: string
+		sourceColumn: priority
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Technician Employee ID'
+		dataType: string
+		sourceColumn: technician_employee_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Response Hours'
+		dataType: double
+		sourceColumn: response_hours
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Labour Hours'
+		dataType: double
+		sourceColumn: labour_hours
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Labour Cost (R)'
+		dataType: decimal
+		sourceColumn: labour_cost_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Parts Cost (R)'
+		dataType: decimal
+		sourceColumn: parts_cost_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Cost (R)'
+		dataType: decimal
+		sourceColumn: total_cost_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Completed'
+		dataType: boolean
+		sourceColumn: is_completed
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Breakdown'
+		dataType: boolean
+		sourceColumn: is_breakdown
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'SLA Breached'
+		dataType: boolean
+		sourceColumn: sla_breached
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Planned'
+		dataType: boolean
+		sourceColumn: is_planned
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Asset Age Band'
+		dataType: string
+		sourceColumn: asset_age_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Total Hours Out Of Service'
+		dataType: double
+		sourceColumn: total_hours_out_of_service
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Source System Code'
+		dataType: string
+		sourceColumn: source_system_code
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Ingested At'
+		dataType: dateTime
+		sourceColumn: ingested_at
+		summarizeBy: none
+		isHidden
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cleansed At'
+		dataType: dateTime
+		sourceColumn: _cleansed_at
+		summarizeBy: none
+		isHidden
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Work Orders' = COUNTROWS ( fct_maintenance_work_orders )
+		formatString: #,0
+		displayFolder: Assets
+
+	measure 'Breakdown Rate %' = DIVIDE ( CALCULATE ( [Work Orders], fct_maintenance_work_orders[Is Breakdown] = TRUE () ), [Work Orders] )
+		formatString: 0.0%
+		displayFolder: Assets
+
+	measure 'Maintenance Cost' = SUM ( fct_maintenance_work_orders[Total Cost (R)] )
+		formatString: "R"#,0
+		displayFolder: Assets
+
+	partition fct_maintenance_work_orders = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="fct_maintenance_work_orders"]}[Data]
+				in
+				    Table

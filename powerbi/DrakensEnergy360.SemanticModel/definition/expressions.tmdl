@@ -1,0 +1,7 @@
+/// Connection parameters, so the same model deploys to dev, test
+/// and prod by changing three values rather than editing queries.
+expression ServerHostname = "adb-0000000000000000.0.azuredatabricks.net" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+expression HttpPath = "/sql/1.0/warehouses/0000000000000000" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+expression CatalogName = "drakens_prod" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]

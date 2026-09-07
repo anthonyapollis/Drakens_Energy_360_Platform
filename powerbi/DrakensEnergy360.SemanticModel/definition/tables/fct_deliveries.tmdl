@@ -1,0 +1,244 @@
+table fct_deliveries
+
+	column 'Delivery ID'
+		dataType: string
+		sourceColumn: delivery_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Planned Arrival Timestamp'
+		dataType: dateTime
+		sourceColumn: planned_arrival_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Actual Arrival Timestamp'
+		dataType: dateTime
+		sourceColumn: actual_arrival_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Date Key'
+		dataType: int64
+		sourceColumn: date_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Destination Site Key'
+		dataType: int64
+		sourceColumn: destination_site_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Product Key'
+		dataType: int64
+		sourceColumn: product_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Route ID'
+		dataType: string
+		sourceColumn: route_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Origin Terminal ID'
+		dataType: string
+		sourceColumn: origin_terminal_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Destination Site ID'
+		dataType: string
+		sourceColumn: destination_site_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Vehicle ID'
+		dataType: string
+		sourceColumn: vehicle_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Driver ID'
+		dataType: string
+		sourceColumn: driver_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Carrier ID'
+		dataType: string
+		sourceColumn: carrier_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Product ID'
+		dataType: string
+		sourceColumn: product_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Province'
+		dataType: string
+		sourceColumn: province
+		summarizeBy: none
+		dataCategory: StateOrProvince
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'City'
+		dataType: string
+		sourceColumn: city
+		summarizeBy: none
+		dataCategory: City
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Urban Class'
+		dataType: string
+		sourceColumn: urban_class
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Product Name'
+		dataType: string
+		sourceColumn: product_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Planned Litres'
+		dataType: double
+		sourceColumn: planned_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Delivered Litres'
+		dataType: double
+		sourceColumn: delivered_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fill Rate %'
+		dataType: double
+		sourceColumn: fill_rate_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Distance km'
+		dataType: double
+		sourceColumn: distance_km
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Drop Count'
+		dataType: int64
+		sourceColumn: drop_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Delay Minutes'
+		dataType: int64
+		sourceColumn: delay_minutes
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Delivery Status'
+		dataType: string
+		sourceColumn: delivery_status
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Reason Code'
+		dataType: string
+		sourceColumn: reason_code
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is On Time'
+		dataType: boolean
+		sourceColumn: is_on_time
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is In Full'
+		dataType: boolean
+		sourceColumn: is_in_full
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is OTIF'
+		dataType: boolean
+		sourceColumn: is_otif
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Punctuality Band'
+		dataType: string
+		sourceColumn: punctuality_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'km Per Drop'
+		dataType: double
+		sourceColumn: km_per_drop
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Litres Per km'
+		dataType: double
+		sourceColumn: litres_per_km
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Source System Code'
+		dataType: string
+		sourceColumn: source_system_code
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Ingested At'
+		dataType: dateTime
+		sourceColumn: ingested_at
+		summarizeBy: none
+		isHidden
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cleansed At'
+		dataType: dateTime
+		sourceColumn: _cleansed_at
+		summarizeBy: none
+		isHidden
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Deliveries' = COUNTROWS ( fct_deliveries )
+		formatString: #,0
+		displayFolder: Supply
+
+	measure 'OTIF Deliveries' = CALCULATE ( [Deliveries], fct_deliveries[Is OTIF] = TRUE () )
+		formatString: #,0
+		displayFolder: Supply
+
+	measure 'OTIF %' = DIVIDE ( [OTIF Deliveries], [Deliveries] )
+		formatString: 0.0%
+		displayFolder: Supply
+
+	measure 'Average Delay (min)' = AVERAGE ( fct_deliveries[Delay Minutes] )
+		formatString: #,0
+		displayFolder: Supply
+
+	partition fct_deliveries = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="fct_deliveries"]}[Data]
+				in
+				    Table

@@ -1,0 +1,153 @@
+table dim_customer
+
+	column 'Customer Key'
+		dataType: int64
+		sourceColumn: customer_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Customer ID'
+		dataType: string
+		sourceColumn: customer_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Customer Name'
+		dataType: string
+		sourceColumn: customer_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Sector'
+		dataType: string
+		sourceColumn: sector
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Segment'
+		dataType: string
+		sourceColumn: segment
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Country Code'
+		dataType: string
+		sourceColumn: country_code
+		summarizeBy: none
+		dataCategory: Country
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Credit Band'
+		dataType: string
+		sourceColumn: credit_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Credit Limit (R)'
+		dataType: double
+		sourceColumn: credit_limit_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Payment Terms Days'
+		dataType: int64
+		sourceColumn: payment_terms_days
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Onboarded Date'
+		dataType: dateTime
+		sourceColumn: onboarded_date
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Active'
+		dataType: boolean
+		sourceColumn: is_active
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Revenue Index'
+		dataType: double
+		sourceColumn: revenue_index
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Service Model'
+		dataType: string
+		sourceColumn: service_model
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Credit Risk Tier'
+		dataType: string
+		sourceColumn: credit_risk_tier
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Industrial'
+		dataType: boolean
+		sourceColumn: is_industrial
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Customer Tenure Days'
+		dataType: int64
+		sourceColumn: customer_tenure_days
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Effective From Date'
+		dataType: dateTime
+		sourceColumn: effective_from_date
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Effective To Date'
+		dataType: dateTime
+		sourceColumn: effective_to_date
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Current'
+		dataType: boolean
+		sourceColumn: is_current
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Scd Version'
+		dataType: int64
+		sourceColumn: scd_version
+		summarizeBy: sum
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Dw Hash Diff'
+		dataType: string
+		sourceColumn: dw_hash_diff
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Record Source'
+		dataType: string
+		sourceColumn: record_source
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	partition dim_customer = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="dim_customer"]}[Data]
+				in
+				    Table

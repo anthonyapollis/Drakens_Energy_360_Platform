@@ -1,0 +1,266 @@
+table agg_site_daily_fuel
+
+	column 'Date Key'
+		dataType: int64
+		sourceColumn: date_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Key'
+		dataType: int64
+		sourceColumn: site_key
+		summarizeBy: none
+		isHidden
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site ID'
+		dataType: string
+		sourceColumn: site_id
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Province'
+		dataType: string
+		sourceColumn: province
+		summarizeBy: none
+		dataCategory: StateOrProvince
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Urban Class'
+		dataType: string
+		sourceColumn: urban_class
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Site Type'
+		dataType: string
+		sourceColumn: site_type
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Demand Band'
+		dataType: string
+		sourceColumn: demand_band
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Transaction Count'
+		dataType: int64
+		sourceColumn: transaction_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Grades Sold'
+		dataType: int64
+		sourceColumn: grades_sold
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Litres'
+		dataType: double
+		sourceColumn: litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Gross Sales (R)'
+		dataType: decimal
+		sourceColumn: gross_sales_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cogs (R)'
+		dataType: decimal
+		sourceColumn: cogs_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Gross Margin (R)'
+		dataType: decimal
+		sourceColumn: gross_margin_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Diesel Litres'
+		dataType: double
+		sourceColumn: diesel_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Petrol Litres'
+		dataType: double
+		sourceColumn: petrol_litres
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Loyalty Transactions'
+		dataType: int64
+		sourceColumn: loyalty_transactions
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fleet Transactions'
+		dataType: int64
+		sourceColumn: fleet_transactions
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cash Sales (R)'
+		dataType: decimal
+		sourceColumn: cash_sales_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Gross Margin %'
+		dataType: double
+		sourceColumn: gross_margin_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Litres Per Transaction'
+		dataType: double
+		sourceColumn: litres_per_transaction
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Average Transaction (R)'
+		dataType: double
+		sourceColumn: average_transaction_zar
+		summarizeBy: sum
+		formatString: "R"#,0.00
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Loyalty Penetration %'
+		dataType: double
+		sourceColumn: loyalty_penetration_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Diesel Share %'
+		dataType: double
+		sourceColumn: diesel_share_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Full Date'
+		dataType: dateTime
+		sourceColumn: full_date
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Day Name'
+		dataType: string
+		sourceColumn: day_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Month Name'
+		dataType: string
+		sourceColumn: month_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Calendar Year'
+		dataType: int64
+		sourceColumn: calendar_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Fiscal Year'
+		dataType: int64
+		sourceColumn: fiscal_year
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Weekend'
+		dataType: boolean
+		sourceColumn: is_weekend
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Public Holiday ZA'
+		dataType: boolean
+		sourceColumn: is_public_holiday_za
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Season Southern'
+		dataType: string
+		sourceColumn: season_southern
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Fuel Volume (L)' = SUM ( agg_site_daily_fuel[Litres] )
+		formatString: #,0
+		displayFolder: Volume
+
+	measure 'Volume per Site (L)' = DIVIDE ( [Fuel Volume (L)], [Trading Sites] )
+		formatString: #,0
+		displayFolder: Volume
+
+	measure 'Trading Sites' = DISTINCTCOUNT ( agg_site_daily_fuel[Site Key] )
+		formatString: #,0
+		displayFolder: Volume
+
+	measure 'Fuel Revenue' = SUM ( agg_site_daily_fuel[Gross Sales (R)] )
+		formatString: "R"#,0
+		displayFolder: Value
+
+	measure 'Gross Margin' = SUM ( agg_site_daily_fuel[Gross Margin (R)] )
+		formatString: "R"#,0
+		displayFolder: Value
+
+	measure 'Gross Margin %' = DIVIDE ( [Gross Margin], [Fuel Revenue] )
+		formatString: 0.0%
+		displayFolder: Value
+
+	measure 'Margin per Litre (c)' = DIVIDE ( [Gross Margin], [Fuel Volume (L)] ) * 100
+		formatString: #,0.0
+		displayFolder: Value
+
+	measure 'Transaction Count' = SUM ( agg_site_daily_fuel[Transaction Count] )
+		formatString: #,0
+		displayFolder: Volume
+
+	measure 'Average Transaction Value' = DIVIDE ( [Fuel Revenue], [Transaction Count] )
+		formatString: "R"#,0.00
+		displayFolder: Value
+
+	measure 'Fuel Volume LY' = CALCULATE ( [Fuel Volume (L)], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )
+		formatString: #,0
+		displayFolder: Time
+
+	measure 'Fuel Volume YoY %' = DIVIDE ( [Fuel Volume (L)] - [Fuel Volume LY], [Fuel Volume LY] )
+		formatString: 0.0%
+		displayFolder: Time
+
+	measure 'Gross Margin YTD' = TOTALYTD ( [Gross Margin], dim_date[Full Date] )
+		formatString: "R"#,0
+		displayFolder: Time
+
+	measure 'Fuel Volume 7D Average' = AVERAGEX ( DATESINPERIOD ( dim_date[Full Date], MAX ( dim_date[Full Date] ), -7, DAY ), [Fuel Volume (L)] )
+		formatString: #,0
+		displayFolder: Time
+
+	measure 'Margin per Site' = DIVIDE ( [Gross Margin], DISTINCTCOUNT ( dim_site[Site Key] ) )
+		formatString: "R"#,0
+		displayFolder: Network
+
+	partition agg_site_daily_fuel = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="gold"]}[Data],
+				    Table   = Schema{[Name="agg_site_daily_fuel"]}[Data]
+				in
+				    Table
