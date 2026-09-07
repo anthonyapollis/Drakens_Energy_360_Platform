@@ -1,0 +1,112 @@
+table obs_table_freshness
+
+	column 'Table Name'
+		dataType: string
+		sourceColumn: table_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Data Source Code'
+		dataType: string
+		sourceColumn: data_source_code
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Data Source Name'
+		dataType: string
+		sourceColumn: data_source_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Ingestion Pattern'
+		dataType: string
+		sourceColumn: ingestion_pattern
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Owning Domain'
+		dataType: string
+		sourceColumn: owning_domain
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'SLA Minutes'
+		dataType: int64
+		sourceColumn: sla_minutes
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is Pii Bearing'
+		dataType: boolean
+		sourceColumn: is_pii_bearing
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Watermark Column'
+		dataType: string
+		sourceColumn: watermark_column
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Row Count'
+		dataType: int64
+		sourceColumn: row_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Min Event Timestamp'
+		dataType: dateTime
+		sourceColumn: min_event_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Max Event Timestamp'
+		dataType: dateTime
+		sourceColumn: max_event_ts
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Max Ingested At'
+		dataType: dateTime
+		sourceColumn: max_ingested_at
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Ingestion Lag Minutes'
+		dataType: int64
+		sourceColumn: ingestion_lag_minutes
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Is SLA Breached'
+		dataType: boolean
+		sourceColumn: is_sla_breached
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'SLA Status'
+		dataType: string
+		sourceColumn: sla_status
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'SLA Consumption %'
+		dataType: double
+		sourceColumn: sla_consumption_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	partition obs_table_freshness = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="platform"]}[Data],
+				    Table   = Schema{[Name="obs_table_freshness"]}[Data]
+				in
+				    Table

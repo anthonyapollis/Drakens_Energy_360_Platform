@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0049",
+  "position": {
+    "x": 884,
+    "y": 22,
+    "width": 380,
+    "height": 24,
+    "z": 49,
+    "tabOrder": 49
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Synthetic data. Drakens Energy is a fictional company.",
+                    "textStyle": {
+                      "fontSize": {
+                        "value": "8D"
+                      },
+                      "color": {
+                        "value": "#8FA79B"
+                      },
+                      "fontFamily": {
+                        "value": "Segoe UI"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

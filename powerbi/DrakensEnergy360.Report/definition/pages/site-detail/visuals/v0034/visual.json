@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0034",
+  "position": {
+    "x": 646.0,
+    "y": 192,
+    "width": 618.0,
+    "height": 220,
+    "z": 34,
+    "tabOrder": 34
+  },
+  "visual": {
+    "visualType": "barChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "network_investment_scorecard"
+                    }
+                  },
+                  "Property": "Demand Band"
+                }
+              },
+              "queryRef": "network_investment_scorecard.Demand Band",
+              "nativeQueryRef": "Demand Band"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "network_investment_scorecard"
+                    }
+                  },
+                  "Property": "Average Investment Score"
+                }
+              },
+              "queryRef": "network_investment_scorecard.Average Investment Score",
+              "nativeQueryRef": "Average Investment Score"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Score components'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

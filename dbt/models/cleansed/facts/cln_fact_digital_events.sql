@@ -38,12 +38,10 @@ assessed as (
     select
         *,
         (digital_event_id is not null) as _dq_digital_event_id_present,
-        (site_id is not null) as _dq_site_id_present,
         (event_ts is not null) as _dq_event_timestamp_valid,
-        (coalesce(_dq_digital_event_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false)) as _dq_is_valid,
+        (coalesce(_dq_digital_event_id_present, false) and coalesce(_dq_event_timestamp_valid, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_digital_event_id_present, false) then 'digital_event_id_present' end,
-            case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end
         ) as _dq_failed_rules
     from cleansed

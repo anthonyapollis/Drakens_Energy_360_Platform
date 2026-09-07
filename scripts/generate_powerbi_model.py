@@ -40,6 +40,11 @@ OUT = DEFN
 # dimensions and aggregates are small and become Import so slicers and card
 # visuals are instant; the transaction fact stays DirectQuery because importing
 # 37 million rows into a .pbix is how a model becomes unmaintainable.
+# `schema` is the warehouse schema each table lives in. It defaults to gold
+# because that is where everything a report should read lives -- but the
+# observability tables are in `platform`, and leaving them out meant the
+# semantic model could not express the data-quality page at all. A report that
+# cannot show its own rejection rate is a report asking to be trusted.
 TABLES = {
     "dim_date":                     dict(mode="import", kind="dimension"),
     "dim_site":                     dict(mode="import", kind="dimension"),
@@ -57,6 +62,14 @@ TABLES = {
     # does not contain fails to load with an error naming the role rather than
     # the table.
     "bridge_security_user_scope":   dict(mode="import", kind="security"),
+    "obs_cleansing_summary":        dict(mode="import", kind="observability",
+                                         schema="platform"),
+    "obs_quarantine_reasons":       dict(mode="import", kind="observability",
+                                         schema="platform"),
+    "obs_reconciliation_controls":  dict(mode="import", kind="observability",
+                                         schema="platform"),
+    "obs_table_freshness":          dict(mode="import", kind="observability",
+                                         schema="platform"),
 }
 
 # DuckDB / Databricks types to TMDL data types.
@@ -269,6 +282,52 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "CALCULATE ( DISTINCTCOUNT ( dim_site[site_key] ), "
          "dim_site[on_national_route] = TRUE () )", "#,0", "Network"),
     ],
+    "obs_cleansing_summary": [
+        ("Rows Landed", "SUM ( obs_cleansing_summary[raw_rows] )",
+         "#,0", "Data quality"),
+        ("Rows Cleansed", "SUM ( obs_cleansing_summary[cleansed_rows] )",
+         "#,0", "Data quality"),
+        ("Rows Quarantined",
+         "SUM ( obs_cleansing_summary[quarantined_rows] )",
+         "#,0", "Data quality"),
+        # Recomputed from the totals rather than averaged from the per-table
+        # rates. An average of rates weights a 40-row dimension the same as a
+        # five-million-row fact, which is how a healthy network reports a
+        # frightening number and an unhealthy one reports a calm one.
+        ("Quarantine Rate %",
+         "DIVIDE ( [Rows Quarantined], [Rows Landed] )",
+         "0.00%", "Data quality"),
+        ("Duplicate Rate %",
+         "DIVIDE ( SUM ( obs_cleansing_summary[duplicates_removed] ), "
+         "[Rows Landed] )", "0.00%", "Data quality"),
+        ("Tables Monitored",
+         "DISTINCTCOUNT ( obs_cleansing_summary[table_name] )",
+         "#,0", "Data quality"),
+        ("Tables Not Reconciling",
+         "CALCULATE ( [Tables Monitored], "
+         "obs_cleansing_summary[row_count_reconciles] = FALSE () )",
+         "#,0", "Data quality"),
+    ],
+    "obs_reconciliation_controls": [
+        ("Controls", "COUNTROWS ( obs_reconciliation_controls )",
+         "#,0", "Data quality"),
+        ("Controls Passing",
+         "CALCULATE ( [Controls], "
+         "obs_reconciliation_controls[is_passing] = TRUE () )",
+         "#,0", "Data quality"),
+        ("Control Pass Rate %",
+         "DIVIDE ( [Controls Passing], [Controls] )", "0.0%", "Data quality"),
+        ("Worst Control Variance %",
+         "MAX ( obs_reconciliation_controls[variance_pct] )",
+         "0.000%", "Data quality"),
+    ],
+    "obs_quarantine_reasons": [
+        ("Rows Rejected", "SUM ( obs_quarantine_reasons[failure_count] )",
+         "#,0", "Data quality"),
+        ("Distinct Rules Firing",
+         "DISTINCTCOUNT ( obs_quarantine_reasons[failed_rule] )",
+         "#,0", "Data quality"),
+    ],
     "fct_commercial_orders": [
         ("Commercial Revenue",
          "SUM ( fct_commercial_orders[revenue_zar] )", '"R"#,0', "Commercial"),
@@ -373,7 +432,8 @@ def render_table(table: str, columns: list[tuple[str, str]], cfg: dict,
         "\t\t\t\t    Source = Databricks.Catalogs("
         "ServerHostname, HttpPath, null),",
         "\t\t\t\t    Catalog = Source{[Name=CatalogName]}[Data],",
-        '\t\t\t\t    Schema  = Catalog{[Name="gold"]}[Data],',
+        f'\t\t\t\t    Schema  = Catalog{{[Name='
+        f'"{cfg.get("schema", "gold")}"]}}[Data],',
         f'\t\t\t\t    Table   = Schema{{[Name="{table}"]}}[Data]',
         "\t\t\t\tin",
         "\t\t\t\t    Table",
@@ -541,8 +601,9 @@ def main() -> int:
     schemas: dict[str, list[tuple[str, str]]] = {}
     missing: list[str] = []
     for table in TABLES:
+        db_schema = f"main_{TABLES[table].get('schema', 'gold')}"
         try:
-            schema = con.execute(f"describe main_gold.{table}").df()
+            schema = con.execute(f"describe {db_schema}.{table}").df()
         except duckdb.Error:
             missing.append(table)
             continue

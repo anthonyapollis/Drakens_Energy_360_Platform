@@ -25,5 +25,9 @@ ref table fct_deliveries
 ref table fct_commercial_orders
 ref table fct_maintenance_work_orders
 ref table bridge_security_user_scope
+ref table obs_cleansing_summary
+ref table obs_quarantine_reasons
+ref table obs_reconciliation_controls
+ref table obs_table_freshness
 ref role 'Regional Analyst'
 ref role 'Executive'

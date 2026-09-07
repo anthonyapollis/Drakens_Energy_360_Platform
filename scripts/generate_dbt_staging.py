@@ -233,9 +233,16 @@ def required_columns(table: str, columns: list[str], key: str | None) -> list[st
     # to a market, or priced in the right currency, so a row missing it is
     # unusable rather than merely incomplete.
     for c in columns:
-        if c in ("site_id", "product_id", "customer_id", "country_code") \
-                and c not in req:
-            req.append(c)
+        if c not in ("site_id", "product_id", "customer_id", "country_code"):
+            continue
+        if c in req:
+            continue
+        # Some of these are optional on some tables -- an app session is not
+        # at a site, a walk-in LPG sale has no account. Requiring them there
+        # quarantines the majority of a healthy feed.
+        if (table, c) in OPTIONAL_FOREIGN_KEYS:
+            continue
+        req.append(c)
     return req
 
 

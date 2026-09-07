@@ -1,0 +1,57 @@
+table obs_quarantine_reasons
+
+	column 'Table Name'
+		dataType: string
+		sourceColumn: table_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Failed Rule'
+		dataType: string
+		sourceColumn: failed_rule
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Failure Count'
+		dataType: int64
+		sourceColumn: failure_count
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Failure Category'
+		dataType: string
+		sourceColumn: failure_category
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Likely Owner'
+		dataType: string
+		sourceColumn: likely_owner
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Evaluated At'
+		dataType: dateTime
+		sourceColumn: evaluated_at
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Rows Rejected' = SUM ( obs_quarantine_reasons[Failure Count] )
+		formatString: #,0
+		displayFolder: Data quality
+
+	measure 'Distinct Rules Firing' = DISTINCTCOUNT ( obs_quarantine_reasons[Failed Rule] )
+		formatString: #,0
+		displayFolder: Data quality
+
+	partition obs_quarantine_reasons = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="platform"]}[Data],
+				    Table   = Schema{[Name="obs_quarantine_reasons"]}[Data]
+				in
+				    Table

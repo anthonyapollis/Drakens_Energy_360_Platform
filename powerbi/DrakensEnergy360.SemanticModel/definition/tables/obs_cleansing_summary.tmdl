@@ -1,0 +1,110 @@
+table obs_cleansing_summary
+
+	column 'Table Name'
+		dataType: string
+		sourceColumn: table_name
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Raw Rows'
+		dataType: int64
+		sourceColumn: raw_rows
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Cleansed Rows'
+		dataType: int64
+		sourceColumn: cleansed_rows
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Quarantined Rows'
+		dataType: int64
+		sourceColumn: quarantined_rows
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Duplicates Removed'
+		dataType: int64
+		sourceColumn: duplicates_removed
+		summarizeBy: sum
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Quarantine Rate %'
+		dataType: double
+		sourceColumn: quarantine_rate_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Duplicate Rate %'
+		dataType: double
+		sourceColumn: duplicate_rate_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Pass Rate %'
+		dataType: double
+		sourceColumn: pass_rate_pct
+		summarizeBy: none
+		formatString: 0.0%
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Quarantine Status'
+		dataType: string
+		sourceColumn: quarantine_status
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Row Count Reconciles'
+		dataType: boolean
+		sourceColumn: row_count_reconciles
+		summarizeBy: none
+		annotation SummarizationSetBy = "Automatic"
+
+	column 'Evaluated At'
+		dataType: dateTime
+		sourceColumn: evaluated_at
+		summarizeBy: none
+		formatString: yyyy-mm-dd
+		annotation SummarizationSetBy = "Automatic"
+
+	measure 'Rows Landed' = SUM ( obs_cleansing_summary[Raw Rows] )
+		formatString: #,0
+		displayFolder: Data quality
+
+	measure 'Rows Cleansed' = SUM ( obs_cleansing_summary[Cleansed Rows] )
+		formatString: #,0
+		displayFolder: Data quality
+
+	measure 'Rows Quarantined' = SUM ( obs_cleansing_summary[Quarantined Rows] )
+		formatString: #,0
+		displayFolder: Data quality
+
+	measure 'Quarantine Rate %' = DIVIDE ( [Rows Quarantined], [Rows Landed] )
+		formatString: 0.00%
+		displayFolder: Data quality
+
+	measure 'Duplicate Rate %' = DIVIDE ( SUM ( obs_cleansing_summary[Duplicates Removed] ), [Rows Landed] )
+		formatString: 0.00%
+		displayFolder: Data quality
+
+	measure 'Tables Monitored' = DISTINCTCOUNT ( obs_cleansing_summary[Table Name] )
+		formatString: #,0
+		displayFolder: Data quality
+
+	measure 'Tables Not Reconciling' = CALCULATE ( [Tables Monitored], obs_cleansing_summary[Row Count Reconciles] = FALSE () )
+		formatString: #,0
+		displayFolder: Data quality
+
+	partition obs_cleansing_summary = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
+				    Catalog = Source{[Name=CatalogName]}[Data],
+				    Schema  = Catalog{[Name="platform"]}[Data],
+				    Table   = Schema{[Name="obs_cleansing_summary"]}[Data]
+				in
+				    Table

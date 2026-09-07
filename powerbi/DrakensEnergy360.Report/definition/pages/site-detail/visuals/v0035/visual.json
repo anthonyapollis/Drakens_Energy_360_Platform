@@ -1,0 +1,116 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0035",
+  "position": {
+    "x": 16.0,
+    "y": 428,
+    "width": 1248.0,
+    "height": 212,
+    "z": 35,
+    "tabOrder": 35
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Raised Timestamp"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Raised Timestamp",
+              "nativeQueryRef": "Raised Timestamp"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Asset Type"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Asset Type",
+              "nativeQueryRef": "Asset Type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Criticality"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Criticality",
+              "nativeQueryRef": "Criticality"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Maintenance Type"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Maintenance Type",
+              "nativeQueryRef": "Maintenance Type"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Maintenance Cost"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Maintenance Cost",
+              "nativeQueryRef": "Maintenance Cost"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Recent work orders at this site'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

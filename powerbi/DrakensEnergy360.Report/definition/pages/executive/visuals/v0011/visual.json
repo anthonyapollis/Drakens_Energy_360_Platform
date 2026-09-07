@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0011",
+  "position": {
+    "x": 16.0,
+    "y": 444,
+    "width": 408.0,
+    "height": 196,
+    "z": 11,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "barChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_site"
+                    }
+                  },
+                  "Property": "Province"
+                }
+              },
+              "queryRef": "dim_site.Province",
+              "nativeQueryRef": "Province"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agg_site_daily_fuel"
+                    }
+                  },
+                  "Property": "Margin per Site"
+                }
+              },
+              "queryRef": "agg_site_daily_fuel.Margin per Site",
+              "nativeQueryRef": "Margin per Site"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Margin per site, by province'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
