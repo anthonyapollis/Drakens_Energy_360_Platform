@@ -312,3 +312,5 @@ There are 2 unused configuration paths:
 [0m06:09:04  154 of 814 START sql table model main_silver_cleansed.cln_fact_shop_sales ...... [RUN]
 [0m06:10:06  149 of 814 OK created sql table model main_silver_cleansed.cln_fact_retail_fuel_payments  [[32mOK[0m in 190.25s]
 [0m06:10:06  155 of 814 START sql table model main_silver_cleansed.cln_fact_site_daily_operations  [RUN]
+[0m06:10:42  153 of 814 OK created sql table model main_silver_cleansed.cln_fact_shop_returns  [[32mOK[0m in 128.55s]
+[0m06:10:42  156 of 814 START sql table model main_silver_cleansed.cln_fact_site_energy_consumption  [RUN]

@@ -19,10 +19,19 @@
 # MAGIC ## Liquid clustering rather than partitioning
 # MAGIC
 # MAGIC Partitioning by `site_id` would create 4,200 directories, most holding a
-# MAGIC few megabytes — the small-file problem by construction. Liquid clustering
-# MAGIC gives the same data skipping without committing the physical layout, and
-# MAGIC the clustering keys can be changed later without rewriting history, which
-# MAGIC partitioning cannot.
+# MAGIC few megabytes — the small-file problem by construction.
+# MAGIC
+# MAGIC Partitioning by `date_key` looks safer and is not. This job measured it:
+# MAGIC the retail fact, partitioned on date, sat in **974 files averaging
+# MAGIC 0.2 MB** — one per day across the 974-day window. `OPTIMIZE` cannot merge
+# MAGIC across partition boundaries, so those files are permanent, and every
+# MAGIC query pays 974 file-open costs to read a third of a gigabyte. The same
+# MAGIC table under liquid clustering compacted from 7 files to 2, averaging
+# MAGIC 74 MB.
+# MAGIC
+# MAGIC Liquid clustering gives the same data skipping without committing the
+# MAGIC physical layout, and the keys can be changed later without rewriting
+# MAGIC history, which partitioning cannot.
 
 # COMMAND ----------
 
