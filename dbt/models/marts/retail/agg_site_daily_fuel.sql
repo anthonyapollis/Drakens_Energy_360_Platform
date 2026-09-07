@@ -41,7 +41,13 @@ daily as (
     select
         date_key,
         site_key,
-        site_id,
+        -- The grain is date x site_key. Every fact whose site code did not
+        -- match resolves to the same unknown member, so this aggregate must
+        -- carry the *member's* identity rather than the unmatched code that
+        -- produced it -- otherwise several hundred drifting codes explode one
+        -- unknown member into several hundred rows a day and break the grain.
+        -- The individual codes stay on the fact, where they can be diagnosed.
+        case when site_key = -1 then 'UNKNOWN' else site_id end as site_id,
         province,
         urban_class,
         site_type,

@@ -42,19 +42,23 @@ assessed as (
         (product_id is not null) as _dq_product_id_present,
         (transaction_ts is not null) as _dq_event_timestamp_valid,
         (unit_price_zar >= 0) as _dq_unit_price_zar_non_negative,
+        (unit_price_zar between 8.0 and 45.0) as _dq_unit_price_zar_plausible,
         (gross_sales_zar >= 0) as _dq_gross_sales_zar_non_negative,
         (cogs_zar >= 0) as _dq_cogs_zar_non_negative,
         (gross_margin_zar >= 0) as _dq_gross_margin_zar_non_negative,
-        (coalesce(_dq_shop_line_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_gross_sales_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false)) as _dq_is_valid,
+        (abs(gross_sales_zar - cogs_zar - gross_margin_zar) <= 0.05) as _dq_amounts_reconcile,
+        (coalesce(_dq_shop_line_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_unit_price_zar_plausible, false) and coalesce(_dq_gross_sales_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false) and coalesce(_dq_amounts_reconcile, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_shop_line_id_present, false) then 'shop_line_id_present' end,
             case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_unit_price_zar_non_negative, false) then 'unit_price_zar_non_negative' end,
+            case when not coalesce(_dq_unit_price_zar_plausible, false) then 'unit_price_zar_plausible' end,
             case when not coalesce(_dq_gross_sales_zar_non_negative, false) then 'gross_sales_zar_non_negative' end,
             case when not coalesce(_dq_cogs_zar_non_negative, false) then 'cogs_zar_non_negative' end,
-            case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end
+            case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end,
+            case when not coalesce(_dq_amounts_reconcile, false) then 'amounts_reconcile' end
         ) as _dq_failed_rules
     from cleansed
 )

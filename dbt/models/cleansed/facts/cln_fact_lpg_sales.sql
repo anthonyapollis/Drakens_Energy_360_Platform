@@ -45,10 +45,12 @@ assessed as (
         (quantity_kg >= 0) as _dq_quantity_kg_non_negative,
         (quantity_kg <= 60000) as _dq_quantity_kg_within_range,
         (unit_price_zar >= 0) as _dq_unit_price_zar_non_negative,
+        (unit_price_zar between 8.0 and 45.0) as _dq_unit_price_zar_plausible,
         (revenue_zar >= 0) as _dq_revenue_zar_non_negative,
         (cogs_zar >= 0) as _dq_cogs_zar_non_negative,
         (gross_margin_zar >= 0) as _dq_gross_margin_zar_non_negative,
-        (coalesce(_dq_lpg_sale_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_quantity_kg_non_negative, false) and coalesce(_dq_quantity_kg_within_range, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_revenue_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false)) as _dq_is_valid,
+        (abs(revenue_zar - cogs_zar - gross_margin_zar) <= 0.05) as _dq_amounts_reconcile,
+        (coalesce(_dq_lpg_sale_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_quantity_kg_non_negative, false) and coalesce(_dq_quantity_kg_within_range, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_unit_price_zar_plausible, false) and coalesce(_dq_revenue_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false) and coalesce(_dq_amounts_reconcile, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_lpg_sale_id_present, false) then 'lpg_sale_id_present' end,
             case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
@@ -58,9 +60,11 @@ assessed as (
             case when not coalesce(_dq_quantity_kg_non_negative, false) then 'quantity_kg_non_negative' end,
             case when not coalesce(_dq_quantity_kg_within_range, false) then 'quantity_kg_within_range' end,
             case when not coalesce(_dq_unit_price_zar_non_negative, false) then 'unit_price_zar_non_negative' end,
+            case when not coalesce(_dq_unit_price_zar_plausible, false) then 'unit_price_zar_plausible' end,
             case when not coalesce(_dq_revenue_zar_non_negative, false) then 'revenue_zar_non_negative' end,
             case when not coalesce(_dq_cogs_zar_non_negative, false) then 'cogs_zar_non_negative' end,
-            case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end
+            case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end,
+            case when not coalesce(_dq_amounts_reconcile, false) then 'amounts_reconcile' end
         ) as _dq_failed_rules
     from cleansed
 )

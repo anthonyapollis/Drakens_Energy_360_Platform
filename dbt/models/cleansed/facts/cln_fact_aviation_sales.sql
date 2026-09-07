@@ -43,9 +43,10 @@ assessed as (
         (uplift_litres >= 0) as _dq_uplift_litres_non_negative,
         (uplift_litres <= 300000) as _dq_uplift_litres_within_range,
         (unit_price_zar >= 0) as _dq_unit_price_zar_non_negative,
+        (unit_price_zar between 8.0 and 45.0) as _dq_unit_price_zar_plausible,
         (revenue_zar >= 0) as _dq_revenue_zar_non_negative,
         (cogs_zar >= 0) as _dq_cogs_zar_non_negative,
-        (coalesce(_dq_aviation_sale_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_uplift_litres_non_negative, false) and coalesce(_dq_uplift_litres_within_range, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_revenue_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_aviation_sale_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_uplift_litres_non_negative, false) and coalesce(_dq_uplift_litres_within_range, false) and coalesce(_dq_unit_price_zar_non_negative, false) and coalesce(_dq_unit_price_zar_plausible, false) and coalesce(_dq_revenue_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_aviation_sale_id_present, false) then 'aviation_sale_id_present' end,
             case when not coalesce(_dq_customer_id_present, false) then 'customer_id_present' end,
@@ -54,6 +55,7 @@ assessed as (
             case when not coalesce(_dq_uplift_litres_non_negative, false) then 'uplift_litres_non_negative' end,
             case when not coalesce(_dq_uplift_litres_within_range, false) then 'uplift_litres_within_range' end,
             case when not coalesce(_dq_unit_price_zar_non_negative, false) then 'unit_price_zar_non_negative' end,
+            case when not coalesce(_dq_unit_price_zar_plausible, false) then 'unit_price_zar_plausible' end,
             case when not coalesce(_dq_revenue_zar_non_negative, false) then 'revenue_zar_non_negative' end,
             case when not coalesce(_dq_cogs_zar_non_negative, false) then 'cogs_zar_non_negative' end
         ) as _dq_failed_rules

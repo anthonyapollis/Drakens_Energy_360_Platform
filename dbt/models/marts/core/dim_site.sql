@@ -85,6 +85,66 @@ banded as (
 
     from source
 
+),
+
+unknown_member as (
+
+    /*
+        The unknown member.
+
+        The landing zone contains referential drift by design -- a site code in
+        a fact that the dimension has not received. Left joining those facts
+        produces a null foreign key, and a null foreign key is the wrong answer
+        twice over: it silently drops the row from every inner join, and it
+        cannot be counted, filtered or explained.
+
+        Kimball's answer is a real dimension row standing for "we do not know".
+        The fact keeps its revenue, the unmatched-ness becomes queryable
+        (`where site_key = -1`), and nothing disappears from a total.
+
+        The key is -1 rather than 0 so it can never collide with a generated
+        surrogate, and the descriptive attributes say 'Unknown' rather than
+        being null, so a report grouped by province shows an Unknown bar
+        instead of a blank one.
+    */
+    select
+        -1 as site_key,
+        'UNKNOWN' as site_id,
+        'Unknown site' as site_name,
+        'ZZ' as country_code,
+        'Unknown' as province,
+        'Unknown' as city,
+        'Unknown' as urban_class,
+        'Unknown' as site_type,
+        'Unknown' as ownership_model,
+        'Unknown' as site_status,
+        cast(null as double) as latitude,
+        cast(null as double) as longitude,
+        false as on_national_route,
+        cast(null as integer) as forecourt_lanes,
+        false as has_convenience,
+        false as has_qsr,
+        false as has_car_wash,
+        false as has_ev_charging,
+        false as has_solar,
+        false as has_lpg,
+        false as is_24_hour,
+        cast(null as date) as opened_date,
+        cast(null as double) as demand_index,
+        'Unknown' as demand_band,
+        'Unknown' as offer_tier,
+        'Unknown' as new_energy_profile,
+        cast(null as double) as site_age_years,
+        false as is_south_africa,
+        cast('1900-01-01' as date) as effective_from_date,
+        cast('9999-12-31' as date) as effective_to_date,
+        true as is_current,
+        1 as scd_version,
+        'unknown-member' as dw_hash_diff,
+        'system' as record_source
+
 )
 
 select * from banded
+union all
+select * from unknown_member

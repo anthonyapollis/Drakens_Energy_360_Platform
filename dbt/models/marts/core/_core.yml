@@ -44,11 +44,15 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Very High', 'High', 'Medium', 'Low', 'Very Low']
+                # 'Unknown' is the dimension's unknown member, not a data
+                # defect: facts carrying referential drift resolve to it
+                # rather than to a null key.
+                values: ['Very High', 'High', 'Medium', 'Low', 'Very Low',
+                         'Unknown']
       - name: ownership_model
         data_tests:
           - accepted_values:
-              arguments: {values: ['COCO', 'CODO', 'DODO']}
+              arguments: {values: ['COCO', 'CODO', 'DODO', 'Unknown']}
       - name: is_current
         data_tests: [not_null]
 
@@ -81,7 +85,8 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Fuel', 'LPG', 'Lubricant', 'Convenience', 'Energy']
+                values: ['Fuel', 'LPG', 'Lubricant', 'Convenience', 'Energy',
+                         'Unknown']
       - name: base_margin_pct
         description: "Regulated fuels must show a materially thinner margin."
         data_tests:

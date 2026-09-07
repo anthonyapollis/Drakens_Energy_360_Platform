@@ -62,6 +62,41 @@ enriched as (
 
     from source
 
+),
+
+unknown_member as (
+
+    /*
+        The unknown member -- see the equivalent block in `dim_site` for the
+        reasoning. A product code the dimension has not received is referential
+        drift, and the fact row that carries it still represents real revenue.
+    */
+    select
+        -1 as product_key,
+        'UNKNOWN' as product_id,
+        'Unknown product' as product_name,
+        'Unknown' as category,
+        'Unknown' as subcategory,
+        'Unknown' as brand,
+        'Unknown' as uom,
+        cast(null as double) as base_price_zar,
+        cast(null as double) as base_cost_zar,
+        false as regulated,
+        'Unknown' as hazard_class,
+        cast(null as bigint) as shelf_life_days,
+        cast(null as {{ dbt.type_numeric() }}) as base_unit_margin_zar,
+        cast(null as double) as base_margin_pct,
+        'Unknown' as price_regime,
+        'Unknown' as reporting_line,
+        cast('1900-01-01' as timestamp) as effective_from_date,
+        cast('9999-12-31' as timestamp) as effective_to_date,
+        true as is_current,
+        1 as scd_version,
+        'unknown-member' as dw_hash_diff,
+        'system' as record_source
+
 )
 
 select * from enriched
+union all
+select * from unknown_member

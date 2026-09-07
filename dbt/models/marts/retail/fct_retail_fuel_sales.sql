@@ -75,24 +75,33 @@ joined as (
         f.date_key,
         f.time_key,
 
-        -- conformed dimension keys
-        s.site_key,
-        p.product_key,
+        -- Conformed dimension keys, resolved to the unknown member rather
+        -- than left null. The landing zone contains referential drift by
+        -- design; a fact carrying a site code the dimension never received is
+        -- still a real transaction with real litres and real margin. Nulling
+        -- its key would drop it from every inner join and from any total
+        -- grouped by province, which is how revenue goes quietly missing.
+        coalesce(s.site_key, -1) as site_key,
+        coalesce(p.product_key, -1) as product_key,
 
         -- degenerate and descriptive attributes
         f.site_id,
         f.product_id,
-        s.province,
-        s.city,
-        s.country_code,
-        s.urban_class,
-        s.site_type,
-        s.ownership_model,
-        s.demand_band,
-        p.product_name,
-        p.subcategory as fuel_grade,
-        p.reporting_line,
-        p.regulated as is_regulated_price,
+        coalesce(s.province, 'Unknown') as province,
+        coalesce(s.city, 'Unknown') as city,
+        coalesce(s.country_code, 'ZZ') as country_code,
+        coalesce(s.urban_class, 'Unknown') as urban_class,
+        coalesce(s.site_type, 'Unknown') as site_type,
+        coalesce(s.ownership_model, 'Unknown') as ownership_model,
+        coalesce(s.demand_band, 'Unknown') as demand_band,
+        coalesce(p.product_name, 'Unknown product') as product_name,
+        coalesce(p.subcategory, 'Unknown') as fuel_grade,
+        coalesce(p.reporting_line, 'Unknown') as reporting_line,
+        coalesce(p.regulated, false) as is_regulated_price,
+
+        -- Makes the drift countable without needing to know the sentinel.
+        s.site_key is null as is_unmatched_site,
+        p.product_key is null as is_unmatched_product,
         f.pump_number,
         f.forecourt_lane,
         f.shift_name,

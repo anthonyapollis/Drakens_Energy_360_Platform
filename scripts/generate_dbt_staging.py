@@ -61,6 +61,52 @@ UNIT_CORRECTIONS = {
     "bunker_litres": 3_000_000,
 }
 
+# Cross-field consistency rules, keyed on the columns they need.
+#
+# These exist because the single-column rules cannot catch the most damaging
+# defect in the landing zone. The injector uses 0 as one of its numeric
+# sentinels, and 0 passes every non-negativity check ever written. Stripping
+# zero the way -999 is stripped is not an option either: zero litres, zero
+# margin and zero downtime are all legitimate readings, and nulling them would
+# destroy more data than the sentinel does.
+#
+# What a zero sentinel cannot survive is being checked against its own row. A
+# transaction with 82 litres at R22.34 that reports R0.00 of sales is
+# internally inconsistent whatever caused it -- a sentinel, a transposed
+# digit, a truncated field -- so the rule catches the class rather than the
+# instance.
+#
+# Tolerances are absolute rand amounts, not percentages, because the rounding
+# error being allowed for is a rounding error in cents and does not scale with
+# the size of the transaction.
+CONSISTENCY_RULES = [
+    (
+        "amounts_reconcile",
+        ("gross_sales_zar", "cogs_zar", "gross_margin_zar"),
+        "abs(gross_sales_zar - cogs_zar - gross_margin_zar) <= 0.05",
+    ),
+    (
+        "amounts_reconcile",
+        ("revenue_zar", "cogs_zar", "gross_margin_zar"),
+        "abs(revenue_zar - cogs_zar - gross_margin_zar) <= 0.05",
+    ),
+    (
+        "sales_match_quantity_and_price",
+        ("gross_sales_zar", "litres", "unit_price_zar"),
+        "abs(gross_sales_zar - litres * unit_price_zar) <= 0.05",
+    ),
+]
+
+# Plausible bands for unit prices. A regulated South African fuel price has
+# never been R1.51 or R0.00 a litre; a row claiming one has lost a decimal
+# separator or picked up a sentinel, and it must not reach a margin
+# calculation. The band is deliberately wide -- it is a sanity check, not a
+# forecast of the pump price.
+PRICE_BANDS = {
+    "unit_price_zar": (8.0, 45.0),
+    "price_per_litre_zar": (8.0, 45.0),
+}
+
 # Columns that must be present for the row to mean anything.
 def required_columns(table: str, columns: list[str], key: str | None) -> list[str]:
     req = [c for c in (key,) if c]
@@ -133,6 +179,19 @@ def quality_rules(table: str, columns: list[str], types: dict,
         if col in UNIT_CORRECTIONS:
             rules[f"{col}_within_range"] = (
                 f"{col} <= {UNIT_CORRECTIONS[col]}")
+        if col in PRICE_BANDS:
+            lo, hi = PRICE_BANDS[col]
+            rules[f"{col}_plausible"] = f"{col} between {lo} and {hi}"
+
+    # Cross-field rules apply only where the table carries every column the
+    # rule reads. A rule silently skipped because a column is missing is worse
+    # than no rule, so membership is checked explicitly rather than assumed
+    # from the table name.
+    present = set(columns)
+    for name, needed, expression in CONSISTENCY_RULES:
+        if present.issuperset(needed):
+            rules[name] = expression
+
     return rules
 
 

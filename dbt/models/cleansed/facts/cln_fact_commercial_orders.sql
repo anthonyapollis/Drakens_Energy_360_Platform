@@ -53,7 +53,8 @@ assessed as (
         (revenue_zar >= 0) as _dq_revenue_zar_non_negative,
         (cogs_zar >= 0) as _dq_cogs_zar_non_negative,
         (gross_margin_zar >= 0) as _dq_gross_margin_zar_non_negative,
-        (coalesce(_dq_order_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_volume_litres_non_negative, false) and coalesce(_dq_volume_litres_within_range, false) and coalesce(_dq_list_price_zar_non_negative, false) and coalesce(_dq_net_price_zar_non_negative, false) and coalesce(_dq_revenue_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false)) as _dq_is_valid,
+        (abs(revenue_zar - cogs_zar - gross_margin_zar) <= 0.05) as _dq_amounts_reconcile,
+        (coalesce(_dq_order_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_volume_litres_non_negative, false) and coalesce(_dq_volume_litres_within_range, false) and coalesce(_dq_list_price_zar_non_negative, false) and coalesce(_dq_net_price_zar_non_negative, false) and coalesce(_dq_revenue_zar_non_negative, false) and coalesce(_dq_cogs_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false) and coalesce(_dq_amounts_reconcile, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_order_id_present, false) then 'order_id_present' end,
             case when not coalesce(_dq_customer_id_present, false) then 'customer_id_present' end,
@@ -65,7 +66,8 @@ assessed as (
             case when not coalesce(_dq_net_price_zar_non_negative, false) then 'net_price_zar_non_negative' end,
             case when not coalesce(_dq_revenue_zar_non_negative, false) then 'revenue_zar_non_negative' end,
             case when not coalesce(_dq_cogs_zar_non_negative, false) then 'cogs_zar_non_negative' end,
-            case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end
+            case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end,
+            case when not coalesce(_dq_amounts_reconcile, false) then 'amounts_reconcile' end
         ) as _dq_failed_rules
     from cleansed
 )
