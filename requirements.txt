@@ -1,5 +1,29 @@
+# Vivo Energy 360 - independent synthetic portfolio project.
+#
+# Lower bounds only. The generator and the dbt models are tested against
+# current releases; pinning exactly would mean this repository stops
+# installing cleanly within a few months.
+
+# ---------------------------------------------------------------- generator
 pandas>=2.2
 numpy>=2.0
 pyarrow>=16.0
+
+# ------------------------------------------------------- warehouse and dbt
+duckdb>=1.0
+dbt-core>=1.7,<2.0
+dbt-duckdb>=1.7          # local and CI target
+dbt-databricks>=1.8      # dev / test / prod target
+
+# ------------------------------------------------------------ machine learning
+scikit-learn>=1.4
+mlflow>=2.12
+
+# ----------------------------------------------------------------- Databricks
+databricks-sdk>=0.30     # deployment; OAuth only, no tokens handled
+
+# ------------------------------------------------------ figures and the ebook
+matplotlib>=3.8
+
+# ------------------------------------------------------------------ testing
 pytest>=8.0
-dbt-databricks>=1.8

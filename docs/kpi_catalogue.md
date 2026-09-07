@@ -1,154 +1,180 @@
-
 # KPI catalogue
 
-## Executive
-- Revenue
-- Gross margin
-- Gross margin %
-- Fuel volume (litres)
-- Revenue growth %
-- Margin growth %
-- Active sites
-- Average throughput per site
-- Inventory value
-- Delivery OTIF %
-- Lost-time incidents
-- Maintenance downtime
-- EV / solar contribution
+> **Independent synthetic portfolio project.** No internal Vivo Energy, Engen,
+> Shell or Vitol data. All figures are generated.
 
-## Retail fuel
-- Litres sold
-- Litres per site per day
-- Transactions
-- Average litres per transaction
-- Revenue per site
-- Gross margin per litre
-- Average selling price per litre
-- Fuel product mix
-- Loyalty penetration %
-- Mobile-app payment penetration %
+Every KPI below is computed **once**, in the gold layer, and read unchanged by
+Power BI, the ML feature sets and any ad-hoc query. That is the point of the
+catalogue: a definition that lives in the BI tool gets reimplemented by whoever
+builds the next report, and two dashboards eventually disagree in front of an
+executive with no way to say which is right.
 
-## Convenience / non-fuel retail
-- Shop revenue
-- Gross margin %
-- Average basket value
-- Items per basket
-- Fuel-to-shop conversion
-- Food/QSR share
-- Sales per square metre (only if store area is available)
-- Stock-out %
+Each entry names where the definition lives, so there is always one answer to
+"where does this number come from".
 
-## Commercial / B2B
-- Contracted volume
-- Delivered volume
-- Contract fulfilment %
-- Revenue/customer
-- Gross margin/customer
-- Margin/litre
-- Customer concentration
-- Tender win rate (only if bid data exists)
-- On-time delivery %
-- Churn / renewal rate
+---
 
-## Supply & storage
-- Stock on hand
-- Storage utilisation %
-- Ullage
-- Inventory days cover
-- Stock-out events
-- Inventory loss %
-- Terminal throughput
-- Replenishment forecast accuracy
+## Retail
 
-## Logistics
-- OTIF %
-- Average delivery delay
-- Litres delivered
-- Kilometres driven
-- Transport cost/litre
-- Tanker utilisation
-- Empty kilometres %
-- Safety events per million km
+| KPI | Definition | Computed in | Additive? |
+|---|---|---|---|
+| Fuel volume | Sum of litres dispensed | `agg_site_daily_fuel.litres` | Yes |
+| Fuel revenue | Litres × pump price, before VAT | `fct_retail_fuel_sales.gross_sales_zar` | Yes |
+| Gross margin | Revenue − cost of sales | `fct_retail_fuel_sales.gross_margin_zar` | Yes |
+| Gross margin % | SUM(margin) ÷ SUM(revenue) | recomputed at query time | **No** |
+| Margin per litre | SUM(margin) ÷ SUM(litres), in cents | recomputed at query time | **No** |
+| Transactions | Count of sales lines | `agg_site_daily_fuel.transaction_count` | Yes |
+| Average transaction value | SUM(revenue) ÷ COUNT(transactions) | recomputed at query time | **No** |
+| Litres per site | SUM(litres) ÷ COUNT(DISTINCT site) | recomputed at query time | **No** |
+| Diesel share % | Diesel litres ÷ total litres | `agg_site_daily_fuel.diesel_share_pct` | **No** |
+| Loyalty penetration % | Loyalty transactions ÷ all transactions | `agg_site_daily_fuel.loyalty_penetration_pct` | **No** |
 
-## Aviation
-- Jet fuel volume
-- Revenue
-- Margin/litre
-- Uplifts
-- Average uplift
-- Customer concentration
-- Service reliability
+**Non-fuel margin share** is the strategic number. Regulated fuel is thin-margin
+volume, so the growth story is what proportion of margin comes from everything
+else:
 
-## Marine
-- Bunker volume
-- Revenue
-- Margin/litre
-- Vessel calls
-- Average bunker size
-- Customer/vessel segment mix
+```
+non_fuel_margin_share_pct = shop_margin / (fuel_margin + shop_margin)
+```
 
-## LPG
-- LPG kilograms sold
-- Cylinder vs bulk mix
-- Revenue/kg
-- Margin/kg
-- Active LPG sites
-- Repeat customer rate
+Computed in `agg_executive_daily_kpi`.
 
-## Lubricants
-- Litres sold
-- Revenue
-- Margin/litre
-- Automotive vs industrial vs marine mix
-- Distributor/customer performance
+---
 
-## Digital & loyalty
-- Monthly active users
-- Payment success %
-- Digital share of transactions
-- Loyalty active members
-- Earn/burn ratio
-- Redemption %
-- Repeat visit frequency
+## Supply and distribution
 
-## EV
-- Charging sessions
-- kWh delivered
-- Charger utilisation %
-- Revenue/kWh
-- Average session duration
-- Failed session %
+| KPI | Definition | Computed in |
+|---|---|---|
+| OTIF % | Deliveries on time **and** in full ÷ all deliveries | `fct_deliveries.is_otif` |
+| On time | Arrival within `otif_delay_threshold_minutes` (60) of plan | `fct_deliveries.is_on_time` |
+| In full | Delivered ≥ 98% of planned volume | `fct_deliveries.is_in_full` |
+| Days of cover | Stock on hand ÷ average daily usage | `fct_inventory_position.days_of_cover` |
+| Stock-out risk | Days of cover < `stock_out_cover_days` (1.5) | `fct_inventory_position.is_stock_out_risk` |
+| Stock on hand | Litres held. **Semi-additive** | `fct_inventory_position.stock_on_hand_litres` |
+| Terminal utilisation % | Closing stock ÷ capacity | `fact_terminal_throughput.utilisation_pct` |
+| Volumetric loss % | (Gross − net) ÷ gross receipts | `fact_terminal_receipts.loss_pct` |
 
-## Solar
-- Solar generation kWh
-- Self-consumption %
-- Grid import avoided
-- Site energy intensity
-- Estimated energy cost saving
+**OTIF is defined once**, in `fct_deliveries`. Both thresholds come from
+`dbt_project.yml` variables so a change is a single edit, and the ML
+late-delivery model trains on the same definition the dashboard reports.
 
-## Maintenance
-- Work orders
-- Preventive maintenance compliance %
-- MTBF
-- MTTR
-- Downtime hours
-- Maintenance cost
-- Repeat failure rate
+**Stock on hand is semi-additive**: sum it across locations, never across time.
+Summing a month of daily snapshots reports the stock as though every day's
+inventory existed simultaneously. In DAX this means `LASTNONBLANK` over the
+date axis, which is documented on the measure.
+
+---
+
+## Commercial
+
+| KPI | Definition | Computed in |
+|---|---|---|
+| Contracted volume | Litres under a contract | `fct_commercial_orders.volume_litres` |
+| Discount leakage | Volume × discount cents per litre | `fct_commercial_orders.discount_value_zar` |
+| Discount intensity % | Discount value ÷ revenue | `agg_customer_monthly.discount_intensity_pct` |
+| Commitment achievement % | Achieved ÷ committed volume | `fact_contract_volume_commitments.achievement_pct` |
+| Days sales outstanding | Days from invoice to payment | `fact_customer_invoices.days_to_payment` |
+| Credit utilisation % | Outstanding ÷ credit limit | `fact_customer_credit_exposure.utilisation_pct` |
+| Revenue at risk | Prior-period revenue of declining accounts | `agg_customer_monthly` |
+
+**Discount leakage** is valued in rand rather than reported as a rate, because
+that is what a commercial review is actually about: a 4 c/L discount sounds
+trivial and is not, at volume.
+
+---
+
+## New energy
+
+| KPI | Definition | Computed in |
+|---|---|---|
+| EV energy delivered | kWh dispensed | `fct_ev_charging_sessions.energy_kwh` |
+| EV margin per kWh | Margin ÷ kWh | `fct_ev_charging_sessions.margin_zar_per_kwh` |
+| Charger power utilisation % | Average power ÷ rated power | `fct_ev_charging_sessions.power_utilisation_pct` |
+| Charger availability % | Time in `Available` or `Charging` | `fact_ev_charger_status` |
+| Solar generation | kWh generated | `fct_solar_generation.energy_kwh` |
+| Solar capacity factor | Actual ÷ theoretical maximum | `fct_solar_generation.capacity_factor` |
+| CO₂ avoided | Solar kWh × grid emission factor | `fct_solar_generation.co2_avoided_kg` |
+| Self-consumption % | Solar consumed on site ÷ generated | `fact_grid_import_export.self_consumption_pct` |
+
+**Power utilisation** is the number that decides whether more chargers are worth
+installing. A charger at 25% utilisation does not need a second unit beside it;
+one at 80% does.
+
+---
+
+## Assets and reliability
+
+| KPI | Definition | Computed in |
+|---|---|---|
+| Breakdown rate % | Unplanned ÷ all work orders | `fct_maintenance_work_orders.is_breakdown` |
+| Planned maintenance % | Planned ÷ all work orders | `fct_maintenance_work_orders.is_planned` |
+| Mean time to repair | Average repair hours | `fact_asset_failures.time_to_repair_hours` |
+| Asset downtime | Hours out of service | `fact_asset_downtime.downtime_hours` |
+| Lost revenue from downtime | Unplanned downtime × site rate | `fact_asset_downtime.lost_revenue_zar` |
+| Maintenance SLA breach % | Response beyond the criticality target | `fct_maintenance_work_orders.sla_breached` |
+
+The response-time target varies by criticality (4 hours for critical, 24
+otherwise), so the SLA flag is computed against the asset's own target rather
+than one global number.
+
+---
 
 ## HSSEQ
-- Total incidents
-- Near misses
-- Lost-time incidents
-- Lost-time days
-- Spill events
-- Spill volume
-- Vehicle incidents
-- Incident closure %
-- TRIR-style rate — include only when reliable exposure hours are available.
 
-## KPIs to avoid unless source data supports them
-- EBITDA if only operational revenue/cost estimates exist
-- TRIR without employee-hours exposure data
-- Sales/m² without store-floor-area master data
-- Carbon intensity without a governed emissions methodology
-- Market share without reliable external market-denominator data
+| KPI | Definition | Computed in |
+|---|---|---|
+| Reportable incidents | Severity ≥ Moderate | `fact_hsseq_incidents.is_reportable` |
+| Lost-time injuries | Incidents causing lost days | `fact_hsseq_incidents.is_lost_time_injury` |
+| Near-miss ratio | Near misses ÷ reportable incidents | derived |
+| Training compliance % | Non-expired mandatory records ÷ required | `fact_training_compliance` |
+| Environmental events | Spills, leaks, exceedances | `fact_environmental_events` |
+
+A **rising** near-miss ratio is usually good news: it means people are
+reporting. Falling near-miss reporting alongside steady incidents is the
+warning sign, and the KPI is documented that way so nobody optimises it in the
+wrong direction.
+
+---
+
+## Executive
+
+| KPI | Definition | Computed in |
+|---|---|---|
+| Total revenue | Fuel + shop | `agg_executive_daily_kpi.total_revenue_zar` |
+| Total margin | Fuel + shop + EV | `agg_executive_daily_kpi.total_margin_zar` |
+| Gross margin % | Total margin ÷ total revenue | `agg_executive_daily_kpi.gross_margin_pct` |
+| Non-fuel margin share % | Shop margin ÷ total margin | `agg_executive_daily_kpi.non_fuel_margin_share_pct` |
+| Trading sites | Sites with sales that day | `agg_executive_daily_kpi.trading_sites` |
+| Investment score | Weighted percentile composite, 0–100 | `network_investment_scorecard.investment_score` |
+| Margin at risk | Margin held by divestment candidates | derived |
+
+---
+
+## Data platform
+
+| KPI | Definition | Computed in |
+|---|---|---|
+| Ingestion lag | Latest ingest − latest event | `obs_table_freshness.ingestion_lag_minutes` |
+| SLA status | Lag against the per-source SLA | `obs_table_freshness.sla_status` |
+| Quarantine rate % | Rejected ÷ landed rows | `obs_cleansing_summary.quarantine_rate_pct` |
+| Duplicate rate % | Deduplicated ÷ landed rows | `obs_cleansing_summary.duplicate_rate_pct` |
+| Row reconciliation | raw = cleansed + quarantined + duplicates | `obs_cleansing_summary.row_count_reconciles` |
+| Control pass rate | Passing ÷ all reconciliation controls | `obs_reconciliation_controls.is_passing` |
+
+**Row reconciliation is the most important KPI on this list.** If it fails,
+every other number on the page is suspect, because rows have been lost
+somewhere in the pipeline and nobody can say which.
+
+---
+
+## Rules that apply to all of them
+
+1. **Ratios are computed from sums, never averaged.** `AVG(margin_pct)`
+   weights a R200 transaction the same as a R20,000 one and gives a different
+   answer from the correct one.
+2. **Percentages are non-additive.** A `_pct` column exists for inspecting a
+   single row; aggregate by recomputing from the components.
+3. **Snapshots are semi-additive.** Inventory sums across locations, never
+   across time.
+4. **Definitions live in gold.** If a KPI is only defined in DAX, it will be
+   redefined differently within a quarter.
