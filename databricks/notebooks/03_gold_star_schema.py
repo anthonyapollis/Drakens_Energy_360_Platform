@@ -152,8 +152,17 @@ save_gold(dim_product, "dim_product", comment="Conformed product dimension acros
 # MAGIC %md
 # MAGIC ## fct_retail_fuel_sales
 # MAGIC
-# MAGIC Partitioned by `date_key` and liquid-clustered on `site_id`, because
-# MAGIC virtually every query filters on a date range and groups by site.
+# MAGIC **Not** partitioned by `date_key`, deliberately. The obvious choice is to
+# MAGIC partition on date because every query filters on a date range, and it is
+# MAGIC wrong here: the window is 974 days, so it produces 974 partitions holding
+# MAGIC roughly 0.2 MB each. `OPTIMIZE` cannot merge across partition boundaries,
+# MAGIC so those small files are permanent, and every query pays 974 file-open
+# MAGIC costs to read a third of a gigabyte.
+# MAGIC
+# MAGIC This was measured, not assumed -- see the note below. Liquid clustering on
+# MAGIC `(date_key, site_id)` gives the same data skipping without fixing the
+# MAGIC physical layout, and the clustering keys can be changed later without
+# MAGIC rewriting history.
 
 # COMMAND ----------
 
@@ -175,14 +184,21 @@ fct_retail = (
     .withColumn("margin_cents_per_litre", F.round(
         F.col("gross_margin_zar") / F.nullif(F.col("litres"), F.lit(0)) * 100, 3))
 )
-save_gold(fct_retail, "fct_retail_fuel_sales", partition="date_key",
+save_gold(fct_retail, "fct_retail_fuel_sales",
           comment="One row per retail fuel sales transaction line.")
 
 try:
-    spark.sql(f"ALTER TABLE {CATALOG}.gold.fct_retail_fuel_sales CLUSTER BY (site_id, product_id)")
-    print("  liquid clustering applied on (site_id, product_id)")
+    spark.sql(f"ALTER TABLE {CATALOG}.gold.fct_retail_fuel_sales "
+              f"CLUSTER BY (date_key, site_id)")
+    spark.sql(f"OPTIMIZE {CATALOG}.gold.fct_retail_fuel_sales")
+    print("  liquid clustering applied on (date_key, site_id)")
 except Exception as exc:                                     # noqa: BLE001
     print(f"  clustering not applied: {exc}")
+
+# The measurement that drove the decision above.
+display(spark.sql(f"""
+    DESCRIBE DETAIL {CATALOG}.gold.fct_retail_fuel_sales
+"""))
 
 # COMMAND ----------
 

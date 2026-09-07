@@ -3,7 +3,11 @@
         materialized='incremental',
         unique_key='transaction_id',
         incremental_strategy='merge' if target.type == 'databricks' else 'delete+insert',
-        partition_by=['date_key'] if target.type == 'databricks' else none,
+        -- Not partitioned by date_key: 974 days in the window would
+        -- produce 974 partitions of a fraction of a megabyte each, and
+        -- OPTIMIZE cannot merge across partitions. Liquid clustering
+        -- gives the same skipping without fixing the layout.
+        liquid_clustered_by=['date_key', 'site_id'] if target.type == 'databricks' else none,
         tags=['retail', 'high_volume', 'hourly']
     )
 }}
@@ -15,9 +19,9 @@
     incremental with a lookback window rather than a full rebuild, because a
     full refresh of this table is the single most expensive job in the platform.
 
-    On Databricks this merges into a Delta table partitioned by date_key and
-    liquid-clustered on site_id; on DuckDB it uses delete+insert, which is the
-    closest equivalent.
+    On Databricks this merges into a Delta table liquid-clustered on
+    (date_key, site_id); on DuckDB it uses delete+insert, which is the closest
+    equivalent.
 */
 
 with fuel_sales as (

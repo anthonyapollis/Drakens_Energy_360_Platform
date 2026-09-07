@@ -63,7 +63,7 @@ if RETENTION_HOURS < 168:
 
 PLAN = [
     # (schema, table, cluster_by, zorder_fallback)
-    ("gold", "fct_retail_fuel_sales", ["site_id", "product_id"], ["site_id"]),
+    ("gold", "fct_retail_fuel_sales", ["date_key", "site_id"], ["site_id"]),
     ("gold", "agg_site_daily_fuel", ["site_id"], ["site_id"]),
     ("gold", "fct_inventory_position", ["site_id", "product_id"], ["site_id"]),
     ("gold", "fct_ev_charging_sessions", ["site_id"], ["site_id"]),

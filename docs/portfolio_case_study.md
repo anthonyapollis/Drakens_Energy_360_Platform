@@ -261,6 +261,17 @@ before defect injection, so the generator knows what a column is supposed to
 be rather than guessing from damaged values. CI fails if the committed models
 drift from what the generator produces.
 
+**Partitioning by date was wrong, and the platform proved it.** Partitioning
+the retail fact on `date_key` is the obvious choice — every query filters on a
+date range. The maintenance job's own output showed the cost: 974 days in the
+window means 974 partitions holding about 0.2 MB each, `OPTIMIZE` cannot merge
+across partition boundaries, so those small files are permanent, and every
+query pays 974 file-open costs to read a third of a gigabyte. The same table
+under liquid clustering compacted from 7 files to 2, averaging 74 MB. Changed
+to liquid clustering on `(date_key, site_id)`, which gives the same skipping
+without fixing the physical layout — and can be re-keyed later without
+rewriting history.
+
 **A catalog per environment.** A dev job physically cannot write to prod
 because the grant does not exist.
 

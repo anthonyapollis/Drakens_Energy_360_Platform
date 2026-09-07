@@ -523,9 +523,12 @@ retail = (
           "demand_index")
 )
 
+# Deliberately not partitioned by date_key: the modelled window is 974 days,
+# so partitioning on it yields 974 partitions of a fraction of a megabyte each
+# and OPTIMIZE cannot merge across partition boundaries. Delta's optimized
+# writes handle file sizing here, and the gold layer uses liquid clustering.
 (retail.write.format("delta").mode("overwrite")
     .option("overwriteSchema", "true")
-    .partitionBy("date_key")
     .saveAsTable(f"{CATALOG}.bronze.fact_retail_fuel_sales"))
 
 n_retail = spark.table(f"{CATALOG}.bronze.fact_retail_fuel_sales").count()
@@ -596,7 +599,7 @@ shop = (
     .drop("id", "day_offset")
 )
 (shop.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
-    .partitionBy("date_key").saveAsTable(f"{CATALOG}.bronze.fact_shop_sales"))
+    .saveAsTable(f"{CATALOG}.bronze.fact_shop_sales"))
 print(f"fact_shop_sales rows: {spark.table(f'{CATALOG}.bronze.fact_shop_sales').count():,}")
 
 # COMMAND ----------
