@@ -36,9 +36,10 @@ table bridge_security_user_scope
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="bridge_security_user_scope"]}[Data]
+				    Path    = DataFolder & "bridge_security_user_scope.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"user_principal", "scope_type", "scope_value", "grants_everything", "dw_loaded_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"user_principal", type text}, {"scope_type", type text}, {"scope_value", type text}, {"grants_everything", type logical}, {"dw_loaded_at", type datetime}})
 				in
-				    Table
+				    Typed

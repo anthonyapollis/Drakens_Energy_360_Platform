@@ -49,9 +49,10 @@ table obs_quarantine_reasons
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="platform"]}[Data],
-				    Table   = Schema{[Name="obs_quarantine_reasons"]}[Data]
+				    Path    = DataFolder & "obs_quarantine_reasons.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"table_name", "failed_rule", "failure_count", "failure_category", "likely_owner", "evaluated_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"table_name", type text}, {"failed_rule", type text}, {"failure_count", Int64.Type}, {"failure_category", type text}, {"likely_owner", type text}, {"evaluated_at", type datetime}})
 				in
-				    Table
+				    Typed

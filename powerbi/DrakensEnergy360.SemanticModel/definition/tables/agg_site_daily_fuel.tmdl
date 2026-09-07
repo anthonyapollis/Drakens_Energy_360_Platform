@@ -258,9 +258,10 @@ table agg_site_daily_fuel
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="agg_site_daily_fuel"]}[Data]
+				    Path    = DataFolder & "agg_site_daily_fuel.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"date_key", "site_key", "site_id", "province", "urban_class", "site_type", "demand_band", "transaction_count", "grades_sold", "litres", "gross_sales_zar", "cogs_zar", "gross_margin_zar", "diesel_litres", "petrol_litres", "loyalty_transactions", "fleet_transactions", "cash_sales_zar", "gross_margin_pct", "litres_per_transaction", "average_transaction_zar", "loyalty_penetration_pct", "diesel_share_pct", "full_date", "day_name", "month_name", "calendar_year", "fiscal_year", "is_weekend", "is_public_holiday_za", "season_southern"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"date_key", Int64.Type}, {"site_key", Int64.Type}, {"site_id", type text}, {"province", type text}, {"urban_class", type text}, {"site_type", type text}, {"demand_band", type text}, {"transaction_count", Int64.Type}, {"grades_sold", Int64.Type}, {"litres", type number}, {"gross_sales_zar", type number}, {"cogs_zar", type number}, {"gross_margin_zar", type number}, {"diesel_litres", type number}, {"petrol_litres", type number}, {"loyalty_transactions", Int64.Type}, {"fleet_transactions", Int64.Type}, {"cash_sales_zar", type number}, {"gross_margin_pct", type number}, {"litres_per_transaction", type number}, {"average_transaction_zar", type number}, {"loyalty_penetration_pct", type number}, {"diesel_share_pct", type number}, {"full_date", type datetime}, {"day_name", type text}, {"month_name", type text}, {"calendar_year", Int64.Type}, {"fiscal_year", Int64.Type}, {"is_weekend", type logical}, {"is_public_holiday_za", type logical}, {"season_southern", type text}})
 				in
-				    Table
+				    Typed

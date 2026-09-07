@@ -145,9 +145,10 @@ table dim_customer
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="dim_customer"]}[Data]
+				    Path    = DataFolder & "dim_customer.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"customer_key", "customer_id", "customer_name", "sector", "segment", "country_code", "credit_band", "credit_limit_zar", "payment_terms_days", "onboarded_date", "is_active", "revenue_index", "service_model", "credit_risk_tier", "is_industrial", "customer_tenure_days", "effective_from_date", "effective_to_date", "is_current", "scd_version", "dw_hash_diff", "record_source"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"customer_key", Int64.Type}, {"customer_id", type text}, {"customer_name", type text}, {"sector", type text}, {"segment", type text}, {"country_code", type text}, {"credit_band", type text}, {"credit_limit_zar", type number}, {"payment_terms_days", Int64.Type}, {"onboarded_date", type datetime}, {"is_active", type logical}, {"revenue_index", type number}, {"service_model", type text}, {"credit_risk_tier", type text}, {"is_industrial", type logical}, {"customer_tenure_days", Int64.Type}, {"effective_from_date", type datetime}, {"effective_to_date", type datetime}, {"is_current", type logical}, {"scd_version", Int64.Type}, {"dw_hash_diff", type text}, {"record_source", type text}})
 				in
-				    Table
+				    Typed

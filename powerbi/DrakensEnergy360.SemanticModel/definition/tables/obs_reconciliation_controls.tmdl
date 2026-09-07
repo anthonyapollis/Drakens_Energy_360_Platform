@@ -83,9 +83,10 @@ table obs_reconciliation_controls
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="platform"]}[Data],
-				    Table   = Schema{[Name="obs_reconciliation_controls"]}[Data]
+				    Path    = DataFolder & "obs_reconciliation_controls.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"control_code", "control_description", "control_owner", "expected_value", "actual_value", "variance_absolute", "variance_pct", "tolerance_pct", "is_passing", "evaluated_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"control_code", type text}, {"control_description", type text}, {"control_owner", type text}, {"expected_value", type number}, {"actual_value", type number}, {"variance_absolute", type number}, {"variance_pct", type number}, {"tolerance_pct", type number}, {"is_passing", type logical}, {"evaluated_at", type datetime}})
 				in
-				    Table
+				    Typed

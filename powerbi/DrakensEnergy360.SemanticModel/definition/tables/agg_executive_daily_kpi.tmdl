@@ -196,9 +196,10 @@ table agg_executive_daily_kpi
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="agg_executive_daily_kpi"]}[Data]
+				    Path    = DataFolder & "agg_executive_daily_kpi.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"date_key", "full_date", "day_name", "month_name", "calendar_year", "fiscal_year", "fiscal_quarter", "is_weekend", "is_public_holiday_za", "province", "trading_sites", "fuel_litres", "fuel_revenue_zar", "fuel_margin_zar", "fuel_transactions", "shop_revenue_zar", "shop_margin_zar", "total_revenue_zar", "total_margin_zar", "delivery_count", "otif_deliveries", "otif_pct", "incident_count", "reportable_incidents", "lost_time_injuries", "ev_sessions", "ev_kwh", "gross_margin_pct", "non_fuel_margin_share_pct", "litres_per_site"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"date_key", Int64.Type}, {"full_date", type datetime}, {"day_name", type text}, {"month_name", type text}, {"calendar_year", Int64.Type}, {"fiscal_year", Int64.Type}, {"fiscal_quarter", Int64.Type}, {"is_weekend", type logical}, {"is_public_holiday_za", type logical}, {"province", type text}, {"trading_sites", Int64.Type}, {"fuel_litres", type number}, {"fuel_revenue_zar", type number}, {"fuel_margin_zar", type number}, {"fuel_transactions", Int64.Type}, {"shop_revenue_zar", type number}, {"shop_margin_zar", type number}, {"total_revenue_zar", type number}, {"total_margin_zar", type number}, {"delivery_count", Int64.Type}, {"otif_deliveries", Int64.Type}, {"otif_pct", type number}, {"incident_count", Int64.Type}, {"reportable_incidents", Int64.Type}, {"lost_time_injuries", Int64.Type}, {"ev_sessions", Int64.Type}, {"ev_kwh", type number}, {"gross_margin_pct", type number}, {"non_fuel_margin_share_pct", type number}, {"litres_per_site", type number}})
 				in
-				    Table
+				    Typed

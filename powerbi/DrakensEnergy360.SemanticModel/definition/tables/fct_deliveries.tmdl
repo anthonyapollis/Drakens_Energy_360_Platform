@@ -242,9 +242,10 @@ table fct_deliveries
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="fct_deliveries"]}[Data]
+				    Path    = DataFolder & "fct_deliveries.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"delivery_id", "planned_arrival_ts", "actual_arrival_ts", "date_key", "destination_site_key", "product_key", "is_unmatched_destination", "route_id", "origin_terminal_id", "destination_site_id", "vehicle_id", "driver_id", "carrier_id", "product_id", "province", "city", "urban_class", "product_name", "planned_litres", "delivered_litres", "fill_rate_pct", "distance_km", "drop_count", "delay_minutes", "delivery_status", "reason_code", "is_on_time", "is_in_full", "is_otif", "punctuality_band", "km_per_drop", "litres_per_km", "source_system_code", "ingested_at", "_cleansed_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"delivery_id", type text}, {"planned_arrival_ts", type datetime}, {"actual_arrival_ts", type datetime}, {"date_key", Int64.Type}, {"destination_site_key", Int64.Type}, {"product_key", Int64.Type}, {"is_unmatched_destination", type logical}, {"route_id", type text}, {"origin_terminal_id", type text}, {"destination_site_id", type text}, {"vehicle_id", type text}, {"driver_id", type text}, {"carrier_id", type text}, {"product_id", type text}, {"province", type text}, {"city", type text}, {"urban_class", type text}, {"product_name", type text}, {"planned_litres", type number}, {"delivered_litres", type number}, {"fill_rate_pct", type number}, {"distance_km", type number}, {"drop_count", Int64.Type}, {"delay_minutes", Int64.Type}, {"delivery_status", type text}, {"reason_code", type text}, {"is_on_time", type logical}, {"is_in_full", type logical}, {"is_otif", type logical}, {"punctuality_band", type text}, {"km_per_drop", type number}, {"litres_per_km", type number}, {"source_system_code", type text}, {"ingested_at", type datetime}, {"_cleansed_at", type datetime}})
 				in
-				    Table
+				    Typed

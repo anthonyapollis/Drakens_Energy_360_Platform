@@ -146,9 +146,10 @@ table dim_date
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="dim_date"]}[Data]
+				    Path    = DataFolder & "dim_date.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"date_key", "full_date", "day_of_month", "day_of_week", "day_name", "day_of_year", "week_of_year", "month_number", "month_name", "quarter_number", "quarter_name", "calendar_year", "fiscal_year", "fiscal_quarter", "fiscal_period", "is_weekend", "is_public_holiday_za", "is_trading_day", "season_southern", "school_holiday_za", "year_month", "fiscal_year_label", "is_non_working_day"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"date_key", Int64.Type}, {"full_date", type datetime}, {"day_of_month", Int64.Type}, {"day_of_week", Int64.Type}, {"day_name", type text}, {"day_of_year", Int64.Type}, {"week_of_year", Int64.Type}, {"month_number", Int64.Type}, {"month_name", type text}, {"quarter_number", Int64.Type}, {"quarter_name", type text}, {"calendar_year", Int64.Type}, {"fiscal_year", Int64.Type}, {"fiscal_quarter", Int64.Type}, {"fiscal_period", Int64.Type}, {"is_weekend", type logical}, {"is_public_holiday_za", type logical}, {"is_trading_day", type logical}, {"season_southern", type text}, {"school_holiday_za", type logical}, {"year_month", type text}, {"fiscal_year_label", type text}, {"is_non_working_day", type logical}})
 				in
-				    Table
+				    Typed

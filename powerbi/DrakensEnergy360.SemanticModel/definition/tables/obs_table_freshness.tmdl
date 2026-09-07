@@ -104,9 +104,10 @@ table obs_table_freshness
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="platform"]}[Data],
-				    Table   = Schema{[Name="obs_table_freshness"]}[Data]
+				    Path    = DataFolder & "obs_table_freshness.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"table_name", "data_source_code", "data_source_name", "ingestion_pattern", "owning_domain", "sla_minutes", "is_pii_bearing", "watermark_column", "row_count", "min_event_ts", "max_event_ts", "max_ingested_at", "ingestion_lag_minutes", "is_sla_breached", "sla_status", "sla_consumption_pct"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"table_name", type text}, {"data_source_code", type text}, {"data_source_name", type text}, {"ingestion_pattern", type text}, {"owning_domain", type text}, {"sla_minutes", Int64.Type}, {"is_pii_bearing", type logical}, {"watermark_column", type text}, {"row_count", Int64.Type}, {"min_event_ts", type datetime}, {"max_event_ts", type datetime}, {"max_ingested_at", type datetime}, {"ingestion_lag_minutes", Int64.Type}, {"is_sla_breached", type logical}, {"sla_status", type text}, {"sla_consumption_pct", type number}})
 				in
-				    Table
+				    Typed

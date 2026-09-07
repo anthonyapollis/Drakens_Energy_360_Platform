@@ -146,9 +146,10 @@ table dim_product
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="dim_product"]}[Data]
+				    Path    = DataFolder & "dim_product.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"product_key", "product_id", "product_name", "category", "subcategory", "brand", "uom", "base_price_zar", "base_cost_zar", "regulated", "hazard_class", "shelf_life_days", "base_unit_margin_zar", "base_margin_pct", "price_regime", "reporting_line", "effective_from_date", "effective_to_date", "is_current", "scd_version", "dw_hash_diff", "record_source"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"product_key", Int64.Type}, {"product_id", type text}, {"product_name", type text}, {"category", type text}, {"subcategory", type text}, {"brand", type text}, {"uom", type text}, {"base_price_zar", type number}, {"base_cost_zar", type number}, {"regulated", type logical}, {"hazard_class", type text}, {"shelf_life_days", Int64.Type}, {"base_unit_margin_zar", type number}, {"base_margin_pct", type number}, {"price_regime", type text}, {"reporting_line", type text}, {"effective_from_date", type datetime}, {"effective_to_date", type datetime}, {"is_current", type logical}, {"scd_version", Int64.Type}, {"dw_hash_diff", type text}, {"record_source", type text}})
 				in
-				    Table
+				    Typed

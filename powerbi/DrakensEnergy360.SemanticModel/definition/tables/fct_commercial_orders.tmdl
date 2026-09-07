@@ -260,9 +260,10 @@ table fct_commercial_orders
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="fct_commercial_orders"]}[Data]
+				    Path    = DataFolder & "fct_commercial_orders.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"order_id", "order_ts", "date_key", "customer_key", "product_key", "is_unmatched_customer", "customer_id", "contract_id", "product_id", "customer_name", "sector", "segment", "credit_band", "credit_risk_tier", "service_model", "is_industrial", "product_name", "reporting_line", "channel", "order_status", "requested_delivery_date", "payment_terms_days", "volume_litres", "list_price_zar", "discount_cents_per_litre", "net_price_zar", "revenue_zar", "cogs_zar", "gross_margin_zar", "discount_value_zar", "margin_pct", "margin_cents_per_litre", "is_open_order", "is_cancelled", "order_size_band", "source_system_code", "ingested_at", "_cleansed_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"order_id", type text}, {"order_ts", type datetime}, {"date_key", Int64.Type}, {"customer_key", Int64.Type}, {"product_key", Int64.Type}, {"is_unmatched_customer", type logical}, {"customer_id", type text}, {"contract_id", type text}, {"product_id", type text}, {"customer_name", type text}, {"sector", type text}, {"segment", type text}, {"credit_band", type text}, {"credit_risk_tier", type text}, {"service_model", type text}, {"is_industrial", type logical}, {"product_name", type text}, {"reporting_line", type text}, {"channel", type text}, {"order_status", type text}, {"requested_delivery_date", type datetime}, {"payment_terms_days", Int64.Type}, {"volume_litres", type number}, {"list_price_zar", type number}, {"discount_cents_per_litre", type number}, {"net_price_zar", type number}, {"revenue_zar", type number}, {"cogs_zar", type number}, {"gross_margin_zar", type number}, {"discount_value_zar", type number}, {"margin_pct", type number}, {"margin_cents_per_litre", type number}, {"is_open_order", type logical}, {"is_cancelled", type logical}, {"order_size_band", type text}, {"source_system_code", type text}, {"ingested_at", type datetime}, {"_cleansed_at", type datetime}})
 				in
-				    Table
+				    Typed

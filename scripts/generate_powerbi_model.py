@@ -34,6 +34,10 @@ DEFN = MODEL_DIR / "definition"
 REPORT_DIR = PBI / f"{PROJECT}.Report"
 OUT = DEFN
 
+# Which shape the partitions take. `csv` reads the extracts in powerbi/data
+# and opens anywhere; `databricks` is the deployed shape. Set by --source.
+SOURCE = "csv"
+
 # Tables the semantic model exposes, and how each is stored.
 #
 # Storage mode is a deliberate choice per table, not a global setting:
@@ -431,23 +435,77 @@ def render_table(table: str, columns: list[tuple[str, str]], cfg: dict,
         parts.append(f"\t\tdisplayFolder: {folder}")
         parts.append("")
 
-    mode = "import" if cfg["mode"] == "import" else "directQuery"
+    # DirectQuery has no meaning over a CSV, so the csv shape imports
+    # everything. The retail fact is DirectQuery in the deployed shape because
+    # importing 37 million rows into a .pbix is how a model becomes
+    # unmaintainable; at extract scale it fits in memory.
+    mode = ("import" if (SOURCE == "csv" or cfg["mode"] == "import")
+            else "directQuery")
     parts += [
         f"\tpartition {table} = m",
         f"\t\tmode: {mode}",
         "\t\tsource =",
         "\t\t\t\tlet",
-        "\t\t\t\t    Source = Databricks.Catalogs("
-        "ServerHostname, HttpPath, null),",
-        "\t\t\t\t    Catalog = Source{[Name=CatalogName]}[Data],",
-        f'\t\t\t\t    Schema  = Catalog{{[Name='
-        f'"{cfg.get("schema", "gold")}"]}}[Data],',
-        f'\t\t\t\t    Table   = Schema{{[Name="{table}"]}}[Data]',
-        "\t\t\t\tin",
-        "\t\t\t\t    Table",
+        *[f"\t\t\t\t{line}" for line in source_query(table, cfg, columns)],
         "",
     ]
     return "\n".join(parts)
+
+
+def source_query(table: str, cfg: dict,
+                 columns: list[tuple[str, str]]) -> list[str]:
+    """The M that loads one table, in whichever of the two shapes is wanted.
+
+    `databricks` is the deployed shape: the same catalog the dbt models build
+    into, parameterised so one model serves dev, test and prod.
+
+    `csv` is the shape that lets the project be opened by someone who has
+    neither a workspace nor a gateway, reading the extracts in `powerbi/data`.
+    That matters more than it sounds: a portfolio model nobody can open is a
+    model nobody can assess, and the Databricks version shows an authentication
+    prompt before it shows a number.
+
+    Columns are selected and typed in M rather than left to inference. Power
+    Query guesses types from the first two hundred rows, and a column that is
+    integer for two hundred rows and decimal afterwards fails the refresh at
+    the row where it changes.
+    """
+    if SOURCE == "databricks":
+        schema = cfg.get("schema", "gold")
+        return [
+            "    Source = Databricks.Catalogs("
+            "ServerHostname, HttpPath, null),",
+            "    Catalog = Source{[Name=CatalogName]}[Data],",
+            f'    Schema  = Catalog{{[Name="{schema}"]}}[Data],',
+            f'    Table   = Schema{{[Name="{table}"]}}[Data]',
+            "in",
+            "    Table",
+        ]
+
+    names = ", ".join(f'"{c}"' for c, _ in columns)
+    types = ", ".join(f'{{"{c}", {m_type(t)}}}' for c, t in columns)
+    return [
+        f'    Path    = DataFolder & "{table}.csv",',
+        "    Source  = Csv.Document(File.Contents(Path), "
+        '[Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),',
+        "    Headers = Table.PromoteHeaders(Source, "
+        "[PromoteAllScalars=true]),",
+        f"    Chosen  = Table.SelectColumns(Headers, {{{names}}}),",
+        f"    Typed   = Table.TransformColumnTypes(Chosen, {{{types}}})",
+        "in",
+        "    Typed",
+    ]
+
+
+def m_type(sql_type: str) -> str:
+    """The M type annotation matching the TMDL data type for a column."""
+    return {
+        "int64": "Int64.Type",
+        "double": "type number",
+        "decimal": "type number",
+        "boolean": "type logical",
+        "dateTime": "type datetime",
+    }.get(tmdl_type(sql_type), "type text")
 
 
 def render_relationships(relationships) -> str:
@@ -586,6 +644,16 @@ def write_project_files() -> None:
 
 
 def render_expressions() -> str:
+    if SOURCE == "csv":
+        folder = str(REPO / "powerbi" / "data").replace("\\", "\\\\") + "\\\\"
+        return "\n".join([
+            "/// Where the CSV extracts live. One parameter, so moving the",
+            "/// project to another machine is one edit rather than sixteen.",
+            f'expression DataFolder = "{folder}" meta '
+            '[IsParameterQuery=true, Type="Text", '
+            "IsParameterQueryRequired=true]",
+            "",
+        ])
     return "\n".join([
         "/// Connection parameters, so the same model deploys to dev, test",
         "/// and prod by changing three values rather than editing queries.",
@@ -608,7 +676,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--warehouse", default=os.environ.get(
         "DRAKENS_DUCKDB_PATH", str(REPO / "data" / "drakens360.duckdb")))
+    ap.add_argument("--source", choices=("csv", "databricks"), default="csv",
+                    help="csv opens without a workspace; databricks is the "
+                         "deployed shape")
     args = ap.parse_args()
+
+    global SOURCE
+    SOURCE = args.source
 
     wh = Path(args.warehouse)
     if not wh.exists():

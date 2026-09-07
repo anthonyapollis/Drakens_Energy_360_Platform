@@ -102,9 +102,10 @@ table obs_cleansing_summary
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="platform"]}[Data],
-				    Table   = Schema{[Name="obs_cleansing_summary"]}[Data]
+				    Path    = DataFolder & "obs_cleansing_summary.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"table_name", "raw_rows", "cleansed_rows", "quarantined_rows", "duplicates_removed", "quarantine_rate_pct", "duplicate_rate_pct", "pass_rate_pct", "quarantine_status", "row_count_reconciles", "evaluated_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"table_name", type text}, {"raw_rows", Int64.Type}, {"cleansed_rows", Int64.Type}, {"quarantined_rows", Int64.Type}, {"duplicates_removed", Int64.Type}, {"quarantine_rate_pct", type number}, {"duplicate_rate_pct", type number}, {"pass_rate_pct", type number}, {"quarantine_status", type text}, {"row_count_reconciles", type logical}, {"evaluated_at", type datetime}})
 				in
-				    Table
+				    Typed

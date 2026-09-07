@@ -214,9 +214,10 @@ table fct_maintenance_work_orders
 		mode: import
 		source =
 				let
-				    Source = Databricks.Catalogs(ServerHostname, HttpPath, null),
-				    Catalog = Source{[Name=CatalogName]}[Data],
-				    Schema  = Catalog{[Name="gold"]}[Data],
-				    Table   = Schema{[Name="fct_maintenance_work_orders"]}[Data]
+				    Path    = DataFolder & "fct_maintenance_work_orders.csv",
+				    Source  = Csv.Document(File.Contents(Path), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Chosen  = Table.SelectColumns(Headers, {"work_order_id", "raised_ts", "completed_ts", "date_key", "site_key", "asset_id", "site_id", "province", "urban_class", "demand_band", "asset_type", "criticality", "asset_age_years", "maintenance_type", "failure_mode", "priority", "technician_employee_id", "response_hours", "labour_hours", "labour_cost_zar", "parts_cost_zar", "total_cost_zar", "is_completed", "is_breakdown", "sla_breached", "is_planned", "asset_age_band", "total_hours_out_of_service", "source_system_code", "ingested_at", "_cleansed_at"}),
+				    Typed   = Table.TransformColumnTypes(Chosen, {{"work_order_id", type text}, {"raised_ts", type datetime}, {"completed_ts", type datetime}, {"date_key", Int64.Type}, {"site_key", Int64.Type}, {"asset_id", type text}, {"site_id", type text}, {"province", type text}, {"urban_class", type text}, {"demand_band", type text}, {"asset_type", type text}, {"criticality", type text}, {"asset_age_years", type number}, {"maintenance_type", type text}, {"failure_mode", type text}, {"priority", type text}, {"technician_employee_id", type text}, {"response_hours", type number}, {"labour_hours", type number}, {"labour_cost_zar", type number}, {"parts_cost_zar", type number}, {"total_cost_zar", type number}, {"is_completed", type logical}, {"is_breakdown", type logical}, {"sla_breached", type logical}, {"is_planned", type logical}, {"asset_age_band", type text}, {"total_hours_out_of_service", type number}, {"source_system_code", type text}, {"ingested_at", type datetime}, {"_cleansed_at", type datetime}})
 				in
-				    Table
+				    Typed
