@@ -17,3 +17,6 @@ mlruns/
 *.tfstate
 *.tfstate.*
 crash.log
+
+# Build logs
+logs_*.log
