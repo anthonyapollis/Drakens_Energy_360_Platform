@@ -187,7 +187,7 @@ flatters it. A model without a stated baseline is a claim, not a result.
 | Demand forecast | How much to deliver, and when | MAE in litres | Seasonal naive — last week, same weekday |
 | Predictive maintenance | Which assets to visit this week | Precision and lift in the top 5% of the ranked queue | The base breakdown rate |
 | Customer churn | Which accounts to call | Average precision; precision at top 5% | Prevalence |
-| Stock-out risk | Which deliveries to bring forward | Recall at the chosen operating threshold | Prevalence |
+| Stock-out risk | Which deliveries to bring forward | Recall at the chosen operating threshold | Prevalence at the prediction horizon |
 | Late delivery | Which slots to re-plan | Lift in the top 10% | The overall late rate |
 | Fraud / anomaly | Which transactions to review | Flagged-vs-normal separation on cash share and fill ratio | The population profile |
 
@@ -197,8 +197,15 @@ model that scores well and is useless:
 - **Chronological split, never random.** A random split lets the model see the
   future of the same site it is predicting.
 - **No feature unknown at decision time.** Cost and labour hours are outcomes
-  of a work order, not predictors of one. `days_of_cover` defines the
-  stock-out target, so it is excluded from the stock-out model.
+  of a work order, not predictors of one.
+- **A target measured after its features, not alongside them.** The stock-out
+  model originally scored the *current* snapshot and reached ROC-AUC 0.998.
+  That was the definition coming back out, not a result: the target is
+  `days_of_cover` below a threshold, and both of that ratio's components were
+  features, so the model divided one by the other and reproduced the rule.
+  Dropping `days_of_cover` alone fixed nothing. The target is now the *next*
+  snapshot of the same tank, which is also the only version anyone needs --
+  a gauge already reports that a tank is low right now.
 - **A stated baseline, reported next to the result.** A demand forecast
   claiming 97% accuracy means a feature has leaked.
 - **The operating threshold comes from the cost asymmetry, not from 0.5.**

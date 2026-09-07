@@ -21,9 +21,9 @@
 dbutils.widgets.text("catalog", "drakens_dev", "Unity Catalog")
 CATALOG = dbutils.widgets.get("catalog")
 
-from pyspark.sql import functions as F
-from pyspark.sql import Window
 from delta.tables import DeltaTable
+from pyspark.sql import Window
+from pyspark.sql import functions as F
 
 spark.sql(f"USE CATALOG {CATALOG}")
 
@@ -35,7 +35,7 @@ for key, value in [
 ]:
     try:
         spark.conf.set(key, value)
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         print(f"note: {key} is managed by the runtime, leaving as-is")
 
 # COMMAND ----------
@@ -200,7 +200,7 @@ for table, name, expr in CONSTRAINTS:
         spark.sql(f"ALTER TABLE {CATALOG}.{table} "
                   f"ADD CONSTRAINT {name} CHECK ({expr})")
         print(f"  added  {table}.{name}")
-    except Exception as exc:                                   # noqa: BLE001
+    except Exception as exc:
         # Already present is the normal case on a re-run.
         if "already exists" in str(exc).lower():
             print(f"  exists {table}.{name}")

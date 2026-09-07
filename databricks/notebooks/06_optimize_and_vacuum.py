@@ -119,7 +119,7 @@ for schema, table, cluster_by, zorder in PLAN:
         try:
             spark.sql(f"ALTER TABLE {fq} CLUSTER BY ({', '.join(cluster_by)})")
             clustering_applied = "liquid:" + ",".join(cluster_by)
-        except Exception as exc:                             # noqa: BLE001
+        except Exception as exc:
             print(f"  {fq}: liquid clustering unavailable ({str(exc)[:70]})")
 
     try:
@@ -134,7 +134,7 @@ for schema, table, cluster_by, zorder in PLAN:
         else:
             spark.sql(f"OPTIMIZE {fq}")
             clustering_applied = "compaction only"
-    except Exception as exc:                                 # noqa: BLE001
+    except Exception as exc:
         print(f"  {fq}: OPTIMIZE failed ({str(exc)[:90]})")
         continue
 
@@ -168,7 +168,7 @@ if RUN_VACUUM:
         try:
             spark.sql(f"VACUUM {fq} RETAIN {RETENTION_HOURS} HOURS")
             vacuumed += 1
-        except Exception as exc:                             # noqa: BLE001
+        except Exception as exc:
             print(f"  {fq}: VACUUM failed ({str(exc)[:90]})")
     print(f"vacuumed {vacuumed} tables, retaining {RETENTION_HOURS}h of history")
 else:

@@ -37,7 +37,7 @@ def current_run_id() -> str:
     """
     try:
         return spark.conf.get("spark.databricks.job.runId")
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         return "interactive"
 
 
@@ -176,7 +176,7 @@ for code, owner, description, tolerance, sql in CONTROLS:
         control_rows.append((code, owner, description, expected, actual,
                              actual - expected, variance_pct, tolerance,
                              passing, None))
-    except Exception as exc:                                 # noqa: BLE001
+    except Exception as exc:
         # A control that cannot be evaluated is not a passing control.
         control_rows.append((code, owner, description, None, None, None,
                              None, tolerance, False, str(exc)[:400]))

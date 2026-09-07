@@ -49,7 +49,7 @@ def current_run_id() -> str:
     """
     try:
         return spark.conf.get("spark.databricks.job.runId")
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         return "interactive"
 
 
@@ -145,7 +145,7 @@ for feed in FEEDS:
     src = f"{LANDING}/{feed['path']}"
     try:
         dbutils.fs.ls(src)
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         print(f"skip {feed['name']}: no files at {src}")
         continue
     q = ingest(feed)

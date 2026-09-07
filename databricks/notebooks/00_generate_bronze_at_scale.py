@@ -51,7 +51,7 @@ for key, value in [
 ]:
     try:
         spark.conf.set(key, value)
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         print(f"note: {key} is managed by the runtime, leaving as-is")
 
 SCALES = {
@@ -434,7 +434,7 @@ HOUR_WEIGHTS = [0.22, 0.14, 0.10, 0.10, 0.18, 0.45, 0.95, 1.55, 1.70, 1.25,
                 0.85, 0.62, 0.45, 0.30]
 hour_slots = []
 for h, w in enumerate(HOUR_WEIGHTS):
-    hour_slots += [h] * int(round(w * 100))
+    hour_slots += [h] * round(w * 100)
 hour_arr = F.array(*[F.lit(h) for h in hour_slots])
 n_hour_slots = len(hour_slots)
 
@@ -726,7 +726,7 @@ rows = []
 for t in sorted(tables):
     try:
         rows.append((t, spark.table(f"{CATALOG}.bronze.{t}").count()))
-    except Exception as exc:                        # noqa: BLE001
+    except Exception as exc:
         rows.append((t, -1))
         print(f"could not count {t}: {exc}")
 

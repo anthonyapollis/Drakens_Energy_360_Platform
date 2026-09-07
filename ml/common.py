@@ -103,3 +103,31 @@ def summarise(name: str, metrics: dict) -> None:
     print("-" * len(name))
     for k, v in metrics.items():
         print(f"  {k:<28} {v:,.4f}" if isinstance(v, float) else f"  {k:<28} {v}")
+
+
+def as_model_matrix(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Return `columns` in dtypes scikit-learn can actually consume.
+
+    DuckDB returns integer columns that permit nulls as pandas nullable
+    `Int64`, whose missing value is `pd.NA`. scikit-learn's ColumnTransformer
+    refuses to place those in a numpy array and raises at `fit`, several steps
+    after the point where the dtype was decided -- so the traceback points at
+    the pipeline rather than at the column.
+
+    Nullable integers become float64, where the missing value is NaN and
+    `HistGradientBoosting*` handles it natively. Nullable booleans become
+    float64 for the same reason: casting them to int first would silently turn
+    an unknown into a False.
+
+    Categorical columns are left alone; the ordinal encoder handles them.
+    """
+    out = df[columns].copy()
+    for col in out.columns:
+        dtype = out[col].dtype
+        nullable_number = (
+            isinstance(dtype, pd.api.extensions.ExtensionDtype)
+            and pd.api.types.is_numeric_dtype(dtype)
+        )
+        if nullable_number or pd.api.types.is_bool_dtype(dtype):
+            out[col] = out[col].astype("float64")
+    return out

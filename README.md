@@ -137,26 +137,74 @@ provinces present, no solar generation at night.
 
 ### Machine learning
 
-Trained on the generated warehouse, reported against a baseline:
+Six experiments, each reported against a baseline it has to beat. Four are
+usable, two are not, and all six are listed — a portfolio that shows only the
+models that worked is not showing the job.
 
-| Model | Result |
-|---|---|
-| Demand forecast | MAE 39.4 L vs seasonal-naive 54.4 L — **27.6% better** than predicting last week's same weekday |
-| Predictive maintenance | 1.35× lift in the top 5% of the risk-ranked queue (69% precision against a 51% base rate) |
+| Model | Result | Verdict |
+|---|---|---|
+| Demand forecast | MAE 39.4 L vs seasonal-naive 54.4 L, R² 0.50 | **27.6% better** than predicting last week's same weekday |
+| Customer churn | ROC-AUC 0.841, AP 0.804, 92.6% precision in the top 5% | Usable — the call list is right nine times in ten |
+| Late delivery | ROC-AUC 0.564, 1.76× lift in the top 10% | Marginal but usable — 33% late in the reviewed decile against an 18% base |
+| Fraud / anomaly | 1.0% flagged; cash share 29.4% vs 23.9%, fill ratio 1.31 vs 1.02 | Flagged shifts differ from normal ones on both axes |
+| Predictive maintenance | ROC-AUC 0.598 against an age-only baseline of 0.620 | **Does not beat its baseline** |
+| Stock-out risk | ROC-AUC 0.510 at the next snapshot | **No signal at this cadence** |
 
-Both numbers are modest and real. A demand forecast that claimed 97% accuracy
-would mean a feature had leaked.
+The two failures are the more useful half of the table.
+
+**Predictive maintenance loses to a single variable.** Ranking the queue by
+asset age scores 0.620; the model scores 0.598. Reducing capacity closes the
+gap but never opens one. The cause is in the generator, not the estimator:
+breakdown probability depends on a latent per-asset failure propensity that no
+column observes except through age, and 61% of assets have exactly one work
+order, so the history features are empty for most rows. What would fix it is
+condition monitoring — run hours, throughput since service, inspection scores.
+
+**Stock-out risk had a leak worth more than the model.** Scored against the
+current snapshot it reached ROC-AUC 0.998. That is not a result: the target is
+`days_of_cover` below a threshold, `days_of_cover` is stock over usage, and
+both were features — so the model divided one by the other and reproduced the
+rule. Excluding `days_of_cover` alone, which the code originally did, excluded
+nothing. Re-pointed at the *next* snapshot, where the target is measured after
+every feature, it scores 0.510: the median gap between snapshots of the same
+tank is 84 days, and a level today says nothing about a level a quarter later.
+The leaked version is the only learnable one, which is exactly why the leak
+was worth finding. The fix is denser data — feed it from the tank telemetry
+stream rather than from quarterly snapshots.
+
+A demand forecast claiming 97% accuracy would mean a feature had leaked. One
+of these six triggered exactly that suspicion, and it was right to.
 
 ### Network investment recommendation
 
-| Recommendation | Sites | Avg score |
-|---|---:|---:|
-| Invest | 207 | 82.3 |
-| Hold | 319 | 62.9 |
-| Hold — strategic coverage | 281 | 37.8 |
-| Review | 37 | 35.4 |
-| Divest candidate | 206 | 16.7 |
+Ranking is not allocation. The scorecard ranks every site; the engine turns
+that ranking into a capital plan under constraints a capital committee will
+actually raise — a fixed budget, one intervention per site, a minimum
+commitment per province, and protection for sites that are the sole coverage
+on a national route.
 
+Against a R1.50bn budget:
+
+| | |
+|---|---:|
+| Funded projects | 250 |
+| Capital committed | R1.384bn (92.2% of budget) |
+| Expected annual uplift | R353.1m |
+| Portfolio ROI | 25.5% per year |
+| Blended payback | 3.9 years |
+| Provinces covered | 9 of 9 |
+
+Those figures rest on one stated assumption, and it is worth naming because
+the engine was wrong twice before it was right. The transaction fact is a
+*sample* — roughly 1.2 fills per site per day where a real forecourt serves
+several hundred — while capital costs are in real rands. Compared directly,
+the plan returned a 651-year payback. Grossed up on an invented throughput
+figure multiplied by the generator's own margin per litre, it returned 1.0
+years and a 98% ROI, which was no better. The correction now rests on a single
+named benchmark — what a mid-sized site earns in fuel gross margin in a year —
+rebased on the median site so a few large metros cannot lift the network.
+Rank order and every ratio between sites are untouched; only the level moves,
+and the factor applied is printed on every run.
 ---
 
 ## Three defects the platform found in itself

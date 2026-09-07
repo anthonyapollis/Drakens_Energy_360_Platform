@@ -192,7 +192,7 @@ try:
               f"CLUSTER BY (date_key, site_id)")
     spark.sql(f"OPTIMIZE {CATALOG}.gold.fct_retail_fuel_sales")
     print("  liquid clustering applied on (date_key, site_id)")
-except Exception as exc:                                     # noqa: BLE001
+except Exception as exc:
     print(f"  clustering not applied: {exc}")
 
 # The measurement that drove the decision above.

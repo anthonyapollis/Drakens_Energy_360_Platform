@@ -28,6 +28,7 @@ from sklearn.preprocessing import OrdinalEncoder
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common import (
+    as_model_matrix,
     load,
     log_common_tags,
     log_sklearn_model,
@@ -110,8 +111,8 @@ def main() -> int:
 
     train, test = time_split(df, "planned_arrival_ts", holdout_frac=0.25)
     cols = NUMERIC + CATEGORICAL + ["is_weekend", "is_public_holiday_za"]
-    X_train, y_train = train[cols], train["is_late"]
-    X_test, y_test = test[cols], test["is_late"]
+    X_train, y_train = as_model_matrix(train, cols), train["is_late"]
+    X_test, y_test = as_model_matrix(test, cols), test["is_late"]
 
     params = dict(max_iter=300, learning_rate=0.07, max_depth=6,
                   min_samples_leaf=40, random_state=42)

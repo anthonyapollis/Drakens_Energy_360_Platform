@@ -297,7 +297,7 @@ for df, table, name, out_mode in [
         q = start(df, table, name, out_mode)
         started.append((name, q))
         print(f"started {name} -> bronze.{table}")
-    except Exception as exc:                                 # noqa: BLE001
+    except Exception as exc:
         print(f"could not start {name}: {exc}")
 
 if MODE == "demo":
