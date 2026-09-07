@@ -17,8 +17,8 @@ cleansed as (
         {{ clean_integer('promotion_key') }} as promotion_key,
         {{ fix_mojibake('promotion_name') }} as promotion_name,
         {{ fix_mojibake('mechanic') }} as mechanic,
-        {{ clean_timestamp('start_date') }} as start_date,
-        {{ clean_timestamp('end_date') }} as end_date,
+        {{ clean_timestamp('start_date', '1950-01-01', '2035-12-31') }} as start_date,
+        {{ clean_timestamp('end_date', '1950-01-01', '2035-12-31') }} as end_date,
         {{ clean_measure('discount_pct') }} as discount_pct
     from source
 ),

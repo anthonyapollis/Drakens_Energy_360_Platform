@@ -22,7 +22,7 @@ cleansed as (
         {{ fix_mojibake('credit_band') }} as credit_band,
         {{ clean_measure('credit_limit_zar') }} as credit_limit_zar,
         {{ clean_integer('payment_terms_days') }} as payment_terms_days,
-        {{ clean_timestamp('onboarded_date') }} as onboarded_date,
+        {{ clean_timestamp('onboarded_date', '1950-01-01', '2035-12-31') }} as onboarded_date,
         try_cast(is_active as boolean) as is_active,
         {{ clean_measure('revenue_index') }} as revenue_index,
         {{ clean_timestamp('effective_from_date') }} as effective_from_date,

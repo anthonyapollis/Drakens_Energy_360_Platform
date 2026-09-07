@@ -61,6 +61,34 @@ UNIT_CORRECTIONS = {
     "bunker_litres": 3_000_000,
 }
 
+# Dates that describe *when something began*, not when an event happened.
+#
+# The default timestamp window is deliberately tight: a transaction dated 2099
+# is clock skew, and a transaction dated 1970 is a dead clock. Applied to an
+# attribute, the same rule is destructive. `dim_site.opened_date` records when
+# a station opened, and stations open decades before the window a warehouse
+# happens to model -- so the tight bound nulled 521 of 586 opening dates, 89%
+# of the network, while every model built successfully and every test passed.
+#
+# The symptom was a map panel reporting that the entire network was between
+# one and two years old, and an investment rule gated on "older than 12 years"
+# that could never fire because no site could be older than three.
+#
+# These columns get a window wide enough to hold a real business history.
+ATTRIBUTE_DATE_BOUNDS = ("1950-01-01", "2035-12-31")
+
+ATTRIBUTE_DATE_SUFFIXES = (
+    "opened_date", "onboarded_date", "commissioned_date", "hire_date",
+    "start_date", "end_date", "expiry_date", "built_date",
+    "installed_date", "first_order_date", "birth_date", "issued_date",
+    "registration_date", "renewal_date", "valid_from_date", "valid_to_date",
+)
+
+
+def is_attribute_date(col: str) -> bool:
+    return col.endswith(ATTRIBUTE_DATE_SUFFIXES)
+
+
 # Amount columns that are legitimately signed, and must never be given a
 # non-negativity rule.
 #
@@ -169,6 +197,10 @@ def clean_expression(col: str, logical: str) -> str:
     if logical == "text":
         return f"{{{{ fix_mojibake('{col}') }}}}"
     if logical == "timestamp":
+        if is_attribute_date(col):
+            return (f"{{{{ clean_timestamp('{col}', "
+                    f"'{ATTRIBUTE_DATE_BOUNDS[0]}', "
+                    f"'{ATTRIBUTE_DATE_BOUNDS[1]}') }}}}")
         return f"{{{{ clean_timestamp('{col}') }}}}"
     if logical == "integer":
         return f"{{{{ clean_integer('{col}') }}}}"

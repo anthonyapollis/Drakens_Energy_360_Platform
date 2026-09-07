@@ -17,8 +17,8 @@ cleansed as (
         {{ clean_integer('campaign_key') }} as campaign_key,
         {{ fix_mojibake('campaign_name') }} as campaign_name,
         {{ fix_mojibake('channel') }} as channel,
-        {{ clean_timestamp('start_date') }} as start_date,
-        {{ clean_timestamp('end_date') }} as end_date,
+        {{ clean_timestamp('start_date', '1950-01-01', '2035-12-31') }} as start_date,
+        {{ clean_timestamp('end_date', '1950-01-01', '2035-12-31') }} as end_date,
         {{ clean_measure('budget_zar') }} as budget_zar,
         {{ fix_mojibake('target_segment') }} as target_segment
     from source

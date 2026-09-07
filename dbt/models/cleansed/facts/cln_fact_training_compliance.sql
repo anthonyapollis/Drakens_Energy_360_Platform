@@ -21,7 +21,7 @@ cleansed as (
         {{ fix_mojibake('course_name') }} as course_name,
         {{ fix_mojibake('result') }} as result,
         {{ clean_measure('score_pct') }} as score_pct,
-        {{ clean_timestamp('expiry_date') }} as expiry_date,
+        {{ clean_timestamp('expiry_date', '1950-01-01', '2035-12-31') }} as expiry_date,
         try_cast(is_expired as boolean) as is_expired,
         try_cast(is_mandatory as boolean) as is_mandatory,
         {{ clean_integer('training_hours') }} as training_hours,

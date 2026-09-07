@@ -33,7 +33,7 @@ cleansed as (
         try_cast(has_solar as boolean) as has_solar,
         try_cast(has_lpg as boolean) as has_lpg,
         try_cast(is_24_hour as boolean) as is_24_hour,
-        {{ clean_timestamp('opened_date') }} as opened_date,
+        {{ clean_timestamp('opened_date', '1950-01-01', '2035-12-31') }} as opened_date,
         {{ fix_mojibake('site_status') }} as site_status,
         {{ clean_measure('demand_index') }} as demand_index,
         {{ clean_timestamp('effective_from_date') }} as effective_from_date,

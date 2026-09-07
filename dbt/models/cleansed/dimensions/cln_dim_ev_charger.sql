@@ -18,7 +18,7 @@ cleansed as (
         {{ clean_code('site_id') }} as site_id,
         {{ fix_mojibake('connector_type') }} as connector_type,
         {{ clean_integer('rated_power_kw') }} as rated_power_kw,
-        {{ clean_timestamp('commissioned_date') }} as commissioned_date,
+        {{ clean_timestamp('commissioned_date', '1950-01-01', '2035-12-31') }} as commissioned_date,
         {{ fix_mojibake('network_operator') }} as network_operator
     from source
 ),

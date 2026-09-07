@@ -78,7 +78,7 @@ select
     latitude, longitude,
     investment_score, investment_quartile, investment_recommendation,
     avg_daily_litres, total_margin_zar, total_revenue_zar,
-    transaction_count, demand_volatility, trading_days
+    transaction_count, demand_volatility, trading_days, site_age_years
 from main_gold.network_investment_scorecard
 where country_code = 'ZA'
 """
@@ -101,12 +101,31 @@ where country_code = 'ZA'
 BENCHMARK_ANNUAL_FUEL_MARGIN_ZAR = 6_000_000.0
 
 
+REFURB_AGE_YEARS = 12.0
+
+
 def eligible_interventions(row) -> list[Intervention]:
-    """Which interventions make sense at this site."""
+    """Which interventions make sense at this site.
+
+    Each rule here has to match the `applies_when` text on the intervention it
+    filters. They drifted apart once already: REFURB was documented as
+    applying to sites older than twelve years and the check was never written,
+    so every site in the network was eligible for a refurbishment. That went
+    unnoticed because the cleansing layer had nulled 89% of opening dates and
+    no site appeared older than three years -- the rule would have filtered
+    nothing even if it had existed.
+    """
     out = []
     for iv in INTERVENTIONS:
         if iv.code == "SHOP" and row.has_convenience:
             continue
+        if iv.code == "REFURB":
+            age = getattr(row, "site_age_years", None)
+            # An unknown age is not an argument for spending capital. Sites
+            # whose opening date did not survive cleansing are excluded and
+            # counted, rather than quietly funded.
+            if age is None or pd.isna(age) or age < REFURB_AGE_YEARS:
+                continue
         if iv.code == "EV":
             if row.has_ev_charging:
                 continue

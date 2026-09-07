@@ -20,7 +20,7 @@ cleansed as (
         {{ clean_code('home_site_id') }} as home_site_id,
         {{ clean_code('business_unit_code') }} as business_unit_code,
         {{ fix_mojibake('employment_type') }} as employment_type,
-        {{ clean_timestamp('hire_date') }} as hire_date,
+        {{ clean_timestamp('hire_date', '1950-01-01', '2035-12-31') }} as hire_date,
         try_cast(is_active as boolean) as is_active,
         {{ clean_timestamp('effective_from_date') }} as effective_from_date,
         {{ clean_timestamp('effective_to_date') }} as effective_to_date,

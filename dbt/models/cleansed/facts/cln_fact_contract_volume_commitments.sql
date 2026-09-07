@@ -14,7 +14,7 @@ with source as (
 cleansed as (
     select
         {{ clean_code('commitment_id') }} as commitment_id,
-        {{ clean_timestamp('period_start_date') }} as period_start_date,
+        {{ clean_timestamp('period_start_date', '1950-01-01', '2035-12-31') }} as period_start_date,
         {{ clean_integer('date_key') }} as date_key,
         {{ clean_code('contract_id') }} as contract_id,
         {{ clean_code('customer_id') }} as customer_id,

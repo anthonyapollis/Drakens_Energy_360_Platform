@@ -19,7 +19,7 @@ cleansed as (
         {{ clean_measure('installed_kwp') }} as installed_kwp,
         {{ clean_integer('panel_count') }} as panel_count,
         {{ fix_mojibake('inverter_model') }} as inverter_model,
-        {{ clean_timestamp('commissioned_date') }} as commissioned_date,
+        {{ clean_timestamp('commissioned_date', '1950-01-01', '2035-12-31') }} as commissioned_date,
         try_cast(has_battery_storage as boolean) as has_battery_storage
     from source
 ),

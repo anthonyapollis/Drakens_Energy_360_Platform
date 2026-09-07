@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -266,121 +267,237 @@ def fig_quarantine_reasons(con):
 
 
 # ==========================================================================
-# 5. Network and commercial views
+# 5. Geography
 # ==========================================================================
-def fig_network_map(con):
-    """Multi-panel geospatial view of the synthetic network.
+PROVINCES_GPKG = REPO / "data" / "geo" / "za_provinces.gpkg"
 
-    A scatter of points on a latitude/longitude pair is not a map, and it is
-    the first thing a reviewer discounts. Four things are added here, each
-    answering a question the plain scatter leaves open:
+# Mainland South Africa, as a clipping envelope: (minx, miny, maxx, maxy).
+MAINLAND = (16.2, -35.2, 33.2, -22.0)
 
-      * **Province extents.** No province boundary file is shipped, and
-        inventing one would be worse than omitting it. Each province is drawn
-        instead as the convex hull of its own synthetic sites -- an honest
-        statement of where this network reaches -- filled as a choropleth of
-        margin per site, so regional performance reads at a glance.
-      * **National corridor overlay.** The N1, N2 and N3 are drawn between the
-        metros they connect. Corridor sites are the ones the capital plan
-        refuses to divest regardless of score, and that constraint is
-        unreadable without seeing which sites they are.
-      * **Dual encoding on the sites.** Area is total margin, colour is the
-        investment recommendation. A large red bubble -- a high-margin site
-        recommended for divestment -- is the case worth arguing about, and it
-        is visible immediately rather than found in a sort.
-      * **A metro inset.** A large share of the network sits inside Gauteng at
-        a scale where the national view is one blob. The inset resolves it.
+# Public geographic reference. Only the metros the national routes run
+# between are used; no route geometry is claimed, and no synthetic site is
+# placed on a line.
+METROS = {
+    "Cape Town": (18.4241, -33.9249),
+    "Johannesburg": (28.0473, -26.2041),
+    "Durban": (31.0218, -29.8587),
+    "Gqeberha": (25.6022, -33.9608),
+    "Bloemfontein": (26.1596, -29.0852),
+    "Polokwane": (29.4689, -23.9045),
+    "Kimberley": (24.7499, -28.7282),
+    "Mbombela": (30.9694, -25.4753),
+}
+CORRIDORS = {
+    "N1": ["Cape Town", "Kimberley", "Bloemfontein", "Johannesburg",
+           "Polokwane"],
+    "N2": ["Cape Town", "Gqeberha", "Durban"],
+    "N3": ["Johannesburg", "Durban"],
+}
+
+# Recommendation colours run invest -> divest, keyed on the exact strings the
+# mart emits. A near-miss on a label falls through to grey and quietly turns
+# the most important encoding on the map into noise.
+REC_COLOURS = {
+    "Invest - Maintain Leadership": "#08512f",
+    "Invest - Expand": ACCENT,
+    "Invest - Refurbish": "#4b9b6e",
+    "Hold": "#9ec7a5",
+    "Hold - Strategic Coverage": GOLD,
+    "Review": "#d98b4a",
+    "Divest Candidate": WARN,
+}
+
+# Equirectangular correction at South African latitudes. Without it a degree
+# of longitude is drawn as wide as a degree of latitude and the country comes
+# out visibly stretched.
+SA_ASPECT = 1 / np.cos(np.radians(28))
+
+
+def load_provinces():
+    """Real province boundaries, or None if the reference data is absent.
+
+    Natural Earth 1:10m admin-1, filtered to South Africa. Public-domain
+    cartographic reference; the boundaries are real, everything plotted on top
+    of them is generated. Earlier versions of this figure drew the convex hull
+    of each province's own sites instead, which was honest but is not a map.
     """
-    from matplotlib.lines import Line2D
-    from matplotlib.patches import Polygon as MplPolygon
-    from scipy.spatial import ConvexHull
+    if not PROVINCES_GPKG.exists():
+        return None
+    try:
+        import geopandas as gpd
+        provinces = gpd.read_file(PROVINCES_GPKG)
+    except Exception as exc:
+        print(f"  province boundaries unavailable: {str(exc)[:80]}")
+        return None
 
-    df = con.execute("""
-        select longitude, latitude, province, city, urban_class,
-               on_national_route, investment_score, investment_recommendation,
-               total_margin_zar
+    # Clip to the mainland. Natural Earth attaches the Prince Edward Islands
+    # to the Western Cape, and they sit at 46 degrees south and 38 east --
+    # roughly 1,800 km off the coast. Left in, they stretch the country's
+    # bounding box by half again, so every map drawn to fit that box renders
+    # South Africa small in a field of empty ocean, with a two-pixel speck in
+    # one corner. No synthetic site is placed there.
+    return provinces.clip(MAINLAND)
+
+
+def scorecard(con):
+    return con.execute("""
+        select site_id, site_name, province, city, urban_class,
+               on_national_route, has_ev_charging, has_solar,
+               investment_score, investment_recommendation,
+               total_margin_zar, litres_total, avg_daily_litres,
+               breakdown_rate_pct, avg_asset_age_years, site_age_years,
+               non_fuel_margin_share_pct,
+               solar_kwh, ev_session_count, latitude, longitude
         from main_gold.network_investment_scorecard
         where country_code = 'ZA'
           and latitude is not null and longitude is not null
     """).df()
+
+
+def draw_basemap(ax, provinces, values=None, cmap="YlGn", edge="white",
+                 face="#eef1ef", lw=0.8):
+    """Draw the province outlines, optionally shaded by `values`."""
+    if provinces is None:
+        return None
+    if values is None:
+        provinces.plot(ax=ax, facecolor=face, edgecolor=edge, linewidth=lw,
+                       zorder=1)
+        return None
+    # The Series index carries whatever the groupby was keyed on, so it is
+    # renamed explicitly rather than assumed. Getting this wrong merges on
+    # nothing and every province comes out unshaded.
+    lookup = values.rename("_v").reset_index()
+    lookup.columns = ["name", "_v"]
+    merged = provinces.merge(lookup, on="name", how="left")
+    merged.plot(ax=ax, column="_v", cmap=cmap, edgecolor=edge, linewidth=lw,
+                zorder=1, missing_kwds={"color": "#f2f2f2"})
+    return merged
+
+
+def fit_to_bounds(ax, provinces, fig=None, pad=0.35):
+    """Clamp the axis to the country's own extent.
+
+    Left to autoscale, the axis pads to whatever the widest artist needs and
+    the map drifts inside a box it does not fill. Aspect is handled by
+    `style_map`; the axes rectangle is sized to match in the caller, because
+    stretching the data to fill a box distorts the country and stretching the
+    box to fit the data is the only correction that does not.
+    """
+    if provinces is None:
+        return
+    x0, y0, x1, y1 = provinces.total_bounds
+    ax.set_xlim(x0 - pad, x1 + pad)
+    ax.set_ylim(y0 - pad, y1 + pad)
+
+
+def geo_ratio(bounds, pad=0.35) -> float:
+    """Width-to-height ratio a region needs to render undistorted."""
+    x_min, y_min, x_max, y_max = bounds
+    lon = (x_max - x_min) + 2 * pad
+    lat = (y_max - y_min) + 2 * pad
+    return lon * math.cos(math.radians((y_min + y_max) / 2)) / max(lat, 1e-9)
+
+
+def inch_rect(fig, left, bottom, width, height):
+    """Convert an inch rectangle to the figure fractions add_axes wants."""
+    return [left / fig.get_figwidth(), bottom / fig.get_figheight(),
+            width / fig.get_figwidth(), height / fig.get_figheight()]
+
+
+def map_rect(fig, x0, y0, width, bounds, pad=0.35):
+    """An axes rectangle shaped like the region it will hold.
+
+    `set_aspect` is not used anywhere in these maps. Asked to honour an aspect
+    ratio, matplotlib shrinks whichever side it likes -- measured here, it cut
+    the map's width from 6.1 to 4.1 inches and left the height alone, so the
+    country sat in the top half of a box it never filled.
+
+    Sizing the rectangle to the data instead makes the fit exact and
+    predictable: with `aspect='auto'` the axes maps longitude to width and
+    latitude to height linearly, so a box whose proportions equal
+    `lon_range x cos(latitude) : lat_range` renders the country undistorted
+    and fills the box completely.
+    """
+    x_min, y_min, x_max, y_max = bounds
+    lon = (x_max - x_min) + 2 * pad
+    lat = (y_max - y_min) + 2 * pad
+    ratio = lon * math.cos(math.radians((y_min + y_max) / 2)) / max(lat, 1e-9)
+    height = (width * fig.get_figwidth()) / ratio / fig.get_figheight()
+    return [x0, y0, width, height]
+
+
+def style_map(ax, title=None, fontsize=9.5):
+    ax.set_aspect("auto")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    if title:
+        ax.set_title(title, loc="left", fontsize=fontsize)
+
+
+def fig_network_map(con):
+    """The hero map: where the network is, what it earns, what to do with it.
+
+    Three encodings on one canvas, each answering a different question:
+    provinces shaded by margin per site answer "which regions earn", bubble
+    area answers "which individual sites matter", and bubble colour answers
+    "what should we do about them". The corridor overlay is there because
+    corridor sites are protected from divestment regardless of score, and the
+    capital plan is unreadable without seeing which those are.
+    """
+    from matplotlib.lines import Line2D
+
+    df = scorecard(con)
     if df.empty:
         return None
+    provinces = load_provinces()
 
-    # Recommendation colours run divergent, so the eye separates "put capital
-    # in" from "take capital out" without consulting the legend.
-    # Ordered invest -> divest, and keyed on the exact strings the mart
-    # emits. A near-miss on a label would silently fall through to grey and
-    # quietly turn the most important encoding on the map into noise.
-    rec_colours = {
-        "Invest - Maintain Leadership": "#08512f",
-        "Invest - Expand": ACCENT,
-        "Invest - Refurbish": "#4b9b6e",
-        "Hold": "#9ec7a5",
-        "Hold - Strategic Coverage": GOLD,
-        "Review": "#d98b4a",
-        "Divest Candidate": WARN,
-    }
-    unmapped = set(df.investment_recommendation) - set(rec_colours)
-    if unmapped:
-        print(f"  warning: unmapped recommendations drawn grey: {sorted(unmapped)}")
+    # Axes are placed explicitly rather than through a gridspec. With a fixed
+    # aspect ratio a gridspec cell keeps its own height and the map floats in
+    # a band of white inside it; sizing the box to the country's own
+    # proportions -- roughly 1.45 wide to 1 tall once latitude is corrected --
+    # is the only way to make the map fill the space it is given.
+    # Laid out in inches rather than figure fractions. The map's height
+    # follows from its width and the country's shape, so the figure is sized
+    # around the map instead of the map being squeezed into a figure -- which
+    # is what left it floating in white in every earlier attempt.
+    bounds = (provinces.total_bounds if provinces is not None
+              else (16.4, -34.9, 33.0, -22.1))
 
-    # The N1/N2/N3 are public geographic reference. Only the metros they run
-    # between are used; no route geometry is claimed, and no synthetic site is
-    # placed on the line.
-    METROS = {
-        "Cape Town": (18.4241, -33.9249),
-        "Johannesburg": (28.0473, -26.2041),
-        "Durban": (31.0218, -29.8587),
-        "Gqeberha": (25.6022, -33.9608),
-        "Bloemfontein": (26.1596, -29.0852),
-        "Polokwane": (29.4689, -23.9045),
-        "Kimberley": (24.7499, -28.7282),
-    }
-    CORRIDORS = {
-        "N1": ["Cape Town", "Kimberley", "Bloemfontein", "Johannesburg",
-               "Polokwane"],
-        "N2": ["Cape Town", "Gqeberha", "Durban"],
-        "N3": ["Johannesburg", "Durban"],
-    }
+    map_w = 6.4
+    map_h = map_w / geo_ratio(bounds)
+    right_w = 5.9
+    gap, margin_l, margin_r = 0.70, 0.15, 0.15
+    top_pad, legend_band = 0.42, 0.95
 
-    fig = plt.figure(figsize=(11.4, 7.4))
-    gs = fig.add_gridspec(2, 2, width_ratios=[2.05, 1.0],
-                          height_ratios=[1.0, 1.0], wspace=0.18, hspace=0.30)
-    ax = fig.add_subplot(gs[:, 0])
-    ax_rank = fig.add_subplot(gs[0, 1])
-    ax_inset = fig.add_subplot(gs[1, 1])
+    fig_w = margin_l + map_w + gap + right_w + margin_r
+    fig_h = legend_band + map_h + top_pad
+    fig = plt.figure(figsize=(fig_w, fig_h))
 
-    # ---- province choropleth built from site hulls -----------------------
+    ax = fig.add_axes(inch_rect(fig, margin_l, legend_band, map_w, map_h))
+
+    # The right column is split so the two panels together span the map.
+    inset_h = map_h * 0.46
+    rank_h = map_h - inset_h - 0.55
+    right_x = margin_l + map_w + gap
+    ax_rank = fig.add_axes(inch_rect(
+        fig, right_x, legend_band + inset_h + 0.55, right_w, rank_h))
+    ax_inset = fig.add_axes(inch_rect(
+        fig, right_x, legend_band, right_w, inset_h))
+
     prov = (df.groupby("province")
               .agg(sites=("total_margin_zar", "size"),
                    margin=("total_margin_zar", "sum"))
               .assign(margin_per_site=lambda d: d.margin / d.sites))
-    lo = float(prov.margin_per_site.min())
-    hi = float(prov.margin_per_site.max())
-    span = max(hi - lo, 1e-9)
-    cmap = plt.get_cmap("YlGn")
 
-    def shade_for(value):
-        return cmap(0.15 + 0.65 * (value - lo) / span)
+    merged = draw_basemap(ax, provinces, prov.margin_per_site)
+    if merged is not None:
+        for _, row in merged.iterrows():
+            point = row.geometry.representative_point()
+            ax.annotate(row["name"], (point.x, point.y), fontsize=7,
+                        color=INK, ha="center", alpha=0.8, zorder=6)
 
-    for province, row in prov.iterrows():
-        pts = df.loc[df.province == province,
-                     ["longitude", "latitude"]].to_numpy()
-        if len(pts) >= 3:
-            try:
-                hull = ConvexHull(pts)
-                ax.add_patch(MplPolygon(
-                    pts[hull.vertices], closed=True,
-                    facecolor=shade_for(row.margin_per_site),
-                    edgecolor="white", linewidth=1.1, alpha=0.85, zorder=1))
-            except Exception:
-                # Collinear or degenerate point sets have no hull. The sites
-                # are still plotted; only the shaded extent is skipped.
-                pass
-        ax.annotate(province, (pts[:, 0].mean(), pts[:, 1].mean()),
-                    fontsize=7, color=INK, ha="center", alpha=0.75, zorder=6)
-
-    # ---- corridor overlay -------------------------------------------------
     for name, stops in CORRIDORS.items():
         xs = [METROS[s][0] for s in stops]
         ys = [METROS[s][1] for s in stops]
@@ -388,50 +505,43 @@ def fig_network_map(con):
                 linestyle=(0, (6, 3)))
         mid = len(xs) // 2
         ax.annotate(name, (xs[mid], ys[mid]), fontsize=7, color=INK,
-                    alpha=0.6, zorder=6, xytext=(4, 4),
+                    alpha=0.65, zorder=6, xytext=(4, 4),
                     textcoords="offset points")
 
-    # ---- sites ------------------------------------------------------------
-    def draw_sites(target, frame, scale):
+    def bubbles(target, frame, scale):
         mx = max(float(frame.total_margin_zar.max()), 1.0)
-        sizes = np.clip(frame.total_margin_zar / mx * scale,
-                        scale * 0.06, scale)
-        colours = [rec_colours.get(r, GREY)
+        sizes = np.clip(frame.total_margin_zar / mx * scale, scale * 0.07,
+                        scale)
+        colours = [REC_COLOURS.get(r, GREY)
                    for r in frame.investment_recommendation]
         target.scatter(frame.longitude, frame.latitude, s=sizes, c=colours,
-                       alpha=0.82, edgecolors="white", linewidths=0.35,
+                       alpha=0.85, edgecolors="white", linewidths=0.35,
                        zorder=5)
 
-    draw_sites(ax, df, 110)
+    bubbles(ax, df, 115)
     for lon, lat in METROS.values():
-        ax.plot(lon, lat, marker="s", ms=3.4, color=INK, zorder=7)
-
-    ax.set_title("Recommendation, margin and corridor exposure", loc="left",
-                 fontsize=10.5)
-    ax.set_xlabel("longitude")
-    ax.set_ylabel("latitude")
-    # Equirectangular correction at South African latitudes. Without it a
-    # degree of longitude is drawn the same width as a degree of latitude and
-    # the country comes out visibly stretched.
-    ax.set_aspect(1 / np.cos(np.radians(28)))
-    ax.grid(alpha=0.12, linewidth=0.5)
+        ax.plot(lon, lat, marker="s", ms=3.2, color=INK, zorder=7)
+    fit_to_bounds(ax, provinces)
+    style_map(ax, "Recommendation, margin and corridor exposure", 10.5)
 
     present = set(df.investment_recommendation)
     handles = [Line2D([], [], marker="o", linestyle="none", markersize=6,
                       markerfacecolor=c, markeredgecolor="white", label=k)
-               for k, c in rec_colours.items() if k in present]
+               for k, c in REC_COLOURS.items() if k in present]
     handles.append(Line2D([], [], color=INK, alpha=0.35,
                           linestyle=(0, (6, 3)), label="national corridor"))
-    # Below the axes rather than inside them: at national scale every corner
-    # of the plot has sites in it, and a legend box would cover a province.
-    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.09),
-              fontsize=7, frameon=False, ncol=4, handletextpad=0.5,
-              columnspacing=1.1)
+    ax.legend(handles=handles, loc="upper center",
+              bbox_to_anchor=(0.5, -0.01), fontsize=7, frameon=False, ncol=4,
+              handletextpad=0.5, columnspacing=1.1)
 
-    # ---- province ranking -------------------------------------------------
     order = prov.sort_values("margin_per_site")
-    ax_rank.barh(order.index, order.margin_per_site,
-                 color=[shade_for(v) for v in order.margin_per_site],
+    lo, hi = prov.margin_per_site.min(), prov.margin_per_site.max()
+    span = max(hi - lo, 1e-9)
+    cmap = plt.get_cmap("YlGn")
+    ax_rank.barh(order.index,
+                 order.margin_per_site,
+                 color=[cmap(0.15 + 0.65 * (v - lo) / span)
+                        for v in order.margin_per_site],
                  edgecolor="white", linewidth=0.6)
     ax_rank.set_title("Margin per site, by province", loc="left", fontsize=9.5)
     ax_rank.xaxis.set_major_formatter(FuncFormatter(thousands))
@@ -443,35 +553,107 @@ def fig_network_map(con):
                          textcoords="offset points", va="center",
                          fontsize=6.5, color=GREY)
 
-    # ---- metro inset ------------------------------------------------------
     gp = df[df.province == "Gauteng"]
     if not gp.empty:
-        pad = 0.35
+        pad = 0.30
         x0, x1 = gp.longitude.min() - pad, gp.longitude.max() + pad
         y0, y1 = gp.latitude.min() - pad, gp.latitude.max() + pad
-        draw_sites(ax_inset, gp, 90)
+        if provinces is not None:
+            provinces.plot(ax=ax_inset, facecolor="#eef1ef",
+                           edgecolor="white", linewidth=0.8, zorder=1)
+        bubbles(ax_inset, gp, 95)
         ax_inset.set_xlim(x0, x1)
         ax_inset.set_ylim(y0, y1)
-        ax_inset.set_aspect(1 / np.cos(np.radians(26)))
-        ax_inset.set_title(f"Gauteng detail ({len(gp):,} sites)", loc="left",
-                           fontsize=9.5)
-        ax_inset.tick_params(labelsize=7)
-        ax_inset.grid(alpha=0.12, linewidth=0.5)
-        # Mark on the national view where the inset is cut from.
+        style_map(ax_inset, f"Gauteng detail ({len(gp):,} sites)")
         ax.add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False,
-                                   edgecolor=INK, linewidth=0.9, alpha=0.5,
+                                   edgecolor=INK, linewidth=0.9, alpha=0.55,
                                    zorder=8))
 
     caption = (
         f"{len(df):,} synthetic sites across {df.province.nunique()} provinces. "
         "Bubble area is total margin; colour is the investment recommendation. "
-        "Shaded areas are the convex hull of each province's synthetic sites, "
-        "not a province boundary.\n"
-        "Coordinates are town centroids plus random jitter and do not "
-        "represent any real service station. "
-        + warehouse_caption()
+        "Province boundaries are Natural Earth 1:10m admin-1 (public domain); "
+        "everything drawn on them is generated.\n"
+        "Coordinates are South African town centroids plus random jitter and "
+        "do not represent any real service station. " + warehouse_caption()
     )
     return _finish(fig, "06_network_map.png", caption)
+
+
+def fig_map_multiples(con):
+    """The same country, read six ways.
+
+    A single map answers one question. A network planner asks six, and
+    flipping between six separate figures makes them impossible to compare --
+    the eye cannot hold the shape of Limpopo from one page to the next. Small
+    multiples on a fixed basemap and a fixed extent put the comparison on one
+    page, which is the whole point of the form.
+    """
+    df = scorecard(con)
+    if df.empty:
+        return None
+    provinces = load_provinces()
+
+    panels = [
+        ("Throughput", "avg_daily_litres", "litres per site per day",
+         "YlGnBu", False),
+        ("Margin per site", "total_margin_zar", "rand per site",
+         "YlGn", False),
+        ("Asset condition", "breakdown_rate_pct",
+         "% of work orders unplanned", "OrRd", False),
+        ("Non-fuel margin", "non_fuel_margin_share_pct",
+         "% of margin from shop, EV and LPG", "PuBu", False),
+        ("New energy", "_new_energy", "% of sites with EV or solar",
+         "BuPu", False),
+        ("Corridor exposure", "_corridor", "% of sites on a national route",
+         "Greys", False),
+    ]
+    df["_new_energy"] = (df.has_ev_charging.astype(bool)
+                         | df.has_solar.astype(bool)).astype(float) * 100
+    df["_corridor"] = df.on_national_route.astype(bool).astype(float) * 100
+
+    fig, axes = plt.subplots(2, 3, figsize=(12.4, 7.2))
+    for ax, (title, column, unit, cmap, _) in zip(axes.ravel(), panels,
+                                                  strict=False):
+        # Mean per province for rates, sum-per-site for money: taking a mean
+        # of a total would say a province with one big site outperforms one
+        # with thirty, which is the opposite of what the map should show.
+        if column == "total_margin_zar":
+            values = (df.groupby("province")[column].sum()
+                      / df.groupby("province")[column].size())
+        else:
+            values = df.groupby("province")[column].mean()
+
+        merged = draw_basemap(ax, provinces, values, cmap=cmap)
+        fit_to_bounds(ax, provinces, pad=0.2)
+        style_map(ax, title)
+
+        if merged is not None:
+            vmin, vmax = float(values.min()), float(values.max())
+            leader = values.idxmax()
+            ax.annotate(f"highest: {leader}", (0.5, -0.04),
+                        xycoords="axes fraction", ha="center", fontsize=7,
+                        color=INK)
+            ax.annotate(f"{thousands(vmin)} to {thousands(vmax)} {unit}",
+                        (0.5, -0.10), xycoords="axes fraction", ha="center",
+                        fontsize=6.5, color=GREY)
+
+        # A site layer keeps the reader oriented: a choropleth alone hides
+        # that the Northern Cape's shading rests on seven sites. White with a
+        # dark edge so the dots read on both the palest and the darkest fills
+        # -- a single flat colour disappears into one end of every ramp.
+        ax.scatter(df.longitude, df.latitude, s=5, c="white",
+                   edgecolors=INK, linewidths=0.45, alpha=0.75, zorder=5)
+
+    fig.suptitle("The same network, read six ways", x=0.012, ha="left",
+                 fontsize=12, fontweight="bold")
+    fig.subplots_adjust(top=0.90, hspace=0.30)
+    caption = (
+        "Provinces shaded by the panel's measure; dots are the synthetic "
+        "sites, identical in every panel so the six are comparable. Province "
+        "boundaries are Natural Earth 1:10m admin-1 (public domain).\n"
+        + warehouse_caption())
+    return _finish(fig, "10_map_multiples.png", caption)
 
 
 def fig_investment_mix(con):

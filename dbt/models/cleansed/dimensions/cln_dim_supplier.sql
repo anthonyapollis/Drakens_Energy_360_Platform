@@ -21,7 +21,7 @@ cleansed as (
         {{ fix_mojibake('risk_rating') }} as risk_rating,
         {{ clean_measure('esg_score') }} as esg_score,
         try_cast(preferred_supplier as boolean) as preferred_supplier,
-        {{ clean_timestamp('contract_start_date') }} as contract_start_date,
+        {{ clean_timestamp('contract_start_date', '1950-01-01', '2035-12-31') }} as contract_start_date,
         {{ clean_timestamp('effective_from_date') }} as effective_from_date,
         {{ clean_timestamp('effective_to_date') }} as effective_to_date,
         try_cast(is_current as boolean) as is_current,
