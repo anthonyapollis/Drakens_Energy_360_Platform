@@ -78,7 +78,12 @@ def warehouse_caption() -> str:
 
 
 def _finish(fig, name: str, caption: str = CAPTION):
-    fig.text(0.01, 0.005, caption, fontsize=6.5, color=GREY, ha="left")
+    # Placed below the figure box, not inside it. At y=0.005 the caption sat
+    # on top of rotated tick labels on any chart with long category names;
+    # a negative y puts it under everything, and `bbox_inches="tight"` grows
+    # the saved image to include it.
+    fig.text(0.01, -0.03, caption, fontsize=6.5, color=GREY, ha="left",
+             va="top")
     IMG.mkdir(parents=True, exist_ok=True)
     path = IMG / name
     fig.savefig(path, bbox_inches="tight", facecolor="white")
@@ -513,14 +518,40 @@ def fig_province_performance(con):
     """).df()
     if df.empty:
         return None
-    fig, ax = plt.subplots(figsize=(7.6, 4.2))
+
+    # Rows whose site never resolved to a province are a data-quality result,
+    # not a province. Charting them as a bar labelled "nan" alongside Gauteng
+    # invites the reader to treat unresolved volume as a region -- so the
+    # bucket is named, moved to the end, and coloured as a warning. Dropping
+    # it silently would be worse: on a partial build it can carry more margin
+    # than every real province combined, and that is worth seeing.
+    unresolved = df.province.isna()
+    df.loc[unresolved, "province"] = "unresolved"
+    df = pd.concat([df[~unresolved], df[unresolved]], ignore_index=True)
+    n_unresolved = int(unresolved.sum())
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.4))
     x = np.arange(len(df))
-    ax.bar(x - 0.2, df.litres_m, 0.4, label="volume (m litres)", color=GREY)
-    ax.bar(x + 0.2, df.margin_m, 0.4, label="gross margin (R m)", color=ACCENT)
+    vol_colours = [WARN if p == "unresolved" else GREY for p in df.province]
+    mar_colours = [WARN if p == "unresolved" else ACCENT for p in df.province]
+    ax.bar(x - 0.2, df.litres_m, 0.4, label="volume (m litres)",
+           color=vol_colours)
+    ax.bar(x + 0.2, df.margin_m, 0.4, label="gross margin (R m)",
+           color=mar_colours, hatch=["//" if p == "unresolved" else ""
+                                     for p in df.province])
     ax.set_xticks(x)
     ax.set_xticklabels(df.province, rotation=30, ha="right", fontsize=8)
     ax.legend(frameon=False, fontsize=8)
     ax.set_title("Volume and margin by province")
+    if n_unresolved:
+        share = df.loc[df.province == "unresolved", "margin_m"].sum() \
+            / max(df.margin_m.sum(), 1e-9)
+        ax.text(0.5, -0.34,
+                f"{share:.0%} of margin sits on sites that did not resolve to "
+                "a province. On a partial build this is expected -- the site\n"
+                "dimension is incomplete -- and on a full build it would be a "
+                "referential defect worth failing the run over.",
+                transform=ax.transAxes, ha="center", fontsize=7, color=WARN)
     return _finish(fig, "08_province_performance.png", warehouse_caption())
 
 
