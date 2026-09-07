@@ -119,6 +119,34 @@ Everything below came out of an actual run, not an estimate.
 
 ### Databricks (portfolio scale, Free Edition)
 
+All five job tasks — generate bronze, build silver, build gold, data quality,
+table maintenance — green on a clean run.
+
+| Layer | Table | Rows |
+|---|---|---:|
+| bronze | `fact_retail_fuel_sales` | 5,000,000 |
+| silver | `fact_retail_fuel_sales` | 5,000,000 |
+| gold | `fct_retail_fuel_sales` | 5,000,000 |
+| gold | `agg_site_daily_fuel` | 971,424 |
+| gold | `agg_executive_daily_kpi` | 8,766 |
+| gold | `network_investment_scorecard` | 1,050 |
+
+All six reconciliation controls pass: margin reconciles, volume ties to the
+aggregate, no rows lost silver-to-gold, every fact resolves to a site, nine
+provinces present, no solar generation at night.
+
+### Machine learning
+
+Trained on the generated warehouse, reported against a baseline:
+
+| Model | Result |
+|---|---|
+| Demand forecast | MAE 39.4 L vs seasonal-naive 54.4 L — **27.6% better** than predicting last week's same weekday |
+| Predictive maintenance | 1.35× lift in the top 5% of the risk-ranked queue (69% precision against a 51% base rate) |
+
+Both numbers are modest and real. A demand forecast that claimed 97% accuracy
+would mean a feature had leaked.
+
 | Layer | Table | Rows |
 |---|---|---:|
 | bronze | `fact_retail_fuel_sales` | 5,000,000 |
