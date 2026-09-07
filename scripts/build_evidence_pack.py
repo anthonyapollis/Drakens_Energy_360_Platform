@@ -800,8 +800,17 @@ def fig_seasonality(con):
     interaction, which is where the pattern either looks like a real trading
     calendar or looks like noise with a trend bolted on.
     """
+    # Mean litres per trading day, not the sum.
+    #
+    # The modelled window runs to the end of August, so January through August
+    # occur in three calendar years and September through December in two.
+    # Summed, the last four months come out roughly a third lower and the
+    # chart shows the shape of the extract window while looking exactly like
+    # seasonality -- which is what the first version of this figure did, under
+    # a caption confidently describing a summer peak that was not there.
     df = con.execute("""
-        select month_name, day_name, sum(fuel_litres) as litres
+        select month_name, day_name,
+               sum(fuel_litres) / count(distinct full_date) as litres
         from main_gold.agg_executive_daily_kpi
         group by 1, 2
     """).df()
@@ -813,12 +822,12 @@ def fig_seasonality(con):
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
             "Saturday", "Sunday"]
     grid = (df.pivot_table(index="month_name", columns="day_name",
-                           values="litres", aggfunc="sum")
+                           values="litres", aggfunc="mean")
               .reindex(index=months, columns=days))
 
-    # Indexed to the overall mean. Absolute litres would make the colour scale
-    # a story about how many days fell in each month.
-    indexed = grid / grid.to_numpy().mean() * 100
+    # Indexed to the overall mean so the colour scale reads as "against a
+    # normal day" rather than in litres.
+    indexed = grid / np.nanmean(grid.to_numpy()) * 100
 
     fig, ax = plt.subplots(figsize=(8.2, 5.0))
     im = ax.imshow(indexed.to_numpy(), cmap="RdYlGn", aspect="auto",
@@ -839,9 +848,12 @@ def fig_seasonality(con):
     cb.set_label("volume index, 100 = network average", fontsize=8)
     cb.outline.set_visible(False)
     ax.set_title("Volume by month and day of week", loc="left")
-    ax.text(0.0, -0.13, "Southern-hemisphere seasons: December and January "
-            "are the high-summer holiday peak, June and July the winter "
-            "trough.", transform=ax.transAxes, fontsize=7.5, color=GREY)
+    ax.text(0.0, -0.13,
+            "Mean litres per trading day, indexed to 100. Per day rather than "
+            "per month because the modelled window ends in August: summed, "
+            "September to December would read a third low and look like "
+            "seasonality.",
+            transform=ax.transAxes, fontsize=7.5, color=GREY)
     return _finish(fig, "12_seasonality.png", warehouse_caption())
 
 
