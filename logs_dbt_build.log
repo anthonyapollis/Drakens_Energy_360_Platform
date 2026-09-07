@@ -284,3 +284,7 @@ There are 2 unused configuration paths:
 [0m06:02:28  140 of 814 START sql table model main_silver_cleansed.cln_fact_near_misses ..... [RUN]
 [0m06:03:07  140 of 814 OK created sql table model main_silver_cleansed.cln_fact_near_misses  [[32mOK[0m in 38.54s]
 [0m06:03:07  141 of 814 START sql table model main_silver_cleansed.cln_fact_opex ............ [RUN]
+[0m06:04:15  141 of 814 OK created sql table model main_silver_cleansed.cln_fact_opex ....... [[32mOK[0m in 67.58s]
+[0m06:04:15  142 of 814 START sql table model main_silver_cleansed.cln_fact_permit_to_work .. [RUN]
+[0m06:04:25  139 of 814 OK created sql table model main_silver_cleansed.cln_fact_mobile_payments  [[32mOK[0m in 119.89s]
+[0m06:04:25  143 of 814 START sql table model main_silver_cleansed.cln_fact_price_changes ... [RUN]

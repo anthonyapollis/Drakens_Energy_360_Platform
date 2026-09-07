@@ -405,7 +405,15 @@ def main(argv=None):
         print(f"  no manifest at {MANIFEST}; run the generator first")
 
     if DUCKDB.exists():
-        con = duckdb.connect(str(DUCKDB), read_only=True)
+        try:
+            con = duckdb.connect(str(DUCKDB), read_only=True)
+        except duckdb.IOException as exc:
+            # Almost always a dbt build holding the file. The manifest figures
+            # above are already written; producing those and reporting why the
+            # rest are missing beats failing the whole run.
+            print(f"  warehouse is locked, skipping its figures: {str(exc)[:100]}")
+            print("done")
+            return 0
         try:
             for fn in (fig_demand_shape, fig_cleansing, fig_quarantine_reasons,
                        fig_network_map, fig_investment_mix,
