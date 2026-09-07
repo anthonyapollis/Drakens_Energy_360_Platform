@@ -39,6 +39,15 @@ CATALOG_COMMENT = (
 )
 
 
+def sql_literal(text: str) -> str:
+    """Escape a Python string for use inside a single-quoted SQL literal.
+
+    Comments describing this project contain apostrophes, and an unescaped one
+    silently truncates the statement into a syntax error.
+    """
+    return text.replace("'", "''")
+
+
 def run_sql(w: WorkspaceClient, warehouse_id: str, statement: str,
             timeout: str = "50s") -> None:
     """Execute one SQL statement, raising on failure."""
@@ -70,10 +79,12 @@ def create_catalog(w: WorkspaceClient, warehouse_id: str, env: str) -> str:
     catalog = f"drakens_{env}"
     print(f"\n[1/3] Unity Catalog: {catalog}")
     run_sql(w, warehouse_id,
-            f"CREATE CATALOG IF NOT EXISTS {catalog} COMMENT '{CATALOG_COMMENT}'")
+            f"CREATE CATALOG IF NOT EXISTS {catalog} "
+            f"COMMENT '{sql_literal(CATALOG_COMMENT)}'")
     for schema, comment in SCHEMAS.items():
         run_sql(w, warehouse_id,
-                f"CREATE SCHEMA IF NOT EXISTS {catalog}.{schema} COMMENT '{comment}'")
+                f"CREATE SCHEMA IF NOT EXISTS {catalog}.{schema} "
+                f"COMMENT '{sql_literal(comment)}'")
     return catalog
 
 
