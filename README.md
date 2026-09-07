@@ -135,9 +135,10 @@ Everything below came out of an actual run, not an estimate.
 
 ---
 
-## Two defects the platform found in itself
+## Three defects the platform found in itself
 
-Both were caught by its own tests, which is the point of having them.
+All three were caught by its own tests and observability, which is the point of
+having them.
 
 **A macro that silently corrupted every ratio.** `safe_divide('a - b', 'c')`
 compiled to `a - (b / c)` because the macro did not parenthesise its
@@ -148,6 +149,14 @@ test asserting that `dim_product.base_margin_pct` falls between −5 and 100.
 independently, so debits exceeded credits by 46%. Caught by
 `obs_reconciliation_controls`, which evaluates double-entry as data rather
 than only as a test. Fixed by emitting journals as balanced pairs.
+
+**A partitioning choice that looked obvious and was wrong.** The retail fact
+was partitioned on `date_key`, because every query filters on a date range.
+The maintenance job measured the result: 974 files averaging 0.2 MB, one per
+day across the window, which `OPTIMIZE` cannot merge because it never crosses
+a partition boundary. The same table under liquid clustering compacted from 7
+files to 2 at an average of 74 MB. Changed to liquid clustering on
+`(date_key, site_id)`.
 
 ---
 
