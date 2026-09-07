@@ -71,11 +71,20 @@ CATEGORICAL = ["product_name", "province", "urban_class", "season_southern"]
 
 def build_features(df):
     df = df.sort_values("planned_arrival_ts").copy()
-    df["is_late"] = (~df["is_on_time"]).astype(int)
+
+    # A delivery whose punctuality is unknown cannot be labelled. Treating it
+    # as on-time would bias the model toward optimism, which is the wrong
+    # direction for a late-delivery alert.
+    before = len(df)
+    df = df.dropna(subset=["is_on_time"])
+    if before != len(df):
+        print(f"dropped {before - len(df):,} deliveries with unknown punctuality")
+
+    df["is_late"] = (~df["is_on_time"].astype(bool)).astype("int8")
     df["planned_hour"] = df["planned_arrival_ts"].dt.hour
     df["km_per_drop"] = df["distance_km"] / df["drop_count"].clip(lower=1)
-    df["is_weekend"] = df["is_weekend"].astype(int)
-    df["is_public_holiday_za"] = df["is_public_holiday_za"].astype(int)
+    for flag in ("is_weekend", "is_public_holiday_za"):
+        df[flag] = df[flag].fillna(False).astype("int8")
 
     # A carrier's own track record is the single most useful predictor, but it
     # has to be computed from prior deliveries only. An expanding mean shifted

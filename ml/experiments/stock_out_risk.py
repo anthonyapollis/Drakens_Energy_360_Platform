@@ -83,17 +83,29 @@ def main() -> int:
     # including it would let the model reproduce the definition rather than
     # learn anything about the drivers, and would score near-perfectly while
     # being worthless the moment the threshold changes.
+    # A row whose target is unknown cannot be learned from. The cleansing
+    # layer legitimately leaves nulls where a measure failed its contract, and
+    # coercing those to 0 would teach the model that a broken row is a healthy
+    # one.
+    before = len(df)
+    df = df.dropna(subset=["is_stock_out_risk"])
+    if before != len(df):
+        print(f"dropped {before - len(df):,} rows with an unknown target")
+
     df["usage_to_capacity_ratio"] = (
         df["average_daily_usage_litres"] / df["capacity_litres"])
     df["headroom_above_reorder"] = (
         df["stock_on_hand_litres"] - df["reorder_point_litres"])
-    df["is_weekend"] = df["is_weekend"].astype(int)
-    df["is_public_holiday_za"] = df["is_public_holiday_za"].astype(int)
+    # Calendar flags come from dim_date and should never be null; filling
+    # explicitly rather than casting means a null is treated as "not a
+    # weekend" instead of raising three steps later.
+    for flag in ("is_weekend", "is_public_holiday_za"):
+        df[flag] = df[flag].fillna(False).astype("int8")
 
     train, test = time_split(df, "snapshot_ts", holdout_frac=0.25)
     cols = NUMERIC + CATEGORICAL + ["is_weekend", "is_public_holiday_za"]
-    X_train, y_train = train[cols], train["is_stock_out_risk"].astype(int)
-    X_test, y_test = test[cols], test["is_stock_out_risk"].astype(int)
+    X_train, y_train = train[cols], train["is_stock_out_risk"].astype(bool).astype("int8")
+    X_test, y_test = test[cols], test["is_stock_out_risk"].astype(bool).astype("int8")
 
     params = dict(max_iter=300, learning_rate=0.08, max_depth=7,
                   min_samples_leaf=40, random_state=42)
