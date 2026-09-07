@@ -39,8 +39,12 @@ select
     d.actual_arrival_ts,
     d.date_key,
 
-    s.site_key as destination_site_key,
-    p.product_key,
+    -- Resolved to the unknown member rather than left null: a delivery to a
+    -- site code the dimension never received still moved real litres, and a
+    -- null key would drop it from every regional total.
+    coalesce(s.site_key, -1) as destination_site_key,
+    coalesce(p.product_key, -1) as product_key,
+    s.site_key is null as is_unmatched_destination,
 
     d.route_id,
     d.origin_terminal_id,
@@ -49,10 +53,10 @@ select
     d.driver_id,
     d.carrier_id,
     d.product_id,
-    s.province,
-    s.city,
-    s.urban_class,
-    p.product_name,
+    coalesce(s.province, 'Unknown') as province,
+    coalesce(s.city, 'Unknown') as city,
+    coalesce(s.urban_class, 'Unknown') as urban_class,
+    coalesce(p.product_name, 'Unknown product') as product_name,
 
     d.planned_litres,
     d.delivered_litres,

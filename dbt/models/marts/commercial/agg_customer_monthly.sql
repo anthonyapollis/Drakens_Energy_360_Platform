@@ -55,7 +55,13 @@ monthly as (
         calendar_year,
         month_number,
         customer_key,
-        customer_id,
+        -- The grain is month x customer_key. Every order whose customer code
+        -- did not match resolves to the same unknown member, so this
+        -- aggregate carries the member's identity rather than the unmatched
+        -- code -- otherwise the drifting codes break the grain. The codes stay
+        -- on the fact, where they can be diagnosed.
+        case when customer_key = -1 then 'UNKNOWN' else customer_id end
+            as customer_id,
         sector,
         segment,
         credit_band,

@@ -207,18 +207,52 @@ Rank order and every ratio between sites are untouched; only the level moves,
 and the factor applied is printed on every run.
 ---
 
-## Three defects the platform found in itself
+## What the platform found in itself
 
-All three were caught by its own tests and observability, which is the point of
-having them.
+Each of these was caught by the project's own tests, observability or
+baselines, which is the point of having them. None was found by reading the
+code.
 
 **A macro that silently corrupted every ratio.** `safe_divide('a - b', 'c')`
 compiled to `a - (b / c)` because the macro did not parenthesise its
 arguments. Not an error — a plausible-looking wrong number. Caught by a range
 test asserting that `dim_product.base_margin_pct` falls between −5 and 100.
 
-**A general ledger that did not balance.** Journal lines were posted
-independently, so debits exceeded credits by 46%. Caught by
+**A validity rule that deleted half the general ledger.** The contract applied
+a blanket rule to every amount column: anything named `*_zar` must be
+non-negative. `signed_amount_zar` is negative on the credit side *by design*,
+so the rule quarantined 41,886 of the ledger's 84,000 lines — every credit leg
+of every journal. What survived was a ledger of debits with almost no credits,
+reporting a 99.98% imbalance that looked like a generator bug and was a
+contract bug. A validity rule inferred from a column's name is a guess, and a
+wrong guess deletes data silently rather than failing loudly.
+
+**Double-entry integrity is a property of the journal, not the line.** With
+that rule fixed the ledger still would not balance, because cleansing assesses
+rows one at a time: when one leg of a balanced pair failed, the other survived
+alone as an unmatched debit or credit. The imbalance was created by the
+cleansing step itself. The mart now publishes only journals whose lines net to
+zero, and orphaned legs stay in quarantine beside the leg that was rejected.
+Debits and credits now agree to the cent.
+
+**Null foreign keys where an unknown member belonged.** The landing zone
+contains referential drift by design — a site code in a fact that the
+dimension never received. Gold left-joined those facts and kept the null key,
+which is wrong twice over: the row drops out of every inner join, and out of
+any total grouped by province. 5,070 retail transactions with real litres and
+real margin were invisible to regional reporting. They now resolve to a `-1`
+unknown member, so nothing disappears from a total and the drift is countable.
+
+**A sentinel that passed every non-negativity check.** The generator uses `0`
+as one of its numeric sentinels, and `0` satisfies every `amount >= 0` rule
+ever written — so 878 rows reached gold reporting R0.00 of sales on 82 litres
+at R22.34. Stripping zero the way `-999` is stripped is not available: zero
+litres and zero margin are legitimate readings. The contract now checks
+amounts against their own row instead, which catches the class rather than the
+instance.
+
+**A general ledger that did not balance.** Journal lines were originally
+posted independently, so debits exceeded credits by 46%. Caught by
 `obs_reconciliation_controls`, which evaluates double-entry as data rather
 than only as a test. Fixed by emitting journals as balanced pairs.
 
@@ -229,6 +263,11 @@ per day across the window — which `OPTIMIZE` can never merge, because it does
 not cross partition boundaries. Re-run under liquid clustering on
 `(date_key, site_id)`, the same 5 million rows occupy **2 files averaging
 94 MB**. A 487-fold reduction in file count for identical data.
+
+**A leak that scored 0.998, and a model with no baseline.** Both are described
+under *Machine learning* above. The first was found because the number was too
+good; the second was found only once the experiment was made to compute the
+baseline it had to beat.
 
 ---
 

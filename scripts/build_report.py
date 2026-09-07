@@ -228,6 +228,26 @@ FINDINGS = [
      "real margin were invisible to regional reporting. They now resolve to a "
      "-1 unknown member, so nothing disappears from a total and the drift is "
      "countable."),
+    ("A validity rule that deleted half the general ledger",
+     "The contract applied a blanket rule to every amount column: anything "
+     "named *_zar must be non-negative. signed_amount_zar is negative on the "
+     "credit side by design, so the rule quarantined 41,886 of the ledger's "
+     "84,000 lines — every credit leg of every journal. What survived was a "
+     "ledger of debits with almost no credits, which reported a 99.98% "
+     "imbalance that looked like a generator bug and was a contract bug. A "
+     "validity rule inferred from a column name is a guess, and a wrong guess "
+     "deletes data silently instead of failing loudly. Signed measures are now "
+     "matched by naming convention and excluded, so a new net_ or _variance "
+     "column is covered the day it is added."),
+    ("Double-entry integrity is a property of the journal, not the line",
+     "Cleansing assesses rows one at a time, so when one leg of a balanced "
+     "pair failed its contract the other leg survived alone. Each orphaned leg "
+     "sat in the ledger as an unmatched debit or credit, and the ledger could "
+     "not balance however correct the generator was — the imbalance was "
+     "created by the cleansing step itself. The mart now publishes only "
+     "journals whose lines still net to zero, and the orphans stay in "
+     "quarantine beside the leg that was rejected. Debits and credits now "
+     "agree exactly, to the cent."),
     ("A sentinel that passed every non-negativity check",
      "The generator uses 0 as one of its numeric sentinels, and 0 satisfies "
      "every 'amount >= 0' rule. Stripping zero the way -999 is stripped is not "

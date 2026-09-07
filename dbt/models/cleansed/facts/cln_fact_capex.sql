@@ -41,15 +41,13 @@ assessed as (
         (period_date is not null) as _dq_event_timestamp_valid,
         (budget_zar >= 0) as _dq_budget_zar_non_negative,
         (actual_spend_zar >= 0) as _dq_actual_spend_zar_non_negative,
-        (variance_zar >= 0) as _dq_variance_zar_non_negative,
-        (coalesce(_dq_capex_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_budget_zar_non_negative, false) and coalesce(_dq_actual_spend_zar_non_negative, false) and coalesce(_dq_variance_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_capex_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_budget_zar_non_negative, false) and coalesce(_dq_actual_spend_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_capex_id_present, false) then 'capex_id_present' end,
             case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_budget_zar_non_negative, false) then 'budget_zar_non_negative' end,
-            case when not coalesce(_dq_actual_spend_zar_non_negative, false) then 'actual_spend_zar_non_negative' end,
-            case when not coalesce(_dq_variance_zar_non_negative, false) then 'variance_zar_non_negative' end
+            case when not coalesce(_dq_actual_spend_zar_non_negative, false) then 'actual_spend_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed
 )

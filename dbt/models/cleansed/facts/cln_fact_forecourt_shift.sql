@@ -39,14 +39,12 @@ assessed as (
         (site_id is not null) as _dq_site_id_present,
         (business_date is not null) as _dq_event_timestamp_valid,
         (cash_declared_zar >= 0) as _dq_cash_declared_zar_non_negative,
-        (cash_variance_zar >= 0) as _dq_cash_variance_zar_non_negative,
-        (coalesce(_dq_forecourt_shift_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_cash_declared_zar_non_negative, false) and coalesce(_dq_cash_variance_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_forecourt_shift_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_cash_declared_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_forecourt_shift_id_present, false) then 'forecourt_shift_id_present' end,
             case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
-            case when not coalesce(_dq_cash_declared_zar_non_negative, false) then 'cash_declared_zar_non_negative' end,
-            case when not coalesce(_dq_cash_variance_zar_non_negative, false) then 'cash_variance_zar_non_negative' end
+            case when not coalesce(_dq_cash_declared_zar_non_negative, false) then 'cash_declared_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed
 )

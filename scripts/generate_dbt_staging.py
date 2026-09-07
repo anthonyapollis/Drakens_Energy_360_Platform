@@ -61,6 +61,31 @@ UNIT_CORRECTIONS = {
     "bunker_litres": 3_000_000,
 }
 
+# Amount columns that are legitimately signed, and must never be given a
+# non-negativity rule.
+#
+# This exists because the blanket rule "any column ending _zar must be >= 0"
+# quarantined 41,886 of the general ledger's 84,000 lines -- every credit leg
+# of every journal -- because `signed_amount_zar` is negative on the credit
+# side *by design*. The ledger that survived contained debits and almost no
+# credits, so it could not balance, and the GL_DEBITS_EQUAL_CREDITS control
+# reported a 99.98% variance that looked like a generator bug and was actually
+# a contract bug.
+#
+# The lesson generalises: a validity rule inferred from a column's name is a
+# guess, and a wrong guess deletes data silently rather than failing loudly.
+# Signed measures are matched on the naming conventions that mean "this may be
+# negative" rather than listed one by one, so a new net_ or _variance column
+# is covered the day it is added.
+SIGNED_PREFIXES = ("signed_", "net_", "delta_", "adjustment_", "variance_")
+SIGNED_SUFFIXES = ("_variance_zar", "_delta_zar", "_change_zar",
+                   "_adjustment_zar", "_movement_zar")
+
+
+def is_signed_measure(col: str) -> bool:
+    return col.startswith(SIGNED_PREFIXES) or col.endswith(SIGNED_SUFFIXES)
+
+
 # Cross-field consistency rules, keyed on the columns they need.
 #
 # These exist because the single-column rules cannot catch the most damaging
@@ -172,9 +197,12 @@ def quality_rules(table: str, columns: list[str], types: dict,
     for col in columns:
         if types.get(col) != "decimal":
             continue
-        if col.endswith(("_zar", "_usd")) or col in UNIT_CORRECTIONS:
+        if ((col.endswith(("_zar", "_usd")) or col in UNIT_CORRECTIONS)
+                and not is_signed_measure(col)):
             # A negative measure is a sign error or an unflagged credit; either
-            # way it must not be silently summed into a revenue total.
+            # way it must not be silently summed into a revenue total. Columns
+            # that are *meant* to carry a sign are excluded -- see
+            # SIGNED_PREFIXES for what applying this rule to one of them cost.
             rules[f"{col}_non_negative"] = f"{col} >= 0"
         if col in UNIT_CORRECTIONS:
             rules[f"{col}_within_range"] = (

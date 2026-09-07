@@ -64,11 +64,12 @@ models:
       - name: credit_band
         data_tests:
           - accepted_values:
-              arguments: {values: ['A', 'B', 'C', 'D']}
+              # 'Unknown' is the dimension's unknown member.
+              arguments: {values: ['A', 'B', 'C', 'D', 'Unknown']}
       - name: credit_risk_tier
         data_tests:
           - accepted_values:
-              arguments: {values: ['Low', 'Medium', 'High']}
+              arguments: {values: ['Low', 'Medium', 'High', 'Unknown']}
       - name: payment_terms_days
         data_tests:
           - volume_within_tolerance:

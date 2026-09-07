@@ -37,14 +37,12 @@ assessed as (
         (product_id is not null) as _dq_product_id_present,
         (effective_date is not null) as _dq_event_timestamp_valid,
         (basic_fuel_price_zar >= 0) as _dq_basic_fuel_price_zar_non_negative,
-        (net_contract_price_zar >= 0) as _dq_net_contract_price_zar_non_negative,
-        (coalesce(_dq_contract_price_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_basic_fuel_price_zar_non_negative, false) and coalesce(_dq_net_contract_price_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_contract_price_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_basic_fuel_price_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_contract_price_id_present, false) then 'contract_price_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
-            case when not coalesce(_dq_basic_fuel_price_zar_non_negative, false) then 'basic_fuel_price_zar_non_negative' end,
-            case when not coalesce(_dq_net_contract_price_zar_non_negative, false) then 'net_contract_price_zar_non_negative' end
+            case when not coalesce(_dq_basic_fuel_price_zar_non_negative, false) then 'basic_fuel_price_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed
 )

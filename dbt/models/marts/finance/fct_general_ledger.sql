@@ -15,9 +15,41 @@
     sign errors, so the signed column is computed once, upstream.
 */
 
-with gl as (
+with all_lines as (
 
     select * from {{ ref('stg_fact_general_ledger') }}
+
+),
+
+balanced_journals as (
+
+    /*
+        Double-entry integrity is a property of the journal, not of the line.
+
+        Cleansing assesses rows one at a time, so when one leg of a balanced
+        pair fails its contract the other leg survives on its own. Each
+        orphaned leg then sits in the ledger as an unmatched debit or credit,
+        and the ledger cannot balance no matter how correct the generator was
+        -- the imbalance is created by the cleansing step itself.
+
+        Only journals whose lines still net to zero are published. The orphans
+        are not deleted: they remain in the quarantine layer alongside the leg
+        that was rejected, which is where a finance team would look for them,
+        and `obs_reconciliation_controls` reports the ledger it can trust
+        rather than one it has silently patched.
+    */
+    select journal_id
+    from all_lines
+    group by journal_id
+    having abs(sum(debit_amount_zar) - sum(credit_amount_zar)) <= 0.01
+
+),
+
+gl as (
+
+    select l.*
+    from all_lines l
+    join balanced_journals b on l.journal_id = b.journal_id
     {{ incremental_window('posting_date') }}
 
 ),

@@ -36,18 +36,22 @@ select
     o.order_ts,
     o.date_key,
 
-    c.customer_key,
-    p.product_key,
+    -- Resolved to the unknown member rather than left null; see dim_site for
+    -- the reasoning. An order whose customer code did not match is still
+    -- revenue, and must not vanish from a total grouped by sector.
+    coalesce(c.customer_key, -1) as customer_key,
+    coalesce(p.product_key, -1) as product_key,
+    c.customer_key is null as is_unmatched_customer,
 
     o.customer_id,
     o.contract_id,
     o.product_id,
-    c.customer_name,
-    c.sector,
-    c.segment,
-    c.credit_band,
-    c.credit_risk_tier,
-    c.service_model,
+    coalesce(c.customer_name, 'Unknown customer') as customer_name,
+    coalesce(c.sector, 'Unknown') as sector,
+    coalesce(c.segment, 'Unknown') as segment,
+    coalesce(c.credit_band, 'Unknown') as credit_band,
+    coalesce(c.credit_risk_tier, 'Unknown') as credit_risk_tier,
+    coalesce(c.service_model, 'Unknown') as service_model,
     c.is_industrial,
     p.product_name,
     p.reporting_line,

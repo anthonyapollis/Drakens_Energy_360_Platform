@@ -39,15 +39,13 @@ assessed as (
         (invoice_id is not null) as _dq_invoice_id_present,
         (customer_id is not null) as _dq_customer_id_present,
         (invoice_date is not null) as _dq_event_timestamp_valid,
-        (net_amount_zar >= 0) as _dq_net_amount_zar_non_negative,
         (vat_amount_zar >= 0) as _dq_vat_amount_zar_non_negative,
         (gross_amount_zar >= 0) as _dq_gross_amount_zar_non_negative,
-        (coalesce(_dq_invoice_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_net_amount_zar_non_negative, false) and coalesce(_dq_vat_amount_zar_non_negative, false) and coalesce(_dq_gross_amount_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_invoice_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_vat_amount_zar_non_negative, false) and coalesce(_dq_gross_amount_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_invoice_id_present, false) then 'invoice_id_present' end,
             case when not coalesce(_dq_customer_id_present, false) then 'customer_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
-            case when not coalesce(_dq_net_amount_zar_non_negative, false) then 'net_amount_zar_non_negative' end,
             case when not coalesce(_dq_vat_amount_zar_non_negative, false) then 'vat_amount_zar_non_negative' end,
             case when not coalesce(_dq_gross_amount_zar_non_negative, false) then 'gross_amount_zar_non_negative' end
         ) as _dq_failed_rules

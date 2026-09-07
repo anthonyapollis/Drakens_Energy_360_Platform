@@ -37,15 +37,13 @@ assessed as (
         (period_date is not null) as _dq_event_timestamp_valid,
         (inflow_zar >= 0) as _dq_inflow_zar_non_negative,
         (outflow_zar >= 0) as _dq_outflow_zar_non_negative,
-        (net_cashflow_zar >= 0) as _dq_net_cashflow_zar_non_negative,
         (closing_balance_zar >= 0) as _dq_closing_balance_zar_non_negative,
-        (coalesce(_dq_cashflow_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_inflow_zar_non_negative, false) and coalesce(_dq_outflow_zar_non_negative, false) and coalesce(_dq_net_cashflow_zar_non_negative, false) and coalesce(_dq_closing_balance_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_cashflow_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_inflow_zar_non_negative, false) and coalesce(_dq_outflow_zar_non_negative, false) and coalesce(_dq_closing_balance_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_cashflow_id_present, false) then 'cashflow_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_inflow_zar_non_negative, false) then 'inflow_zar_non_negative' end,
             case when not coalesce(_dq_outflow_zar_non_negative, false) then 'outflow_zar_non_negative' end,
-            case when not coalesce(_dq_net_cashflow_zar_non_negative, false) then 'net_cashflow_zar_non_negative' end,
             case when not coalesce(_dq_closing_balance_zar_non_negative, false) then 'closing_balance_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed

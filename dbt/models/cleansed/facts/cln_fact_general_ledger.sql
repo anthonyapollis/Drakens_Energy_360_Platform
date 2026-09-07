@@ -43,14 +43,12 @@ assessed as (
         (posting_date is not null) as _dq_event_timestamp_valid,
         (debit_amount_zar >= 0) as _dq_debit_amount_zar_non_negative,
         (credit_amount_zar >= 0) as _dq_credit_amount_zar_non_negative,
-        (signed_amount_zar >= 0) as _dq_signed_amount_zar_non_negative,
-        (coalesce(_dq_journal_line_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_debit_amount_zar_non_negative, false) and coalesce(_dq_credit_amount_zar_non_negative, false) and coalesce(_dq_signed_amount_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_journal_line_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_debit_amount_zar_non_negative, false) and coalesce(_dq_credit_amount_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_journal_line_id_present, false) then 'journal_line_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_debit_amount_zar_non_negative, false) then 'debit_amount_zar_non_negative' end,
-            case when not coalesce(_dq_credit_amount_zar_non_negative, false) then 'credit_amount_zar_non_negative' end,
-            case when not coalesce(_dq_signed_amount_zar_non_negative, false) then 'signed_amount_zar_non_negative' end
+            case when not coalesce(_dq_credit_amount_zar_non_negative, false) then 'credit_amount_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed
 )
