@@ -1,0 +1,14 @@
+# Normalise line endings so a clone on Windows and one on Linux produce
+# identical working trees. Without this, every file committed from Windows
+# shows as modified on a Linux CI runner and the generated-model staleness
+# check in CI fails for no real reason.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.pdf binary
+*.parquet binary
+*.duckdb binary
+*.qvf binary
+*.xlsx binary

@@ -320,3 +320,7 @@ There are 2 unused configuration paths:
 [0m06:17:44  158 of 814 START sql table model main_silver_cleansed.cln_fact_spare_parts_usage  [RUN]
 [0m06:20:11  151 of 814 OK created sql table model main_silver_cleansed.cln_fact_route_performance  [[32mOK[0m in 759.39s]
 [0m06:20:11  159 of 814 START sql table model main_silver_cleansed.cln_fact_stock_losses .... [RUN]
+[0m06:22:02  159 of 814 OK created sql table model main_silver_cleansed.cln_fact_stock_losses  [[32mOK[0m in 110.93s]
+[0m06:22:02  160 of 814 START sql table model main_silver_cleansed.cln_fact_tank_dips ....... [RUN]
+[0m06:22:26  158 of 814 OK created sql table model main_silver_cleansed.cln_fact_spare_parts_usage  [[32mOK[0m in 282.44s]
+[0m06:22:26  161 of 814 START sql table model main_silver_cleansed.cln_fact_terminal_issues . [RUN]

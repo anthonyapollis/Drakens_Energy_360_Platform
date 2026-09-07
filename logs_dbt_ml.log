@@ -1,0 +1,10 @@
+[0m06:22:43  Running with dbt=1.11.12
+[0m06:22:45  Registered adapter: duckdb=1.10.1
+[0m06:22:49  [[33mWARNING[0m]: Configuration paths exist in your dbt_project.yml file which do not apply to any resources.
+There are 2 unused configuration paths:
+- models.vivo_energy_360.intermediate
+- seeds.vivo_energy_360
+[0m06:22:52  Found 481 models, 1 operation, 322 data tests, 4 snapshots, 167 sources, 7 exposures, 621 macros
+[0m06:22:52  
+[0m06:22:52  Concurrency: 3 threads (target='duckdb_local')
+[0m06:22:52  
