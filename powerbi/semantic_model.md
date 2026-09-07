@@ -203,6 +203,91 @@ categories that need explaining in a capital meeting — a strategically
 protected site and a divestment candidate — are the two that do not look like
 anything else on the page.
 
+### ArcGIS for Power BI, and when it earns its place
+
+Azure Maps covers the network page. ArcGIS for Power BI (the Esri visual that
+ships with Power BI Desktop) does things Azure Maps cannot, and the honest
+position is that it is worth the extra dependency on exactly two pages.
+
+| Capability | Azure Maps | ArcGIS for Power BI |
+|---|---|---|
+| Bubble, heat and reference layers | Yes | Yes |
+| Cartographic basemaps (topographic, imagery, dark grey canvas) | Limited | Full Esri basemap gallery |
+| Drive-time and distance catchments | No | Yes |
+| Demographic and lifestyle reference layers | No | Yes (Esri data, licensed) |
+| Address-level geocoding at scale | No | Yes (credit-consuming) |
+| Available without extra licensing | Yes | Standard tier only |
+
+**Where it earns its place**
+
+*Catchment analysis on the investment page.* The question a capital committee
+asks about a divestment candidate is not "what does it earn" — the scorecard
+answers that — but "who else covers this area if it goes". A five- and
+ten-minute drive-time polygon around each candidate, with the other sites
+inside it, answers that directly. A radius circle does not: a site ten
+kilometres away across a mountain is not a substitute, and on a straight-line
+buffer it looks like one.
+
+*Corridor coverage.* Drive-time bands along the N1, N2 and N3 show where the
+network has a genuine gap rather than merely a low site count. Coverage is a
+function of travel time, not of how many dots fall inside a province.
+
+**Where it does not.** Everyday operational pages stay on Azure Maps. ArcGIS
+credits are consumed per geocode and per analysis operation, so a page that
+refreshes hourly and re-runs a drive-time analysis each time turns a
+cartography decision into a recurring bill. Catchments are computed once, on
+demand, by an analyst — not on every dashboard refresh.
+
+### Geocoding: why the platform never does it at render time
+
+Every site in this model carries `latitude` and `longitude` from `dim_site`.
+Nothing on any map page is geocoded by the visual, and that is a deliberate
+constraint rather than an accident of the data being available.
+
+Text geocoding fails in a specific and dangerous way. It does not error — it
+returns a confident wrong answer. Several South African town names occur in
+more than one province, and several occur in other countries entirely; a
+visual asked to resolve `"Springs"` or `"Richmond"` from a text column will
+resolve it to *something*, and the resulting bubble looks exactly like a
+correct one. A map that is 3% wrong in a way nobody can see is worse than a
+map that refuses to draw.
+
+So the rule is enforced at three points:
+
+1. **The dimension carries coordinates.** They are generated as a town
+   centroid plus jitter, and they are the only source of position on any page.
+2. **Data categories are set explicitly** — *Latitude* and *Longitude* on
+   those columns, and summarisation set to *Don't summarize*. Left on Sum, a
+   map renders a single bubble in the Southern Ocean at the sum of every
+   coordinate, which is the most common Power BI mapping failure and looks
+   like a rendering bug rather than a modelling one.
+3. **Geocoding is off in the tenant** for these reports, so a report author
+   cannot reintroduce it by dragging a city name onto a map.
+
+**If coordinates were missing.** Geocoding would happen once, in the pipeline,
+not in the report: batch the distinct addresses through a geocoder, store the
+result with its match score and the precision it resolved at, and reject
+anything below rooftop or street level to a manual queue. That makes the
+match quality a column that can be tested, filtered and shown, rather than an
+invisible property of a visual. `dim_site` would gain
+`geocode_precision` and `geocode_confidence`, and the map would filter on
+them — a low-confidence site should be visible as low-confidence, not silently
+plotted.
+
+### Coordinate reference system
+
+Everything is stored in WGS 84 (EPSG:4326), which is what both visuals expect
+and what the generator produces.
+
+Distance and area calculations do **not** happen in degrees. A degree of
+longitude at Cape Town's latitude is about 92 km against 111 km for a degree
+of latitude, so a "radius" measured in raw coordinate space is an ellipse that
+gets more wrong the further south the site is. Where the platform needs real
+distance — the corridor coverage measure, the catchment work above — it
+projects to Hartebeesthoek94 / Lo29 or uses a proper geodesic distance. The
+same correction is applied in the Python figures, where the map's axes are
+sized to `longitude x cos(latitude) : latitude` rather than drawn square.
+
 ### Drill path
 
 ```

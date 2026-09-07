@@ -316,6 +316,14 @@ tr:last-child td{border-bottom:none}
 border-radius:9px;padding:15px 17px}
 .card .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .card .v{font-size:25px;font-weight:650;margin-top:3px;letter-spacing:-.02em}
+.toc{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;
+margin:22px 0 4px;padding:14px 18px;background:#fff;border:1px solid var(--line);
+border-radius:9px;font-size:13px}
+.toc strong{font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+color:var(--muted);margin-right:4px}
+.toc a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.toc a:hover{border-bottom-color:var(--accent)}
+@media print{.toc{display:none}}
 figure{margin:24px 0}
 figure img{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
 figcaption{font-size:12.5px;color:var(--muted);margin-top:8px}
@@ -403,6 +411,18 @@ Warehouse: {ctx['warehouse_name']}</p>
 
 <h2>Summary</h2>
 <div class="cards">{card_html}</div>
+<nav class="toc">
+  <strong>In this report</strong>
+  <a href="#build">Build</a>
+  <a href="#quality">Data quality</a>
+  <a href="#warehouse">Warehouse</a>
+  <a href="#demand">Demand</a>
+  <a href="#network">Network and investment</a>
+  <a href="#operations">Commercial and operations</a>
+  <a href="#ml">Machine learning</a>
+  <a href="#findings">What it found in itself</a>
+  <a href="#limits">Limitations</a>
+</nav>
 <p>The platform covers retail forecourt, commercial B2B, supply and
 distribution, LPG, lubricants, aviation, marine, loyalty, digital, EV and
 solar, asset maintenance, HSSEQ and finance — modelled on South Africa with
@@ -412,11 +432,11 @@ demo well: a deliberately dirty landing zone, a cleansing layer whose output
 is measured rather than asserted, and models reported against baselines they
 have to beat.</p>
 
-<h2>Build</h2>
+<h2 id="build">Build</h2>
 {html_table(ctx['build_tables'], ('Rows',))}
 {figure_block('01_build_scale.png', 'Largest fact tables in the portfolio build.')}
 
-<h2>Data quality</h2>
+<h2 id="quality">Data quality</h2>
 <p>The landing zone is dirty on purpose. A portfolio project built on perfect
 data demonstrates nothing, because the difficult part of the job is deciding
 what to do with the row where litres reads "1&nbsp;234,5", the site code has a
@@ -434,7 +454,7 @@ which turns cleansing from an assertion into a measurement.</p>
 {html_table(ctx['quarantine'], ('Rows',))}
 {figure_block('05_quarantine_reasons.png', 'Rejection reasons. The operational response differs by rule.')}
 
-<h2>Warehouse</h2>
+<h2 id="warehouse">Warehouse</h2>
 {html_table(ctx['controls'], ('Variance %',))}
 <p>A reconciliation control evaluates a published number as data rather than
 only as a test, so a control that fails names the figure that is wrong and by
@@ -442,28 +462,45 @@ how much. Controls that fail are shown as failures; a report that quietly
 omits them would defeat the purpose of having them.</p>
 {figure_block('09_databricks_medallion.png', 'Live row counts through bronze, silver and gold on Databricks at portfolio scale.')}
 
-<h2>Demand signal</h2>
-{figure_block('03_demand_shape.png', 'Generated demand follows real trading rhythms: commute peaks at 08:00 and 17:00, and a Friday-heavy week. Without this the forecasting model would have nothing to learn.')}
+<h2 id="demand">Demand and trading rhythm</h2>
+<p>A forecasting model can only learn a pattern the data actually contains.
+These three figures are the evidence that the generator produces one: an
+hourly commute shape, a weekly rhythm, and a southern-hemisphere seasonal
+cycle that survives all the way through to the warehouse.</p>
+{figure_block('03_demand_shape.png', 'Commute peaks at 08:00 and 17:00, and a Friday-heavy week.')}
+{figure_block('11_executive_trend.png', 'Revenue and margin across the modelled window, with the margin rate on its own axis. A rate and a total share an axis only in charts that say nothing about either.')}
+{figure_block('12_seasonality.png', 'Month against day of week, indexed to the network average. December and January are the high-summer holiday peak; June and July the winter trough.')}
 
-<h2>Network and investment</h2>
-{figure_block('06_network_map.png', 'Provinces shaded by margin per site; bubble area is total margin and colour is the investment recommendation. The N1, N2 and N3 are drawn because corridor sites are protected from divestment regardless of score. Shaded areas are the convex hull of each province&rsquo;s synthetic sites, not a province boundary.')}
+<h2 id="network">Network and investment</h2>
+{figure_block('06_network_map.png', 'Provinces shaded by margin per site; bubble area is total margin and colour is the investment recommendation. The N1, N2 and N3 are drawn because corridor sites are protected from divestment regardless of score. Province boundaries are Natural Earth 1:10m admin-1, public domain; everything drawn on them is generated.')}
 {html_table(ctx['plan_summary'])}
 <h3>Plan by province</h3>
 {html_table(ctx['plan_province'], ('Projects', 'Capex (R m)', 'Uplift (R m)'))}
+{figure_block('10_map_multiples.png', 'The same network read six ways, on a fixed basemap and extent so the panels are directly comparable. A single map answers one question; a network planner asks six.')}
 {figure_block('08_province_performance.png', 'Volume and margin by province.')}
+{figure_block('16_investment_frontier.png', 'Every candidate project by return against capital, with the funded set highlighted. The funded set is not simply the top of the ROI ranking &mdash; provincial minimums and corridor protection pull specific projects in.')}
+{figure_block('18_site_distribution.png', 'Left: throughput is skewed enough that a network average is a poor summary. Right: what actually drives the investment score, as the correlation between each component and the total.')}
 
-<h2>Machine learning</h2>
+<h2 id="operations">Commercial and operations</h2>
+<p>Four questions the business asks that the platform is built to answer, each
+computed once in gold rather than reassembled per report.</p>
+{figure_block('13_commercial.png', 'Left: whether the credit band means anything &mdash; worse-rated customers discount harder. Right: how concentrated the customer book is, which is a different risk from an even one.')}
+{figure_block('14_delivery_performance.png', 'OTIF broken out by province and by trip length. As a single network number it is the least useful form of it: broken out, it says whether lateness is a routing problem, a distance problem or one region&rsquo;s problem.')}
+{figure_block('15_asset_reliability.png', 'Breakdown rate against asset age and criticality. This is the signal the predictive-maintenance model is allowed to learn from, and the reason that experiment reports an age-only baseline.')}
+
+<h2 id="ml">Machine learning</h2>
 <p>Six experiments, each reported against a baseline it has to beat. Not all
 of them win, and all six are listed — a portfolio that shows only the models
 that worked is not showing the job.</p>
 {html_table(ctx['ml'])}
+{figure_block('17_model_scorecard.png', 'Each classifier against the baseline it has to beat, and the demand forecast against its seasonal-naive baseline. A bar that does not clear its black marker has not earned its place in the pipeline.')}
 
-<h2>What the platform found in itself</h2>
+<h2 id="findings">What the platform found in itself</h2>
 <p>Each of these was caught by the project&rsquo;s own tests, observability or
 baselines, which is the point of having them.</p>
 {findings}
 
-<h2>Limitations</h2>
+<h2 id="limits">Limitations</h2>
 <p>Stated plainly, because a report that claims completeness is misleading.</p>
 <ul>{limits}</ul>
 
