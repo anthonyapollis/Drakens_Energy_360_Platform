@@ -1,12 +1,16 @@
+{#
+    Not partitioned by date_key. That is the obvious choice -- every query
+    filters on a date range -- and it is wrong here: 974 days in the window
+    means 974 partitions of a fraction of a megabyte each, and OPTIMIZE never
+    merges across a partition boundary, so those small files are permanent.
+    Measured, not assumed: see docs/portfolio_case_study.md. Liquid clustering
+    gives the same data skipping without fixing the physical layout.
+#}
 {{
     config(
         materialized='incremental',
         unique_key='transaction_id',
         incremental_strategy='merge' if target.type == 'databricks' else 'delete+insert',
-        -- Not partitioned by date_key: 974 days in the window would
-        -- produce 974 partitions of a fraction of a megabyte each, and
-        -- OPTIMIZE cannot merge across partitions. Liquid clustering
-        -- gives the same skipping without fixing the layout.
         liquid_clustered_by=['date_key', 'site_id'] if target.type == 'databricks' else none,
         tags=['retail', 'high_volume', 'hourly']
     )

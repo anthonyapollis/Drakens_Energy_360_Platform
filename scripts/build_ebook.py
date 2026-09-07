@@ -55,7 +55,13 @@ def warehouse_facts() -> dict:
         print(f"  warning: no warehouse at {DUCKDB}; skipping warehouse figures")
         return {}
 
-    con = duckdb.connect(str(DUCKDB), read_only=True)
+    try:
+        con = duckdb.connect(str(DUCKDB), read_only=True)
+    except duckdb.IOException as exc:
+        # Almost always a dbt build holding the file. The manifest-derived
+        # sections still render; the warehouse tables are simply omitted.
+        print(f"  warehouse is locked, omitting its figures: {str(exc)[:100]}")
+        return {}
     out: dict = {}
 
     def try_query(key, sql, single=True):
@@ -644,7 +650,10 @@ def render_pdf(html_path: Path, pdf_path: Path) -> bool:
     import subprocess
     import tempfile
 
-    with tempfile.TemporaryDirectory() as profile:
+    # ignore_cleanup_errors: headless Chromium leaves a memory-mapped crash
+    # metrics file behind on Windows that cannot be removed immediately, and
+    # failing to delete a temp directory must not discard a PDF that rendered.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:
         cmd = [
             str(browser), "--headless", "--disable-gpu", "--no-sandbox",
             f"--user-data-dir={profile}",
