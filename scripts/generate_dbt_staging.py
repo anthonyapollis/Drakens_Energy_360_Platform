@@ -150,6 +150,36 @@ CONSISTENCY_RULES = [
     ),
 ]
 
+# Percentages that are a share of something and therefore cannot fall
+# outside 0-100.
+#
+# Listed explicitly rather than matched on a `_pct` suffix. Twice in this
+# project a rule inferred from a column's name destroyed legitimate data --
+# every credit leg of the general ledger, then 89% of site opening dates --
+# and both times the rule looked obviously right. A margin percentage can be
+# negative on a bad day and a growth rate is negative half the time, so the
+# broad version of this rule would quarantine real rows. Only the ratios whose
+# denominator physically bounds them are constrained.
+BOUNDED_PERCENTAGES = {
+    "fill_pct": (0, 100),
+    "fill_rate_pct": (0, 100),
+    "power_utilisation_pct": (0, 100),
+    "otif_pct": (0, 100),
+    "breakdown_rate_pct": (0, 100),
+    "uptime_pct": (0, 100),
+    "utilisation_pct": (0, 100),
+    "compliance_pct": (0, 100),
+    "attendance_pct": (0, 100),
+}
+
+# Physical quantities that cannot be negative. Listed explicitly, for the
+# same reason as BOUNDED_PERCENTAGES: a suffix rule would sweep in
+# delay_minutes, which is legitimately negative when a load arrives early.
+NON_NEGATIVE_MEASURES = {
+    "average_power_kw", "rated_power_kw", "energy_kwh", "capacity_litres",
+    "stock_on_hand_litres", "solar_kwh", "generation_kwh",
+}
+
 # Plausible bands for unit prices. A regulated South African fuel price has
 # never been R1.51 or R0.00 a litre; a row claiming one has lost a decimal
 # separator or picked up a sentinel, and it must not reach a margin
@@ -242,6 +272,11 @@ def quality_rules(table: str, columns: list[str], types: dict,
         if col in PRICE_BANDS:
             lo, hi = PRICE_BANDS[col]
             rules[f"{col}_plausible"] = f"{col} between {lo} and {hi}"
+        if col in NON_NEGATIVE_MEASURES:
+            rules[f"{col}_non_negative"] = f"{col} >= 0"
+        if col in BOUNDED_PERCENTAGES:
+            lo, hi = BOUNDED_PERCENTAGES[col]
+            rules[f"{col}_in_range"] = f"{col} between {lo} and {hi}"
 
     # Cross-field rules apply only where the table carries every column the
     # rule reads. A rule silently skipped because a column is missing is worse

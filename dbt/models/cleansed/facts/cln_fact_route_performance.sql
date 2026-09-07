@@ -39,11 +39,13 @@ assessed as (
         (route_performance_id is not null) as _dq_route_performance_id_present,
         (business_date is not null) as _dq_event_timestamp_valid,
         (cost_per_km_zar >= 0) as _dq_cost_per_km_zar_non_negative,
-        (coalesce(_dq_route_performance_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_cost_per_km_zar_non_negative, false)) as _dq_is_valid,
+        (utilisation_pct between 0 and 100) as _dq_utilisation_pct_in_range,
+        (coalesce(_dq_route_performance_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_cost_per_km_zar_non_negative, false) and coalesce(_dq_utilisation_pct_in_range, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_route_performance_id_present, false) then 'route_performance_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
-            case when not coalesce(_dq_cost_per_km_zar_non_negative, false) then 'cost_per_km_zar_non_negative' end
+            case when not coalesce(_dq_cost_per_km_zar_non_negative, false) then 'cost_per_km_zar_non_negative' end,
+            case when not coalesce(_dq_utilisation_pct_in_range, false) then 'utilisation_pct_in_range' end
         ) as _dq_failed_rules
     from cleansed
 )

@@ -43,14 +43,16 @@ assessed as (
         (dip_ts is not null) as _dq_event_timestamp_valid,
         (volume_litres >= 0) as _dq_volume_litres_non_negative,
         (volume_litres <= 3000000) as _dq_volume_litres_within_range,
-        (coalesce(_dq_tank_dip_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_volume_litres_non_negative, false) and coalesce(_dq_volume_litres_within_range, false)) as _dq_is_valid,
+        (fill_pct between 0 and 100) as _dq_fill_pct_in_range,
+        (coalesce(_dq_tank_dip_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_volume_litres_non_negative, false) and coalesce(_dq_volume_litres_within_range, false) and coalesce(_dq_fill_pct_in_range, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_tank_dip_id_present, false) then 'tank_dip_id_present' end,
             case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_volume_litres_non_negative, false) then 'volume_litres_non_negative' end,
-            case when not coalesce(_dq_volume_litres_within_range, false) then 'volume_litres_within_range' end
+            case when not coalesce(_dq_volume_litres_within_range, false) then 'volume_litres_within_range' end,
+            case when not coalesce(_dq_fill_pct_in_range, false) then 'fill_pct_in_range' end
         ) as _dq_failed_rules
     from cleansed
 )

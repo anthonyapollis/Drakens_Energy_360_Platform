@@ -737,6 +737,583 @@ def fig_province_performance(con):
     return _finish(fig, "08_province_performance.png", warehouse_caption())
 
 
+
+# ==========================================================================
+# 7. Commercial and operational analysis
+# ==========================================================================
+def fig_executive_trend(con):
+    """Revenue, margin and margin rate over the whole modelled window.
+
+    A daily series at this length is unreadable as a line, and a monthly one
+    hides the weekly rhythm the generator works hard to produce. Both are
+    drawn: the daily series faint, a 28-day rolling mean over it, and the
+    margin rate on its own axis underneath, because a rate and a total on one
+    axis is how a chart ends up saying nothing about either.
+    """
+    df = con.execute("""
+        select full_date,
+               sum(total_revenue_zar) as revenue,
+               sum(total_margin_zar)  as margin,
+               sum(fuel_litres)       as litres
+        from main_gold.agg_executive_daily_kpi
+        where full_date is not null
+        group by 1 order by 1
+    """).df()
+    if df.empty:
+        return None
+    df["full_date"] = pd.to_datetime(df.full_date)
+    df["margin_pct"] = df.margin / df.revenue.replace(0, np.nan) * 100
+    roll = df.set_index("full_date").rolling("28D").mean()
+
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(10.4, 5.6), sharex=True,
+        gridspec_kw={"height_ratios": [2.1, 1.0], "hspace": 0.12})
+
+    ax1.plot(df.full_date, df.revenue, color=GREY, lw=0.5, alpha=0.45,
+             label="daily")
+    ax1.plot(roll.index, roll.revenue, color=ACCENT, lw=2.0,
+             label="revenue, 28-day mean")
+    ax1.plot(roll.index, roll.margin, color=GOLD, lw=2.0,
+             label="margin, 28-day mean")
+    ax1.fill_between(roll.index, 0, roll.margin, color=GOLD, alpha=0.12)
+    ax1.yaxis.set_major_formatter(FuncFormatter(thousands))
+    ax1.set_ylabel("rand per day")
+    ax1.set_title("Network revenue and margin", loc="left")
+    ax1.legend(frameon=False, fontsize=8, ncol=3, loc="upper left")
+    ax1.grid(alpha=0.15, linewidth=0.5)
+
+    ax2.plot(roll.index, roll.margin_pct, color=INK, lw=1.6)
+    ax2.set_ylabel("margin %")
+    ax2.set_title("Gross margin rate", loc="left", fontsize=9.5)
+    ax2.grid(alpha=0.15, linewidth=0.5)
+    # One decimal: the rate moves inside a single percentage point, and
+    # a zero-decimal axis prints the same label five times.
+    ax2.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.1f}%"))
+    return _finish(fig, "11_executive_trend.png", warehouse_caption())
+
+
+def fig_seasonality(con):
+    """Month against day of week, as a heatmap.
+
+    The demand generator shapes volume by hour, weekday, month and public
+    holiday. A line chart shows one of those at a time; a heatmap shows the
+    interaction, which is where the pattern either looks like a real trading
+    calendar or looks like noise with a trend bolted on.
+    """
+    df = con.execute("""
+        select month_name, day_name, sum(fuel_litres) as litres
+        from main_gold.agg_executive_daily_kpi
+        group by 1, 2
+    """).df()
+    if df.empty:
+        return None
+
+    months = ["January", "February", "March", "April", "May", "June", "July",
+              "August", "September", "October", "November", "December"]
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+            "Saturday", "Sunday"]
+    grid = (df.pivot_table(index="month_name", columns="day_name",
+                           values="litres", aggfunc="sum")
+              .reindex(index=months, columns=days))
+
+    # Indexed to the overall mean. Absolute litres would make the colour scale
+    # a story about how many days fell in each month.
+    indexed = grid / grid.to_numpy().mean() * 100
+
+    fig, ax = plt.subplots(figsize=(8.2, 5.0))
+    im = ax.imshow(indexed.to_numpy(), cmap="RdYlGn", aspect="auto",
+                   vmin=100 - np.nanmax(abs(indexed.to_numpy() - 100)),
+                   vmax=100 + np.nanmax(abs(indexed.to_numpy() - 100)))
+    ax.set_xticks(range(len(days)))
+    ax.set_xticklabels([d[:3] for d in days], fontsize=8.5)
+    ax.set_yticks(range(len(months)))
+    ax.set_yticklabels([m[:3] for m in months], fontsize=8.5)
+    for i in range(len(months)):
+        for j in range(len(days)):
+            v = indexed.to_numpy()[i, j]
+            if np.isfinite(v):
+                ax.text(j, i, f"{v:.0f}", ha="center", va="center",
+                        fontsize=6.8,
+                        color="white" if abs(v - 100) > 12 else INK)
+    cb = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
+    cb.set_label("volume index, 100 = network average", fontsize=8)
+    cb.outline.set_visible(False)
+    ax.set_title("Volume by month and day of week", loc="left")
+    ax.text(0.0, -0.13, "Southern-hemisphere seasons: December and January "
+            "are the high-summer holiday peak, June and July the winter "
+            "trough.", transform=ax.transAxes, fontsize=7.5, color=GREY)
+    return _finish(fig, "12_seasonality.png", warehouse_caption())
+
+
+def fig_credit_and_sector(con):
+    """Two commercial questions the credit committee actually asks.
+
+    Left: does the credit band mean anything -- do worse-rated customers
+    actually pay later and discount harder? Right: how concentrated is the
+    book, because a customer list whose top decile carries most of the revenue
+    is a different risk from one that does not.
+    """
+    band = con.execute("""
+        select credit_band,
+               count(distinct customer_key) as customers,
+               sum(revenue_zar)             as revenue,
+               avg(margin_pct)              as margin_pct,
+               avg(discount_intensity_pct)  as discount_pct
+        from main_gold.agg_customer_monthly
+        where credit_band is not null
+        group by 1 order by 1
+    """).df()
+    cust = con.execute("""
+        select customer_key, sum(revenue_zar) as revenue
+        from main_gold.agg_customer_monthly
+        group by 1 having sum(revenue_zar) > 0
+    """).df()
+    if band.empty or cust.empty:
+        return None
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 4.2))
+
+    x = np.arange(len(band))
+    ax1.bar(x - 0.2, band.margin_pct, 0.4, color=ACCENT, label="margin %")
+    ax1.bar(x + 0.2, band.discount_pct, 0.4, color=WARN, label="discount %")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(band.credit_band)
+    ax1.set_xlabel("credit band")
+    ax1.set_title("Margin and discount by credit band", loc="left",
+                  fontsize=10)
+    ax1.legend(frameon=False, fontsize=8)
+    ax1.set_ylabel("% of revenue")
+    ax1.grid(axis="y", alpha=0.15, linewidth=0.5)
+    ax1.set_ylim(0, float(band.margin_pct.max()) * 1.32)
+    # Counts sit above the bars. Below the axis they collided with the axis
+    # label, which is the kind of overlap that survives review because the
+    # chart is still readable and quietly looks unfinished.
+    for i, row in band.iterrows():
+        ax1.annotate(f"{int(row.customers):,} customers",
+                     (i, float(row.margin_pct)), xytext=(0, 6),
+                     textcoords="offset points", ha="center", fontsize=7,
+                     color=GREY)
+
+    share = (cust.revenue.sort_values(ascending=False).cumsum()
+             / cust.revenue.sum() * 100).to_numpy()
+    pct = np.arange(1, len(share) + 1) / len(share) * 100
+    ax2.plot(pct, share, color=ACCENT, lw=2)
+    ax2.plot([0, 100], [0, 100], color=GREY, lw=1, linestyle=(0, (4, 3)),
+             label="perfectly even book")
+    top_decile = float(np.interp(10, pct, share))
+    ax2.axvline(10, color=WARN, lw=1, alpha=0.6)
+    ax2.annotate(f"top 10% of customers\ncarry {top_decile:.0f}% of revenue",
+                 (10, top_decile), xytext=(16, top_decile - 22),
+                 fontsize=8, color=INK,
+                 arrowprops=dict(arrowstyle="->", color=GREY, lw=0.8))
+    ax2.set_xlabel("cumulative share of customers (%)")
+    ax2.set_ylabel("cumulative share of revenue (%)")
+    ax2.set_title("Revenue concentration", loc="left", fontsize=10)
+    ax2.legend(frameon=False, fontsize=8, loc="lower right")
+    ax2.grid(alpha=0.15, linewidth=0.5)
+    return _finish(fig, "13_commercial.png", warehouse_caption())
+
+
+def fig_delivery_performance(con):
+    """Where the distribution plan actually breaks.
+
+    OTIF as a single network number is the least useful form of it. Broken out
+    by province and by trip length, it says whether lateness is a routing
+    problem, a distance problem, or one region's problem -- which are three
+    different fixes.
+    """
+    prov = con.execute("""
+        select province,
+               count(*)                             as deliveries,
+               avg(case when is_otif then 1.0 else 0 end) * 100 as otif_pct,
+               avg(delay_minutes)                   as avg_delay
+        from main_gold.fct_deliveries
+        where province is not null
+        group by 1 having count(*) > 30
+        order by otif_pct
+    """).df()
+    dist = con.execute("""
+        select case
+                 when distance_km < 50   then '< 50'
+                 when distance_km < 150  then '50-150'
+                 when distance_km < 300  then '150-300'
+                 when distance_km < 600  then '300-600'
+                 else '600+'
+               end as band,
+               count(*) as deliveries,
+               avg(case when is_otif then 1.0 else 0 end) * 100 as otif_pct
+        from main_gold.fct_deliveries
+        where distance_km is not null
+        group by 1
+    """).df()
+    if prov.empty:
+        return None
+
+    order = ["< 50", "50-150", "150-300", "300-600", "600+"]
+    dist = dist.set_index("band").reindex(order).dropna().reset_index()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 4.2),
+                                   gridspec_kw={"width_ratios": [1.25, 1.0]})
+
+    network = float(prov.deliveries @ prov.otif_pct / prov.deliveries.sum())
+    colours = [WARN if v < network else ACCENT for v in prov.otif_pct]
+    ax1.barh(prov.province, prov.otif_pct, color=colours, edgecolor="white",
+             linewidth=0.6)
+    ax1.axvline(network, color=INK, lw=1, linestyle=(0, (4, 3)))
+    ax1.annotate(f"network {network:.1f}%", (network, -0.7),
+                 xytext=(4, 0), textcoords="offset points", fontsize=7.5,
+                 color=INK)
+    ax1.set_xlabel("on time and in full (%)")
+    ax1.set_title("OTIF by province", loc="left", fontsize=10)
+    ax1.grid(axis="x", alpha=0.15, linewidth=0.5)
+    ax1.tick_params(labelsize=8)
+    for i, row in prov.iterrows():
+        ax1.annotate(f"{int(row.deliveries):,}", (row.otif_pct, i),
+                     xytext=(4, 0), textcoords="offset points", va="center",
+                     fontsize=6.5, color=GREY)
+
+    ax2.plot(dist.band, dist.otif_pct, color=ACCENT, lw=2, marker="o", ms=5)
+    ax2.set_xlabel("trip distance (km)")
+    ax2.set_ylabel("OTIF (%)")
+    ax2.set_title("OTIF by trip length", loc="left", fontsize=10)
+    ax2.grid(alpha=0.15, linewidth=0.5)
+    for _, row in dist.iterrows():
+        ax2.annotate(f"{int(row.deliveries):,}", (row.band, row.otif_pct),
+                     xytext=(0, 9), textcoords="offset points", ha="center",
+                     fontsize=7, color=GREY)
+    return _finish(fig, "14_delivery_performance.png", warehouse_caption())
+
+
+def fig_asset_reliability(con):
+    """The signal the maintenance model is allowed to learn from.
+
+    Breakdown rate rises with asset age and with criticality, and this figure
+    is the reason the predictive-maintenance experiment reports an age-only
+    baseline: if age explains most of the separation, a model has to beat age
+    before it has earned a place in the pipeline.
+    """
+    age = con.execute("""
+        select asset_age_band,
+               count(*) as work_orders,
+               avg(case when is_breakdown then 1.0 else 0 end) * 100 as rate
+        from main_gold.fct_maintenance_work_orders
+        where asset_age_band is not null
+        group by 1
+    """).df()
+    # A cell computed from one work order is not a rate, it is that work
+    # order. Cells below the threshold are left blank rather than printed as
+    # a confident 0% or 100%, which is what they were before: the first draft
+    # of this figure showed a POS Terminal / Critical cell at 100% on a single
+    # row, sitting in the same colour scale as cells built from 300.
+    typ = con.execute("""
+        select asset_type, criticality,
+               avg(case when is_breakdown then 1.0 else 0 end) * 100 as rate,
+               count(*) as work_orders
+        from main_gold.fct_maintenance_work_orders
+        where asset_type is not null and criticality is not null
+        group by 1, 2
+        having count(*) >= 20
+    """).df()
+    if age.empty:
+        return None
+
+    order = ["0-5", "5-10", "10-15", "15+"]
+    age = age.set_index("asset_age_band").reindex(order).dropna().reset_index()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.6),
+                                   gridspec_kw={"width_ratios": [1.0, 1.30],
+                                                "wspace": 0.38})
+
+    bars = ax1.bar(age.asset_age_band, age.rate,
+                   color=plt.get_cmap("OrRd")(
+                       np.linspace(0.35, 0.85, len(age))),
+                   edgecolor="white", linewidth=0.6)
+    ax1.set_xlabel("asset age band (years)")
+    ax1.set_ylabel("unplanned work orders (%)")
+    ax1.set_title("Breakdown rate rises with age", loc="left", fontsize=10)
+    ax1.grid(axis="y", alpha=0.15, linewidth=0.5)
+    for b, row in zip(bars, age.itertuples(), strict=False):
+        ax1.annotate(f"{row.rate:.0f}%\n{int(row.work_orders):,} WOs",
+                     (b.get_x() + b.get_width() / 2, row.rate),
+                     xytext=(0, 4), textcoords="offset points", ha="center",
+                     fontsize=7, color=GREY)
+
+    pivot = typ.pivot_table(index="asset_type", columns="criticality",
+                            values="rate", aggfunc="mean")
+    for col in ("Critical", "High", "Medium", "Low"):
+        if col not in pivot.columns:
+            pivot[col] = np.nan
+    pivot = pivot[["Critical", "High", "Medium", "Low"]]
+    im = ax2.imshow(pivot.to_numpy(), cmap="OrRd", aspect="auto")
+    ax2.set_xticks(range(len(pivot.columns)))
+    ax2.set_xticklabels(pivot.columns, fontsize=8)
+    ax2.set_yticks(range(len(pivot.index)))
+    ax2.set_yticklabels(pivot.index, fontsize=8)
+    for i in range(pivot.shape[0]):
+        for j in range(pivot.shape[1]):
+            v = pivot.to_numpy()[i, j]
+            if np.isfinite(v):
+                ax2.text(j, i, f"{v:.0f}", ha="center", va="center",
+                         fontsize=7,
+                         color="white" if v > np.nanmean(pivot.to_numpy())
+                         else INK)
+    ax2.set_title("Breakdown rate by asset type and criticality",
+                  loc="left", fontsize=10)
+    cb = fig.colorbar(im, ax=ax2, shrink=0.85, pad=0.02)
+    cb.set_label("% unplanned", fontsize=8)
+    cb.outline.set_visible(False)
+    return _finish(fig, "15_asset_reliability.png", warehouse_caption())
+
+
+def fig_investment_frontier(con):
+    """Every candidate project, and the line the budget actually drew.
+
+    The optimiser's output is a list, and a list does not show why one project
+    was funded and a similar one was not. Plotting return against capital does:
+    the funded set is not simply the top of the ROI ranking, because provincial
+    minimums and corridor protection pull specific projects in.
+    """
+    plan_path = REPO / "data" / "network_investment_plan.csv"
+    if not plan_path.exists():
+        return None
+    plan = pd.read_csv(plan_path)
+    if plan.empty or "selected" not in plan:
+        return None
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 4.4),
+                                   gridspec_kw={"width_ratios": [1.25, 1.0],
+                                                "wspace": 0.34})
+
+    sel = plan[plan.selected.astype(bool)]
+    rej = plan[~plan.selected.astype(bool)]
+
+    # Capital cost takes one value per intervention type, so an honest scatter
+    # is five vertical lines with several hundred points stacked on each. A
+    # little horizontal jitter separates them without moving any point far
+    # enough to misread its cost.
+    rng = np.random.default_rng(7)
+
+    def jitter(values):
+        return values / 1e6 + rng.normal(0, 0.055, len(values))
+
+    ax1.scatter(jitter(rej.capex_zar), rej.roi_pct, s=14, c=GREY, alpha=0.30,
+                label=f"not funded ({len(rej):,})", linewidths=0)
+    ax1.scatter(jitter(sel.capex_zar), sel.roi_pct, s=18, c=ACCENT,
+                alpha=0.75, label=f"funded ({len(sel):,})", linewidths=0)
+    ax1.set_xlabel("capital required (R m)")
+    ax1.set_ylabel("expected return (% per year)")
+    ax1.set_title("Candidate projects: return against capital", loc="left",
+                  fontsize=10)
+    ax1.legend(frameon=False, fontsize=8, loc="upper right")
+    ax1.grid(alpha=0.15, linewidth=0.5)
+
+    by_type = (sel.groupby("intervention")
+                  .agg(projects=("site_id", "size"),
+                       capex=("capex_zar", "sum"),
+                       uplift=("expected_annual_uplift_zar", "sum"))
+                  .sort_values("capex"))
+    y = np.arange(len(by_type))
+    ax2.barh(y - 0.2, by_type.capex / 1e6, 0.4, color=GREY, label="capital")
+    ax2.barh(y + 0.2, by_type.uplift / 1e6, 0.4, color=ACCENT,
+             label="annual uplift")
+    ax2.set_yticks(y)
+    # Wrapped, because the intervention names are long enough to run into the
+    # bars at this width.
+    ax2.set_yticklabels([n.replace(" ", "\n", 1) for n in by_type.index],
+                        fontsize=8)
+    ax2.set_xlabel("R m")
+    ax2.set_title("Funded plan by intervention", loc="left", fontsize=10)
+    ax2.legend(frameon=False, fontsize=8)
+    ax2.grid(axis="x", alpha=0.15, linewidth=0.5)
+    for i, row in enumerate(by_type.itertuples()):
+        ax2.annotate(f"{int(row.projects)} sites",
+                     (max(row.capex, row.uplift) / 1e6, i), xytext=(4, 0),
+                     textcoords="offset points", va="center", fontsize=6.5,
+                     color=GREY)
+    return _finish(fig, "16_investment_frontier.png", warehouse_caption())
+
+
+def fig_model_scorecard(_con=None):
+    """Every model against the baseline it has to beat.
+
+    Read straight from the MLflow tracking store, so a model that stops
+    beating its baseline changes this figure on the next run rather than
+    waiting for someone to remember to redraw it.
+    """
+    import sqlite3
+
+    db = REPO / "mlruns" / "mlflow.db"
+    if not db.exists():
+        return None
+    try:
+        conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return None
+    try:
+        runs = pd.read_sql_query(
+            "SELECT e.name AS experiment, r.run_uuid, r.start_time "
+            "FROM runs r JOIN experiments e "
+            "ON r.experiment_id = e.experiment_id "
+            "WHERE r.status = 'FINISHED'", conn)
+        metrics = pd.read_sql_query(
+            "SELECT run_uuid, key, value FROM metrics", conn)
+    finally:
+        conn.close()
+    if runs.empty:
+        return None
+
+    latest = (runs.sort_values("start_time")
+                  .groupby("experiment", as_index=False).last())
+    wide = (metrics[metrics.run_uuid.isin(latest.run_uuid)]
+            .merge(latest[["experiment", "run_uuid"]], on="run_uuid")
+            .pivot_table(index="experiment", columns="key", values="value",
+                         aggfunc="last"))
+    wide.index = wide.index.str.replace("drakens_energy_360_", "", regex=False)
+
+    rows = []
+    for name, r in wide.iterrows():
+        auc = r.get("roc_auc")
+        if pd.isna(auc):
+            continue
+        base = r.get("baseline_roc_auc_age_only")
+        rows.append({
+            "model": name.replace("_", " ").title(),
+            "score": float(auc),
+            "baseline": float(base) if pd.notna(base) else 0.5,
+            "baseline_label": ("age-only" if pd.notna(base) else "chance"),
+        })
+    if not rows:
+        return None
+    scored = pd.DataFrame(rows).sort_values("score")
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.8, 4.0),
+                                   gridspec_kw={"width_ratios": [1.3, 1.0]})
+
+    y = np.arange(len(scored))
+    # A model has to clear its baseline by a margin worth deploying for, not
+    # by a rounding error. Stock-out risk scores 0.510 against a chance
+    # baseline of 0.500: nominally ahead, and useless.
+    MEANINGFUL = 0.02
+    beats = scored.score > scored.baseline + MEANINGFUL
+    ax1.barh(y, scored.score, color=[ACCENT if b else WARN for b in beats],
+             edgecolor="white", linewidth=0.6, height=0.62)
+    for i, row in enumerate(scored.itertuples()):
+        ax1.plot([row.baseline, row.baseline], [i - 0.36, i + 0.36],
+                 color=INK, lw=1.8)
+        ax1.annotate(f"{row.score:.3f}", (row.score, i), xytext=(4, 0),
+                     textcoords="offset points", va="center", fontsize=7.5,
+                     color=GREY)
+    ax1.set_yticks(y)
+    ax1.set_yticklabels(scored.model, fontsize=8.5)
+    ax1.set_xlim(0.45, 1.0)
+    ax1.set_xlabel("ROC-AUC")
+    ax1.set_title("Each model against the baseline it must beat (black bar)",
+                  loc="left", fontsize=10)
+    ax1.grid(axis="x", alpha=0.15, linewidth=0.5)
+
+    # The demand forecast is a regression and has no AUC, so it gets its own
+    # panel rather than a meaningless bar on the one above.
+    demand = wide.loc["demand_forecast"] if "demand_forecast" in wide.index \
+        else None
+    if demand is not None and pd.notna(demand.get("mae")):
+        labels = ["seasonal naive\n(last week, same day)", "model"]
+        values = [float(demand.get("baseline_mae", np.nan)),
+                  float(demand.get("mae"))]
+        bars = ax2.bar(labels, values, color=[GREY, ACCENT],
+                       edgecolor="white", linewidth=0.6, width=0.55)
+        ax2.set_ylabel("mean absolute error (litres)")
+        ax2.set_title("Demand forecast against its baseline", loc="left",
+                      fontsize=10)
+        ax2.grid(axis="y", alpha=0.15, linewidth=0.5)
+        for b, v in zip(bars, values, strict=False):
+            ax2.annotate(f"{v:,.1f}",
+                         (b.get_x() + b.get_width() / 2, v), xytext=(0, 4),
+                         textcoords="offset points", ha="center", fontsize=8,
+                         color=INK)
+        improvement = float(demand.get("mae_improvement_pct", np.nan))
+        if np.isfinite(improvement):
+            ax2.annotate(f"{improvement:.1f}% better", (1, values[1]),
+                         xytext=(0, 26), textcoords="offset points",
+                         ha="center", fontsize=9, color=ACCENT,
+                         fontweight="bold")
+    else:
+        ax2.axis("off")
+
+    failed = int((~beats).sum())
+    ax1.text(0.0, -0.20,
+             "The black marker is the baseline each model has to beat. A bar "
+             f"that does not clear it by at least {MEANINGFUL:.2f} has not "
+             "earned its place in the pipeline:\n"
+             f"{failed} of {len(scored)} classifiers here have not.",
+             transform=ax1.transAxes, fontsize=7.5, color=GREY, va="top")
+    return _finish(fig, "17_model_scorecard.png")
+
+
+def fig_site_distribution(con):
+    """How unequal the network is, and where the score comes from.
+
+    Left: the distribution of site throughput, because a network average is a
+    poor summary of a population this skewed. Right: what actually drives the
+    investment score, as the correlation between each component and the total.
+    """
+    df = con.execute("""
+        select avg_daily_litres, total_margin_zar, investment_score,
+               urban_class, r_contribution, r_throughput, r_growth,
+               r_non_fuel, r_reliability, r_uptime, r_safety,
+               r_asset_condition
+        from main_gold.network_investment_scorecard
+        where avg_daily_litres is not null
+    """).df()
+    if df.empty:
+        return None
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 4.2))
+
+    classes = [c for c in ("Metro", "Urban", "Town", "Rural")
+               if c in set(df.urban_class)]
+    data = [df.loc[df.urban_class == c, "avg_daily_litres"].dropna()
+            for c in classes]
+    parts = ax1.violinplot(data, showmedians=True, widths=0.8)
+    for body in parts["bodies"]:
+        body.set_facecolor(ACCENT)
+        body.set_alpha(0.35)
+    for key in ("cmedians", "cmaxes", "cmins", "cbars"):
+        if key in parts:
+            parts[key].set_color(INK)
+            parts[key].set_linewidth(1.0)
+    ax1.set_xticks(range(1, len(classes) + 1))
+    ax1.set_xticklabels(classes, fontsize=8.5)
+    ax1.set_ylabel("litres per site per day")
+    ax1.set_title("Throughput distribution by location type", loc="left",
+                  fontsize=10)
+    ax1.grid(axis="y", alpha=0.15, linewidth=0.5)
+    for i, c in enumerate(classes, start=1):
+        ax1.annotate(f"n={len(df[df.urban_class == c]):,}", (i, 0),
+                     xytext=(0, -30), textcoords="offset points",
+                     ha="center", fontsize=7, color=GREY)
+
+    components = ["r_contribution", "r_throughput", "r_growth", "r_non_fuel",
+                  "r_reliability", "r_uptime", "r_safety",
+                  "r_asset_condition"]
+    corr = (df[[*components, "investment_score"]].corr()["investment_score"]
+            .drop("investment_score").sort_values())
+    ax2.barh([c.replace("r_", "").replace("_", " ") for c in corr.index],
+             corr.to_numpy(),
+             color=[WARN if v < 0 else ACCENT for v in corr],
+             edgecolor="white", linewidth=0.6)
+    ax2.axvline(0, color=INK, lw=0.8)
+    ax2.set_xlabel("correlation with the investment score")
+    ax2.set_title("What drives the score", loc="left", fontsize=10)
+    ax2.grid(axis="x", alpha=0.15, linewidth=0.5)
+    ax2.tick_params(labelsize=8)
+    ax2.text(0.0, -0.22,
+             "Weights are a stated management judgement, not a fitted "
+             "parameter, so a challenged recommendation can be answered with "
+             "its inputs.",
+             transform=ax2.transAxes, fontsize=7, color=GREY)
+    return _finish(fig, "18_site_distribution.png", warehouse_caption())
+
+
 # ==========================================================================
 # 6. Databricks evidence
 # ==========================================================================
@@ -830,9 +1407,14 @@ def main(argv=None):
             print("done")
             return 0
         try:
-            for fn in (fig_demand_shape, fig_cleansing, fig_quarantine_reasons,
-                       fig_network_map, fig_investment_mix,
-                       fig_province_performance):
+            for fn in (fig_demand_shape, fig_cleansing,
+                       fig_quarantine_reasons, fig_network_map,
+                       fig_investment_mix, fig_province_performance,
+                       fig_map_multiples, fig_executive_trend,
+                       fig_seasonality, fig_credit_and_sector,
+                       fig_delivery_performance, fig_asset_reliability,
+                       fig_investment_frontier, fig_model_scorecard,
+                       fig_site_distribution):
                 try:
                     fn(con)
                 except Exception as exc:

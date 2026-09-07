@@ -36,11 +36,15 @@ assessed as (
         (aviation_snapshot_id is not null) as _dq_aviation_snapshot_id_present,
         (product_id is not null) as _dq_product_id_present,
         (snapshot_ts is not null) as _dq_event_timestamp_valid,
-        (coalesce(_dq_aviation_snapshot_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false)) as _dq_is_valid,
+        (capacity_litres >= 0) as _dq_capacity_litres_non_negative,
+        (stock_on_hand_litres >= 0) as _dq_stock_on_hand_litres_non_negative,
+        (coalesce(_dq_aviation_snapshot_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_capacity_litres_non_negative, false) and coalesce(_dq_stock_on_hand_litres_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_aviation_snapshot_id_present, false) then 'aviation_snapshot_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
-            case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end
+            case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
+            case when not coalesce(_dq_capacity_litres_non_negative, false) then 'capacity_litres_non_negative' end,
+            case when not coalesce(_dq_stock_on_hand_litres_non_negative, false) then 'stock_on_hand_litres_non_negative' end
         ) as _dq_failed_rules
     from cleansed
 )

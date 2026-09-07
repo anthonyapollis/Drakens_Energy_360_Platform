@@ -39,14 +39,16 @@ assessed as (
         (snapshot_date is not null) as _dq_event_timestamp_valid,
         (credit_limit_zar >= 0) as _dq_credit_limit_zar_non_negative,
         (outstanding_balance_zar >= 0) as _dq_outstanding_balance_zar_non_negative,
+        (utilisation_pct between 0 and 100) as _dq_utilisation_pct_in_range,
         (overdue_balance_zar >= 0) as _dq_overdue_balance_zar_non_negative,
-        (coalesce(_dq_exposure_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_credit_limit_zar_non_negative, false) and coalesce(_dq_outstanding_balance_zar_non_negative, false) and coalesce(_dq_overdue_balance_zar_non_negative, false)) as _dq_is_valid,
+        (coalesce(_dq_exposure_id_present, false) and coalesce(_dq_customer_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_credit_limit_zar_non_negative, false) and coalesce(_dq_outstanding_balance_zar_non_negative, false) and coalesce(_dq_utilisation_pct_in_range, false) and coalesce(_dq_overdue_balance_zar_non_negative, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_exposure_id_present, false) then 'exposure_id_present' end,
             case when not coalesce(_dq_customer_id_present, false) then 'customer_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_credit_limit_zar_non_negative, false) then 'credit_limit_zar_non_negative' end,
             case when not coalesce(_dq_outstanding_balance_zar_non_negative, false) then 'outstanding_balance_zar_non_negative' end,
+            case when not coalesce(_dq_utilisation_pct_in_range, false) then 'utilisation_pct_in_range' end,
             case when not coalesce(_dq_overdue_balance_zar_non_negative, false) then 'overdue_balance_zar_non_negative' end
         ) as _dq_failed_rules
     from cleansed

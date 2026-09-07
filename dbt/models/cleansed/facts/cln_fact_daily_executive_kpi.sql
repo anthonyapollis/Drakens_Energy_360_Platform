@@ -49,7 +49,8 @@ assessed as (
         (total_revenue_zar >= 0) as _dq_total_revenue_zar_non_negative,
         (gross_margin_zar >= 0) as _dq_gross_margin_zar_non_negative,
         (average_transaction_zar >= 0) as _dq_average_transaction_zar_non_negative,
-        (coalesce(_dq_executive_kpi_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_fuel_revenue_zar_non_negative, false) and coalesce(_dq_shop_revenue_zar_non_negative, false) and coalesce(_dq_total_revenue_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false) and coalesce(_dq_average_transaction_zar_non_negative, false)) as _dq_is_valid,
+        (otif_pct between 0 and 100) as _dq_otif_pct_in_range,
+        (coalesce(_dq_executive_kpi_id_present, false) and coalesce(_dq_site_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_fuel_revenue_zar_non_negative, false) and coalesce(_dq_shop_revenue_zar_non_negative, false) and coalesce(_dq_total_revenue_zar_non_negative, false) and coalesce(_dq_gross_margin_zar_non_negative, false) and coalesce(_dq_average_transaction_zar_non_negative, false) and coalesce(_dq_otif_pct_in_range, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_executive_kpi_id_present, false) then 'executive_kpi_id_present' end,
             case when not coalesce(_dq_site_id_present, false) then 'site_id_present' end,
@@ -58,7 +59,8 @@ assessed as (
             case when not coalesce(_dq_shop_revenue_zar_non_negative, false) then 'shop_revenue_zar_non_negative' end,
             case when not coalesce(_dq_total_revenue_zar_non_negative, false) then 'total_revenue_zar_non_negative' end,
             case when not coalesce(_dq_gross_margin_zar_non_negative, false) then 'gross_margin_zar_non_negative' end,
-            case when not coalesce(_dq_average_transaction_zar_non_negative, false) then 'average_transaction_zar_non_negative' end
+            case when not coalesce(_dq_average_transaction_zar_non_negative, false) then 'average_transaction_zar_non_negative' end,
+            case when not coalesce(_dq_otif_pct_in_range, false) then 'otif_pct_in_range' end
         ) as _dq_failed_rules
     from cleansed
 )

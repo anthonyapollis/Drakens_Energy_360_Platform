@@ -49,13 +49,15 @@ assessed as (
         (planned_arrival_ts is not null) as _dq_event_timestamp_valid,
         (delivered_litres >= 0) as _dq_delivered_litres_non_negative,
         (delivered_litres <= 60000) as _dq_delivered_litres_within_range,
-        (coalesce(_dq_delivery_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_delivered_litres_non_negative, false) and coalesce(_dq_delivered_litres_within_range, false)) as _dq_is_valid,
+        (fill_rate_pct between 0 and 100) as _dq_fill_rate_pct_in_range,
+        (coalesce(_dq_delivery_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_delivered_litres_non_negative, false) and coalesce(_dq_delivered_litres_within_range, false) and coalesce(_dq_fill_rate_pct_in_range, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_delivery_id_present, false) then 'delivery_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
             case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
             case when not coalesce(_dq_delivered_litres_non_negative, false) then 'delivered_litres_non_negative' end,
-            case when not coalesce(_dq_delivered_litres_within_range, false) then 'delivered_litres_within_range' end
+            case when not coalesce(_dq_delivered_litres_within_range, false) then 'delivered_litres_within_range' end,
+            case when not coalesce(_dq_fill_rate_pct_in_range, false) then 'fill_rate_pct_in_range' end
         ) as _dq_failed_rules
     from cleansed
 )

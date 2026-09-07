@@ -11,17 +11,31 @@
 
 {% macro clean_text(column) %}
     {#-
-        Trim, then map the sentinel strings that extracts use in place of NULL
-        onto an actual NULL. Case-folded so 'null', 'NULL' and 'Null' are all
-        caught. An empty string after trimming is also a null: a space is not
-        a value.
+        Strip surrounding whitespace, then map the sentinel strings that
+        extracts use in place of NULL onto an actual NULL. Case-folded so
+        'null', 'NULL' and 'Null' are all caught. An empty string after
+        stripping is also a null: a space is not a value.
+
+        `trim()` is not enough. In DuckDB and in Spark it removes spaces and
+        nothing else, so a value padded with a tab survives cleansing intact
+        and arrives in gold as a *different category* from the same value
+        without one. It showed up as thirteen asset types on a chart that
+        should have had twelve, with a tab-padded value sitting beside
+        'Underground Tank' -- both real, both counted separately, neither
+        obviously wrong to anyone reading a total.
+
+        The regex strips every kind of surrounding whitespace: spaces, tabs,
+        carriage returns, newlines and the non-breaking space that arrives
+        whenever a value has been through a spreadsheet.
     -#}
     nullif(
         case
-            when upper(trim(cast({{ column }} as varchar))) in
+            when upper(regexp_replace(cast({{ column }} as varchar),
+                                      '^[\s\x{00a0}]+|[\s\x{00a0}]+$', '', 'g')) in
                  ('', 'NULL', 'N/A', '#N/A', '-', '?', 'UNKNOWN', 'NONE', 'NA')
                 then null
-            else trim(cast({{ column }} as varchar))
+            else regexp_replace(cast({{ column }} as varchar),
+                                '^[\s\x{00a0}]+|[\s\x{00a0}]+$', '', 'g')
         end,
         ''
     )

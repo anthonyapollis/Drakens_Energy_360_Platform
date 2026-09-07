@@ -67,11 +67,35 @@ select
     d.delivery_status,
     d.reason_code,
 
-    -- The single conformed OTIF definition.
-    d.delay_minutes <= {{ var('otif_delay_threshold_minutes') }} as is_on_time,
-    d.delivered_litres >= d.planned_litres * 0.98 as is_in_full,
-    (d.delay_minutes <= {{ var('otif_delay_threshold_minutes') }}
-        and d.delivered_litres >= d.planned_litres * 0.98) as is_otif,
+    /*
+        The single conformed OTIF definition.
+
+        Written out with an explicit unknown rather than relying on SQL's
+        three-valued logic, which gets this exactly wrong. `NULL <= 60` is
+        NULL, and `NULL AND FALSE` is FALSE -- so a delivery that had not
+        arrived yet *and* was short-delivered came out as a definite OTIF
+        failure, while one that had not arrived and was full came out as
+        unknown. The same row was being judged or excused depending on a
+        second, unrelated column.
+
+        A delivery in flight has no punctuality. Saying so is the only honest
+        answer, and it keeps in-flight loads from quietly deflating the
+        network OTIF figure.
+    */
+    case
+        when d.delay_minutes is null then null
+        else d.delay_minutes <= {{ var('otif_delay_threshold_minutes') }}
+    end as is_on_time,
+    case
+        when d.delivered_litres is null or d.planned_litres is null then null
+        else d.delivered_litres >= d.planned_litres * 0.98
+    end as is_in_full,
+    case
+        when d.delay_minutes is null or d.delivered_litres is null
+             or d.planned_litres is null then null
+        else d.delay_minutes <= {{ var('otif_delay_threshold_minutes') }}
+             and d.delivered_litres >= d.planned_litres * 0.98
+    end as is_otif,
 
     case
         when d.delay_minutes <= 0 then 'Early'

@@ -39,11 +39,13 @@ assessed as (
         (throughput_id is not null) as _dq_throughput_id_present,
         (product_id is not null) as _dq_product_id_present,
         (business_date is not null) as _dq_event_timestamp_valid,
-        (coalesce(_dq_throughput_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false)) as _dq_is_valid,
+        (utilisation_pct between 0 and 100) as _dq_utilisation_pct_in_range,
+        (coalesce(_dq_throughput_id_present, false) and coalesce(_dq_product_id_present, false) and coalesce(_dq_event_timestamp_valid, false) and coalesce(_dq_utilisation_pct_in_range, false)) as _dq_is_valid,
         concat_ws(',',
             case when not coalesce(_dq_throughput_id_present, false) then 'throughput_id_present' end,
             case when not coalesce(_dq_product_id_present, false) then 'product_id_present' end,
-            case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end
+            case when not coalesce(_dq_event_timestamp_valid, false) then 'event_timestamp_valid' end,
+            case when not coalesce(_dq_utilisation_pct_in_range, false) then 'utilisation_pct_in_range' end
         ) as _dq_failed_rules
     from cleansed
 )

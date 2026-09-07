@@ -19,7 +19,21 @@ models:
           - volume_within_tolerance:
               arguments: {min_value: 0, max_value: 60000}
       - name: is_otif
-        data_tests: [not_null]
+        description: >
+          Null where the delivery has not arrived yet, which is a real state
+          and not a defect: punctuality is unknowable before arrival. The test
+          asserts the flag is present for every *arrived* delivery instead, so
+          a genuine gap in the feed still fails while an in-flight load does
+          not. The late-delivery model drops these rows for the same reason --
+          treating an unarrived load as on time would bias it toward optimism,
+          which is the wrong direction for a lateness alert.
+        data_tests:
+          - not_null:
+              config:
+                where: >
+                  delay_minutes is not null
+                  and delivered_litres is not null
+                  and planned_litres is not null
       - name: punctuality_band
         data_tests:
           - accepted_values:
