@@ -263,14 +263,26 @@ drift from what the generator produces.
 
 **Partitioning by date was wrong, and the platform proved it.** Partitioning
 the retail fact on `date_key` is the obvious choice — every query filters on a
-date range. The maintenance job's own output showed the cost: 974 days in the
-window means 974 partitions holding about 0.2 MB each, `OPTIMIZE` cannot merge
-across partition boundaries, so those small files are permanent, and every
-query pays 974 file-open costs to read a third of a gigabyte. The same table
-under liquid clustering compacted from 7 files to 2, averaging 74 MB. Changed
-to liquid clustering on `(date_key, site_id)`, which gives the same skipping
-without fixing the physical layout — and can be re-keyed later without
-rewriting history.
+date range. The maintenance job's own output showed the cost, on the same 5
+million rows:
+
+| Table | Layout | Files | Avg file size |
+|---|---|---:|---:|
+| `gold.fct_retail_fuel_sales` | partitioned by `date_key` | 974 | 0.2 MB |
+| `gold.fct_retail_fuel_sales` | liquid clustered `(date_key, site_id)` | **2** | **94.4 MB** |
+| `bronze.fact_retail_fuel_sales` | partitioned by `date_key` | 974 | 0.2 MB |
+| `bronze.fact_retail_fuel_sales` | unpartitioned, compacted | **3** | **44.5 MB** |
+| `bronze.fact_shop_sales` | partitioned by `date_key` | 974 | 0.1 MB |
+| `bronze.fact_shop_sales` | unpartitioned, compacted | **1** | **48.9 MB** |
+
+974 days in the window means 974 partitions of a fraction of a megabyte each.
+`OPTIMIZE` never merges across a partition boundary, so those small files are
+permanent, and every query pays 974 file-open costs to read a third of a
+gigabyte. Liquid clustering gives the same data skipping without committing the
+physical layout, and the keys can be re-chosen later without rewriting history.
+
+A **487-fold** reduction in file count for identical data, found by reading the
+maintenance job's own output rather than by reasoning about it in advance.
 
 **A catalog per environment.** A dev job physically cannot write to prod
 because the grant does not exist.

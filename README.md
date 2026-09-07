@@ -152,11 +152,11 @@ than only as a test. Fixed by emitting journals as balanced pairs.
 
 **A partitioning choice that looked obvious and was wrong.** The retail fact
 was partitioned on `date_key`, because every query filters on a date range.
-The maintenance job measured the result: 974 files averaging 0.2 MB, one per
-day across the window, which `OPTIMIZE` cannot merge because it never crosses
-a partition boundary. The same table under liquid clustering compacted from 7
-files to 2 at an average of 74 MB. Changed to liquid clustering on
-`(date_key, site_id)`.
+The maintenance job measured the result: **974 files averaging 0.2 MB** — one
+per day across the window — which `OPTIMIZE` can never merge, because it does
+not cross partition boundaries. Re-run under liquid clustering on
+`(date_key, site_id)`, the same 5 million rows occupy **2 files averaging
+94 MB**. A 487-fold reduction in file count for identical data.
 
 ---
 
