@@ -215,13 +215,38 @@ def test_all_nine_provinces_reach_gold(con):
     assert n == 9, f"only {n} provinces present in the gold site dimension"
 
 
-def test_south_african_site_count(con):
-    n = scalar(con, """
-        select count(*) from main_gold.dim_site
-        where country_code = 'ZA' and is_current
-    """)
-    assert 1_000 <= n <= 1_100, (
-        f"{n} South African sites; the spec calls for approximately 1,050")
+def test_south_africa_is_the_largest_market(con):
+    """South Africa's share of the estate, not its absolute size.
+
+    This asserted 1,000 to 1,100 sites, which is the full profile's figure.
+    The test profile builds 250 and CI runs the test profile, so the check
+    failed on a warehouse that was entirely correct -- and it encoded the same
+    1,050 that was wrong in the README, from the same vanished build.
+
+    A count that depends on the profile cannot be asserted by a test that runs
+    against every profile. The share can: the generator draws South African
+    sites from 88 town anchors and the rest from country centroids in fixed
+    proportion, so ZA stays the largest single market at roughly two fifths of
+    the network at any scale.
+    """
+    za, total = con.execute("""
+        select count(*) filter (where country_code = 'ZA' and is_current),
+               count(*) filter (where is_current and country_code <> 'ZZ')
+        from main_gold.dim_site
+    """).fetchone()
+    assert za > 0, "no South African sites reached gold"
+    share = za / total
+    assert 0.35 <= share <= 0.55, (
+        f"{za} of {total} sites are South African ({share:.0%}); the "
+        f"generator's mix puts it between 35% and 55%")
+
+    biggest = con.execute("""
+        select country_code, count(*) as n from main_gold.dim_site
+        where is_current and country_code <> 'ZZ'
+        group by 1 order by 2 desc limit 1
+    """).fetchone()
+    assert biggest[0] == "ZA", (
+        f"{biggest[0]} has {biggest[1]} sites, more than South Africa's {za}")
 
 
 def test_investment_scores_are_bounded(con):

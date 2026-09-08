@@ -188,6 +188,11 @@ def check_artifacts(con: duckdb.DuckDBPyConnection, fact: dict) -> list[str]:
                 continue
             with csv.open(encoding="utf-8", newline="") as fh:
                 rows = sum(1 for _ in fh) - 1
+            if table == "obs_ml_performance":
+                # Not a warehouse table. It is written straight from the
+                # MLflow store by scripts/export_ml_results.py, so there is
+                # nothing in DuckDB to reconcile it against.
+                continue
             schema = ("main_platform" if table.startswith("obs_")
                       else "main_gold")
             try:

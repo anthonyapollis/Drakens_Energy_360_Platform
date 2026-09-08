@@ -73,6 +73,12 @@ TABLES = {
     # does not contain fails to load with an error naming the role rather than
     # the table.
     "bridge_security_user_scope":   dict(mode="import", kind="security"),
+    # The ML scorecard. It is not produced by dbt -- it comes out of the
+    # MLflow store via scripts/export_ml_results.py -- but it belongs in the
+    # semantic model for the same reason the observability tables do: a claim
+    # nobody can see in the report is a claim nobody checks.
+    "obs_ml_performance":           dict(mode="import", kind="observability",
+                                         schema="platform"),
     "obs_cleansing_summary":        dict(mode="import", kind="observability",
                                          schema="platform"),
     "obs_quarantine_reasons":       dict(mode="import", kind="observability",
@@ -401,6 +407,42 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "CALCULATE ( [Tables Monitored], "
          "obs_cleansing_summary[row_count_reconciles] = FALSE () )",
          "#,0", "Data quality"),
+    ],
+    "dim_site": [
+        # Explicit, because the model discourages implicit measures and a
+        # scatter's axes have to aggregate something. At the site grain these
+        # average one value each, which is the coordinate itself.
+        ("Site Latitude", "AVERAGE ( dim_site[latitude] )", "0.000",
+         "Geography"),
+        ("Site Longitude", "AVERAGE ( dim_site[longitude] )", "0.000",
+         "Geography"),
+    ],
+    "obs_ml_performance": [
+        ("Models", "COUNTROWS ( obs_ml_performance )", "#,0", "Machine learning"),
+        ("Models Beating Baseline",
+         "CALCULATE ( COUNTROWS ( obs_ml_performance ), "
+         "obs_ml_performance[verdict] = \"Beats baseline\" )",
+         "#,0", "Machine learning"),
+        ("Models Scored",
+         "CALCULATE ( COUNTROWS ( obs_ml_performance ), "
+         "NOT ISBLANK ( obs_ml_performance[metric_value] ) )",
+         "#,0", "Machine learning"),
+        # Share of the models that were actually scored, not of every row. A
+        # denominator that counts the unsupervised model makes the honest
+        # answer look worse than it is, and the dishonest fix is to drop that
+        # row from the page entirely.
+        ("Baseline Beat Rate %",
+         "DIVIDE ( [Models Beating Baseline], [Models Scored] )",
+         "0.0%", "Machine learning"),
+        ("Average Lift over Baseline",
+         "AVERAGE ( obs_ml_performance[lift_over_baseline] )",
+         "+0.000;-0.000;0.000", "Machine learning"),
+        ("Best ROC-AUC",
+         "CALCULATE ( MAX ( obs_ml_performance[metric_value] ), "
+         "obs_ml_performance[metric_name] = \"roc_auc\" )",
+         "0.000", "Machine learning"),
+        ("Training Rows", "SUM ( obs_ml_performance[train_rows] )",
+         "#,0", "Machine learning"),
     ],
     "obs_reconciliation_controls": [
         ("Controls", "COUNTROWS ( obs_reconciliation_controls )",
@@ -958,8 +1000,20 @@ def main() -> int:
         try:
             schema = con.execute(f"describe {db_schema}.{table}").df()
         except duckdb.Error:
-            missing.append(table)
-            continue
+            # Not every table in the model comes from the warehouse. The ML
+            # scorecard is written straight from the MLflow store, so its
+            # schema is read from the extract itself. DuckDB sniffs the CSV,
+            # which keeps one code path for typing rather than a second
+            # hand-maintained column list that drifts the first time a metric
+            # is added.
+            extract = REPO / "powerbi" / "data" / f"{table}.csv"
+            if extract.exists():
+                schema = con.execute(
+                    f"describe select * from "
+                    f"read_csv_auto('{extract.as_posix()}')").df()
+            else:
+                missing.append(table)
+                continue
         schemas[table] = list(
             zip(schema.column_name, schema.column_type, strict=False))
     con.close()

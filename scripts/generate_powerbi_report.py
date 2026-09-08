@@ -115,7 +115,10 @@ BAND_FAINT = "#AFC3B8"
 # KPI cards carry a tint rather than plain white, so a row of numbers reads as
 # a band of its own against the page. Kept very light: the callout on it is
 # INK, and the pair has to pass the same contrast gate as everything else.
-CARD_BG = "#F4F8F5"
+CARD_BG = "#F7FAF8"
+# The KPI band sits a shade deeper than the rest, so the eye
+# lands on the numbers first without needing a border to say so.
+KPI_BG = "#EAF1EC"
 
 # Ordered invest -> divest, matching the mart's seven recommendation strings
 # and the evidence pack's figures. A report and a report-about-the-report that
@@ -154,8 +157,12 @@ def theme() -> dict:
         "visualStyles": {
             "*": {
                 "*": {
-                    "background": [{"show": True, "color": {"solid":
-                                                            {"color": "#FFFFFF"}},
+                    # Every tile, not only the KPI cards. Half the page in
+                    # white and half in a tint reads as two designs sharing a
+                    # canvas; one surface colour throughout is what makes the
+                    # page look composed rather than assembled.
+                    "background": [{"show": True,
+                                    "color": {"solid": {"color": CARD_BG}},
                                     "transparency": 0}],
                     "border": [{"show": True, "color": {"solid":
                                                         {"color": LINE}},
@@ -422,7 +429,7 @@ def combo(x, y, width, height, *, category, columns, line, title) -> dict:
 
 
 def scatter(x, y, width, height, *, detail, x_measure, y_measure,
-            size=None, title=None) -> dict:
+            size=None, legend=None, title=None) -> dict:
     """A scatter, which needs its axes named separately.
 
     Two measures stacked on the Y role is a valid clustered chart and an
@@ -439,6 +446,8 @@ def scatter(x, y, width, height, *, detail, x_measure, y_measure,
     }
     if size:
         query["Size"] = {"projections": [size]}
+    if legend:
+        query["Series"] = {"projections": [legend]}
     return visual("scatterChart", x, y, width, height, query=query,
                   title=title, objects={
                       "dataPoint": [{"properties": {
@@ -607,18 +616,28 @@ def page_network() -> tuple[str, str, list[dict]]:
     # 6 columns the frame is roughly square and the bounding box fills it.
     x, width = col(0, 6)
     y, height = row(0, 404)
-    v.append(map_visual(
+    # A coordinate scatter, not a basemap visual. Both basemap options failed
+    # on a machine nobody controls: Azure Maps renders a sign-in prompt where
+    # the map should be, and the built-in map is off unless Global > Security
+    # has map visuals enabled -- and when it does draw, its auto-zoom falls
+    # back to a world view as soon as a filter leaves it few enough points to
+    # be unable to compute an extent, which is exactly when the reader is
+    # looking hardest.
+    #
+    # A scatter on longitude and latitude has none of that. It always renders,
+    # it rescales its axes to whatever survives the filter, and it needs no
+    # external service. The cost is the coastline, and the coastline was never
+    # the point: these are town centroids plus jitter, and what the page is
+    # for is where the margin sits relative to everything else.
+    v.append(scatter(
         x, y, width, height,
-        latitude=column("dim_site", "Latitude"),
-        longitude=column("dim_site", "Longitude"),
-        size=measure("network_investment_scorecard", "Sites Scored"),
+        detail=column("dim_site", "Site Name"),
+        x_measure=measure("dim_site", "Site Longitude"),
+        y_measure=measure("dim_site", "Site Latitude"),
+        size=measure("agg_site_daily_fuel", "Gross Margin"),
         legend=column("network_investment_scorecard",
                       "Investment Recommendation"),
-        tooltips=[column("dim_site", "Site Name"),
-                  measure("agg_site_daily_fuel", "Gross Margin"),
-                  measure("network_investment_scorecard",
-                          "Average Investment Score")],
-        title="Network by investment recommendation"))
+        title="Where the margin sits: every site by coordinate"))
 
     x, width = col(6, 3)
     v.append(chart(
@@ -888,8 +907,62 @@ def page_data_quality() -> tuple[str, str, list[dict]]:
     return "data-quality", "Data quality", v
 
 
+def page_machine_learning() -> tuple[str, str, list[dict]]:
+    """The models, and whether they earned their place.
+
+    A portfolio that shows six trained models and no baselines is showing six
+    numbers, not six models. This page leads with how many actually beat the
+    thing they have to beat -- three of five scored -- because the two that do
+    not are the reason to believe the three that do. Predictive maintenance
+    loses to knowing an asset's age, and stock-out risk is chance once the
+    leak is removed. Both are on the page.
+    """
+    v = header("Machine learning",
+               "Six models, the baseline each has to beat, and the two that "
+               "do not")
+
+    y = row(0, 0)[0]
+    v += kpi_row([
+        ("obs_ml_performance", "Models", "Models trained"),
+        ("obs_ml_performance", "Models Beating Baseline", "Beat baseline"),
+        ("obs_ml_performance", "Baseline Beat Rate %", "Of those scored"),
+        ("obs_ml_performance", "Best ROC-AUC", "Best ROC-AUC"),
+        ("obs_ml_performance", "Training Rows", "Training rows"),
+    ], y=y)
+
+    top = row(112, 0)[0]
+    x, width = col(0, 7)
+    v.append(chart(
+        "clusteredBarChart", x, top, width, 232,
+        category=[column("obs_ml_performance", "Model")],
+        values=[measure("obs_ml_performance", "Average Lift over Baseline")],
+        title="Lift over baseline, by model (negative means it lost)"))
+
+    x, width = col(7, 5)
+    v.append(chart(
+        "donutChart", x, top, width, 232,
+        category=[column("obs_ml_performance", "Verdict")],
+        values=[measure("obs_ml_performance", "Models")],
+        title="Verdicts"))
+
+    bottom = row(360, 0)[0]
+    x, width = col(0, 12)
+    v.append(table_visual(x, bottom, width, 200, [
+        column("obs_ml_performance", "Model"),
+        column("obs_ml_performance", "Use Case"),
+        column("obs_ml_performance", "Target"),
+        column("obs_ml_performance", "Metric Name"),
+        column("obs_ml_performance", "Metric Value"),
+        column("obs_ml_performance", "Baseline Name"),
+        column("obs_ml_performance", "Baseline Value"),
+        column("obs_ml_performance", "Verdict"),
+    ], "Every model, its baseline, and the verdict"))
+    return "machine-learning", "Machine learning", v
+
+
 PAGES = [page_executive, page_network, page_site_detail, page_commercial,
-         page_supply, page_assets, page_data_quality]
+         page_supply, page_assets, page_data_quality,
+         page_machine_learning]
 
 
 # --------------------------------------------------------------------------
@@ -975,11 +1048,11 @@ TEXT_ON = [
     ("page title on the header band", BAND_TEXT, INK, 3.0),
     ("page subtitle on the header band", BAND_SUBTLE, INK, 4.5),
     ("synthetic-data disclaimer on the header band", BAND_FAINT, INK, 4.5),
-    ("card callout on a card", INK, CARD_BG, 3.0),
-    ("card category label on a card", MUTED, CARD_BG, 4.5),
-    ("visual title on a tile", INK, "#FFFFFF", 4.5),
-    ("axis and legend labels on a tile", MUTED, "#FFFFFF", 4.5),
-    ("table values on a tile", INK, "#FFFFFF", 4.5),
+    ("card callout on a card", INK, KPI_BG, 3.0),
+    ("card category label on a card", MUTED, KPI_BG, 4.5),
+    ("visual title on a tile", INK, CARD_BG, 4.5),
+    ("axis and legend labels on a tile", MUTED, CARD_BG, 4.5),
+    ("table values on a tile", INK, CARD_BG, 4.5),
 ]
 
 

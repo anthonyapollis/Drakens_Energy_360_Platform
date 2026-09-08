@@ -48,7 +48,7 @@
             "show": true,
             "color": {
               "solid": {
-                "color": "#FFFFFF"
+                "color": "#F7FAF8"
               }
             },
             "transparency": 0
@@ -157,7 +157,7 @@
             "show": true,
             "color": {
               "solid": {
-                "color": "#F4F8F5"
+                "color": "#F7FAF8"
               }
             },
             "transparency": 0

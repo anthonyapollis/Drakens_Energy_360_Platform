@@ -393,6 +393,20 @@
             "isHidden": true
           }
         ],
+        "measures": [
+          {
+            "name": "Site Latitude",
+            "expression": "AVERAGE ( dim_site[Latitude] )",
+            "formatString": "0.000",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Site Longitude",
+            "expression": "AVERAGE ( dim_site[Longitude] )",
+            "formatString": "0.000",
+            "displayFolder": "Geography"
+          }
+        ],
         "partitions": [
           {
             "name": "dim_site",
@@ -2930,6 +2944,183 @@
                 "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
                 "    Chosen  = Table.SelectColumns(Headers, {\"user_principal\", \"scope_type\", \"scope_value\", \"grants_everything\", \"dw_loaded_at\"}),",
                 "    Typed   = Table.TransformColumnTypes(Chosen, {{\"user_principal\", type text}, {\"scope_type\", type text}, {\"scope_value\", type text}, {\"grants_everything\", type logical}, {\"dw_loaded_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "obs_ml_performance",
+        "columns": [
+          {
+            "name": "Model",
+            "dataType": "string",
+            "sourceColumn": "model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Model Key",
+            "dataType": "string",
+            "sourceColumn": "model_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Task",
+            "dataType": "string",
+            "sourceColumn": "task",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Use Case",
+            "dataType": "string",
+            "sourceColumn": "use_case",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Target",
+            "dataType": "string",
+            "sourceColumn": "target",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Grain",
+            "dataType": "string",
+            "sourceColumn": "grain",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Metric Name",
+            "dataType": "string",
+            "sourceColumn": "metric_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Metric Value",
+            "dataType": "double",
+            "sourceColumn": "metric_value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Baseline Name",
+            "dataType": "string",
+            "sourceColumn": "baseline_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Baseline Value",
+            "dataType": "double",
+            "sourceColumn": "baseline_value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Lift Over Baseline",
+            "dataType": "double",
+            "sourceColumn": "lift_over_baseline",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Higher Is Better",
+            "dataType": "boolean",
+            "sourceColumn": "higher_is_better",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Verdict",
+            "dataType": "string",
+            "sourceColumn": "verdict",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Train Rows",
+            "dataType": "int64",
+            "sourceColumn": "train_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Test Rows",
+            "dataType": "int64",
+            "sourceColumn": "test_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "N Features",
+            "dataType": "int64",
+            "sourceColumn": "n_features",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Interpretation",
+            "dataType": "string",
+            "sourceColumn": "interpretation",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Disclaimer",
+            "dataType": "string",
+            "sourceColumn": "disclaimer",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Models",
+            "expression": "COUNTROWS ( obs_ml_performance )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Models Beating Baseline",
+            "expression": "CALCULATE ( COUNTROWS ( obs_ml_performance ), obs_ml_performance[Verdict] = \"Beats baseline\" )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Models Scored",
+            "expression": "CALCULATE ( COUNTROWS ( obs_ml_performance ), NOT ISBLANK ( obs_ml_performance[Metric Value] ) )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Baseline Beat Rate %",
+            "expression": "DIVIDE ( [Models Beating Baseline], [Models Scored] )",
+            "formatString": "0.0%",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Average Lift over Baseline",
+            "expression": "AVERAGE ( obs_ml_performance[Lift Over Baseline] )",
+            "formatString": "+0.000;-0.000;0.000",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Best ROC-AUC",
+            "expression": "CALCULATE ( MAX ( obs_ml_performance[Metric Value] ), obs_ml_performance[Metric Name] = \"roc_auc\" )",
+            "formatString": "0.000",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Training Rows",
+            "expression": "SUM ( obs_ml_performance[Train Rows] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_ml_performance",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_ml_performance.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"model\", \"model_key\", \"task\", \"use_case\", \"target\", \"grain\", \"metric_name\", \"metric_value\", \"baseline_name\", \"baseline_value\", \"lift_over_baseline\", \"higher_is_better\", \"verdict\", \"train_rows\", \"test_rows\", \"n_features\", \"interpretation\", \"disclaimer\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"model\", type text}, {\"model_key\", type text}, {\"task\", type text}, {\"use_case\", type text}, {\"target\", type text}, {\"grain\", type text}, {\"metric_name\", type text}, {\"metric_value\", type number}, {\"baseline_name\", type text}, {\"baseline_value\", type number}, {\"lift_over_baseline\", type number}, {\"higher_is_better\", type logical}, {\"verdict\", type text}, {\"train_rows\", Int64.Type}, {\"test_rows\", Int64.Type}, {\"n_features\", Int64.Type}, {\"interpretation\", type text}, {\"disclaimer\", type text}}, \"en-US\")",
                 "in",
                 "    Typed"
               ]
