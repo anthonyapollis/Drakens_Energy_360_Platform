@@ -119,6 +119,30 @@ CLAIMS = [
 ]
 
 
+# Words that make a mention of 1,050 legitimate: the walkthrough contrasts the
+# Databricks SCALES configuration against the local warehouse precisely so the
+# two are not conflated. Banning the digits outright would forbid the sentence
+# that prevents the error.
+SCALE_CONTEXT = re.compile(r"databricks|scales|notebook|portfolio generation",
+                           re.I)
+SITE_CLAIM = re.compile(r"1,050\s+(?:synthetic\s+)?(?:service\s+stations|"
+                        r"ZA\s+sites|sites)", re.I)
+
+
+def stale_site_claim(text: str) -> str | None:
+    """The false claim, not the number.
+
+    Context is checked on both sides. An earlier version used a trailing
+    lookahead only, and let through "the notebook SCALES dictionary sets 1,050
+    sites" in one direction while catching it in the other.
+    """
+    for match in SITE_CLAIM.finditer(text):
+        window = text[max(0, match.start() - 140):match.end() + 140]
+        if not SCALE_CONTEXT.search(window):
+            return match.group(0)
+    return None
+
+
 def check_claims(fact: dict) -> list[str]:
     problems = []
     for relpath, pattern, key, fmt in CLAIMS:
@@ -237,10 +261,11 @@ def check_artifacts(con: duckdb.DuckDBPyConnection, fact: dict) -> list[str]:
                 f"docs/{name}: does not mention the site count "
                 f"({fact['sites']}) anywhere -- it was built against a "
                 f"different warehouse, or not rebuilt")
-        if "1,050" in text:
+        stale = stale_site_claim(text)
+        if stale:
             problems.append(
-                f"docs/{name}: still carries the figure 1,050, which no "
-                f"warehouse in this repo produces")
+                f"docs/{name}: asserts {stale!r}, which no warehouse in this "
+                f"repo produces")
 
     # The CSV-backed model points at an absolute folder, because Power Query
     # has no way to resolve a path relative to the project. That is fine

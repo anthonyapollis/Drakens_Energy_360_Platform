@@ -189,6 +189,35 @@ def ml_verdicts(ml: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+SPATIAL_GUARD_OUTPUT = chr(10).join([
+    "ST_Distance_Sphere axis check: Johannesburg to Cape Town",
+    "  expected  1,261,576 m",
+    "  measured  1,261,576 m   PASS",
+    "",
+    "point-in-polygon check (against Natural Earth admin-1):",
+    "  Not South Africa                        336",
+    "  Matches                                 232",
+    "  Outside the mapped province polygons     15",
+    "  Province mismatch                         2",
+    "  No province recorded                      1",
+])
+
+
+def coverage_table() -> pd.DataFrame:
+    """Which reporting lines can be reported on, from the derived matrix."""
+    path = REPO / "powerbi" / "data" / "obs_product_coverage.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(path)
+    return df[["reporting_line", "products_in_dimension", "revenue_zar",
+               "status", "note"]].rename(columns={
+                   "reporting_line": "Reporting line",
+                   "products_in_dimension": "Products",
+                   "revenue_zar": "Revenue (R)",
+                   "status": "Status",
+                   "note": "Note"})
+
+
 def ml_scorecard() -> pd.DataFrame:
     """The ML results, from the one place that derives them.
 
@@ -399,9 +428,143 @@ li{margin:7px 0}
 .missing{color:var(--muted);font-style:italic;font-size:13.5px}
 footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);
 font-size:12px;color:var(--muted)}
-@media print{body{background:#fff}.wrap{padding:0}h2{page-break-after:avoid}
-figure,table,.finding{page-break-inside:avoid}}
+figure figcaption{break-before:avoid;page-break-before:avoid}
+table thead{display:table-header-group}
+table tr{break-inside:avoid;page-break-inside:avoid}
+.walkthrough h3{margin-top:26px}
+.walkthrough pre{background:#f4f8f5;border:1px solid var(--line);
+border-radius:6px;padding:10px 12px;font-size:11.5px;overflow-x:auto;
+white-space:pre-wrap;word-break:break-word}
+.evidence{border-left:3px solid var(--accent);background:#f7faf8;
+padding:10px 14px;margin:14px 0;font-size:13px}
+.evidence .label{font-weight:600;color:var(--accent);
+text-transform:uppercase;letter-spacing:.04em;font-size:11px}
+.gap{border-left:3px solid var(--gold);background:#fdf8ee;
+padding:10px 14px;margin:14px 0;font-size:13px}
+@page{size:A4;margin:18mm 16mm 20mm 16mm}
+@media print{
+  body{background:#fff}
+  .wrap{padding:0}
+  /* Headings must not be the last thing on a page. The "Cleansing outcome"
+     heading was stranded at the foot of one page with its table on the next,
+     which reads as a missing table rather than a page break. */
+  h1,h2,h3{page-break-after:avoid;break-after:avoid}
+  h2{page-break-before:auto}
+  /* A figure and its caption are one object. Splitting them put explanatory
+     text over the provenance footer on page 5. */
+  figure{page-break-inside:avoid;break-inside:avoid;margin:18px 0 22px}
+  figure img{max-height:200mm;object-fit:contain}
+  .finding,.evidence,.gap{page-break-inside:avoid;break-inside:avoid}
+  table{page-break-inside:auto}
+  table thead{display:table-header-group}
+  table tfoot{display:table-footer-group}
+  p{orphans:3;widows:3}
+  .pagebreak{page-break-before:always;break-before:page}
+}
 """
+
+
+MD_DOC = REPO / "docs" / "walkthrough_databricks.md"
+
+
+def render_markdown(path: Path) -> str:
+    """Enough Markdown for the walkthrough, and no dependency.
+
+    The `markdown` package is not installed here and adding one for six
+    constructs is not worth the requirement. This handles the six the document
+    actually uses -- headings, paragraphs, lists, tables, fenced code and
+    inline code/bold -- and leaves anything else as text rather than guessing.
+    """
+    if not path.exists():
+        return ""
+    import html as _html
+    import re as _re
+
+    def inline(text: str) -> str:
+        text = _html.escape(text)
+        text = _re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+        text = _re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
+        return text
+
+    out, lines = [], path.read_text(encoding="utf-8").splitlines()
+    i, para, bullets, table = 0, [], [], []
+
+    def flush():
+        nonlocal para, bullets, table
+        if para:
+            out.append(f"<p>{' '.join(para)}</p>")
+            para = []
+        if bullets:
+            items = "".join(f"<li>{b}</li>" for b in bullets)
+            out.append(f"<ul>{items}</ul>")
+            bullets = []
+        if table:
+            header, *body = table
+            head = "".join(f"<th>{c}</th>" for c in header)
+            rows = "".join(
+                "<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>"
+                for r in body)
+            out.append(f"<table><thead><tr>{head}</tr></thead>"
+                       f"<tbody>{rows}</tbody></table>")
+            table = []
+
+    while i < len(lines):
+        raw = lines[i]
+        line = raw.rstrip()
+        if line.startswith("```"):
+            flush()
+            i += 1
+            block = []
+            while i < len(lines) and not lines[i].startswith("```"):
+                block.append(_html.escape(lines[i]))
+                i += 1
+            out.append("<pre>" + chr(10).join(block) + "</pre>")
+            i += 1
+            continue
+        if not line.strip():
+            flush()
+        elif line.startswith("#"):
+            flush()
+            level = len(line) - len(line.lstrip("#"))
+            text = inline(line.lstrip("#").strip())
+            out.append(f"<h{min(level + 1, 4)}>{text}</h{min(level + 1, 4)}>")
+        elif line.lstrip().startswith(("- ", "* ")):
+            if para:
+                flush()
+            bullets.append(inline(line.lstrip()[2:]))
+        elif line.strip().startswith("|") and line.strip().endswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if all(set(c) <= set("-: ") for c in cells):
+                i += 1
+                continue
+            table.append([inline(c) for c in cells])
+        else:
+            if bullets or table:
+                flush()
+            para.append(inline(line.strip()))
+        i += 1
+    flush()
+    return chr(10).join(out)
+
+
+def evidence(label: str, body: str) -> str:
+    return (f'<div class="evidence"><div class="label">{label}</div>'
+            f"{body}</div>")
+
+
+def missing_capture(number: int, what: str) -> str:
+    """A numbered slot for a capture that could not be taken here.
+
+    Stated rather than omitted. Power BI Desktop windows return black through
+    this session's capture path and Codex reports its own capture blocked, so
+    a screenshot of the rendered report cannot be produced unattended. Leaving
+    the slot visible and numbered is the difference between a known gap and a
+    document that quietly implies the evidence exists.
+    """
+    return (f'<div class="gap"><strong>Capture {number} &mdash; not '
+            f"available in this environment.</strong> {what} Native window "
+            f"capture returns a blank image for Power BI Desktop in this "
+            f"session, so no screenshot is presented in its place.</div>")
 
 
 def html_table(df: pd.DataFrame, numeric: tuple[str, ...] = ()) -> str:
@@ -440,6 +603,11 @@ def figure_block(name: str, caption: str) -> str:
 
 
 def build_html(ctx: dict) -> str:
+    spatial_evidence = evidence(
+        'Command output &mdash; spatial axis guard',
+        f'<pre>{SPATIAL_GUARD_OUTPUT}</pre>')
+    walkthrough_html = render_markdown(MD_DOC) or (
+        '<p class="missing">docs/walkthrough_databricks.md is not present in this build.</p>')
     m = ctx["manifest"] or {}
     dq = (m.get("data_quality") or {})
     cards = [
@@ -477,6 +645,8 @@ Warehouse: {ctx['warehouse_name']}</p>
   <a href="#build">Build</a>
   <a href="#quality">Data quality</a>
   <a href="#warehouse">Warehouse</a>
+  <a href="#model">Data model</a>
+  <a href="#walkthrough">Implementation</a>
   <a href="#demand">Demand</a>
   <a href="#network">Network and investment</a>
   <a href="#operations">Commercial and operations</a>
@@ -523,6 +693,45 @@ only as a test, so a control that fails names the figure that is wrong and by
 how much. Controls that fail are shown as failures; a report that quietly
 omits them would defeat the purpose of having them.</p>
 {figure_block('09_databricks_medallion.png', 'Live row counts through bronze, silver and gold on Databricks at portfolio scale.')}
+
+<h2 id="model" class="pagebreak">The data model</h2>
+<p>Every diagram below is rendered from <code>model.bim</code>, the semantic
+model the Power BI report loads &mdash; not drawn by hand and not transcribed
+from a design document. Each box, edge and cardinality is therefore a
+statement about the artifact that was actually built, and a relationship added
+tomorrow appears in tomorrow&rsquo;s diagram. Where a fact has no modelled
+relationship the diagram says so, because that absence is a finding rather
+than a layout accident.</p>
+
+{figure_block('erd_00_overview.png', 'Conformed dimensions ranked by how many tables resolve against them. A dimension that only one fact uses is not conformed; it is a lookup table with ambitions.')}
+{figure_block('erd_retail.png', 'Retail fuel. The transaction fact and the site-day aggregate resolve against the same three dimensions, which is what makes the aggregate reconcilable against the detail rather than merely similar to it.')}
+{figure_block('erd_commercial.png', 'Commercial B2B. The relationship to dim_product was missing until recently, which meant lubricants &mdash; the largest line in the business at R20.3bn &mdash; could not be sliced by product at all.')}
+{figure_block('erd_supply.png', 'Supply and distribution. Deliveries resolve to a destination site, so a delivery to an unrecognised site lands on the unknown member rather than vanishing from the count.')}
+{figure_block('erd_network.png', 'Network investment and the spatial analysis, both keyed on the site dimension.')}
+{figure_block('erd_forecast.png', 'Forecasting and model results. These tables key on product name rather than a surrogate, because they are produced by the ML layer rather than by dbt.')}
+
+<h3>What the diagrams do not cover</h3>
+{html_table(ctx.get('coverage'), ('Products',))}
+<p>Five of the nine reporting lines cannot be charted, and for three different
+reasons. Four have no gold fact at all. Energy has one &mdash;
+<code>fct_ev_charging_sessions</code>, carrying R1.67m of revenue and 232,029
+kWh &mdash; and no <code>product_key</code>, so it cannot join the product
+dimension. Reading a blank bar as &ldquo;no data&rdquo; collapses three
+different problems into the wrong one.</p>
+
+<h2 id="walkthrough" class="pagebreak">Implementation walkthrough</h2>
+<p>How the platform is built, stage by stage, with the decision at each one
+and the evidence it produced. Command output shown below is captured from
+actual runs and is labelled as command output; it is not a screenshot of a
+cloud console.</p>
+<div class="walkthrough">
+{walkthrough_html}
+</div>
+
+{spatial_evidence}
+
+{missing_capture(1, 'The Power BI Forecast page before and after a reporting-line filter, showing the score and forecast panels changing together.')}
+{missing_capture(2, 'The Databricks job run history for the medallion pipeline.')}
 
 <h2 id="demand">Demand and trading rhythm</h2>
 <p>A forecasting model can only learn a pattern the data actually contains.
@@ -844,7 +1053,8 @@ def main() -> int:
                cleansing=cleansing, quarantine=quarantine, controls=controls,
                province=province, plan_summary=plan_summary,
                plan_province=plan_province, plan_full=plan_full, ml=ml,
-               ml_scorecard=ml_scorecard())
+               ml_scorecard=ml_scorecard(),
+               coverage=coverage_table())
 
     DOCS.mkdir(parents=True, exist_ok=True)
     OUT_HTML.write_text(build_html(ctx), encoding="utf-8")
