@@ -123,12 +123,12 @@ def theme() -> dict:
         "neutral": GOLD,
         "bad": WARN,
         "textClasses": {
-            "title": {"fontFace": "Segoe UI Semibold", "fontSize": 14,
+            "title": {"fontFace": "Segoe UI Semibold", "fontSize": 15,
                       "color": INK},
-            "header": {"fontFace": "Segoe UI Semibold", "fontSize": 11,
+            "header": {"fontFace": "Segoe UI Semibold", "fontSize": 12,
                        "color": INK},
-            "label": {"fontFace": "Segoe UI", "fontSize": 9, "color": MUTED},
-            "callout": {"fontFace": "Segoe UI Light", "fontSize": 30,
+            "label": {"fontFace": "Segoe UI", "fontSize": 11, "color": MUTED},
+            "callout": {"fontFace": "Segoe UI Light", "fontSize": 34,
                         "color": INK},
         },
         "visualStyles": {
@@ -146,25 +146,25 @@ def theme() -> dict:
                                     "transparency": 88, "blur": 8}],
                     "title": [{"show": True, "fontColor": {"solid":
                                                            {"color": INK}},
-                               "fontSize": 11, "alignment": "left",
+                               "fontSize": 13, "alignment": "left",
                                "titleWrap": True}],
                     "visualHeader": [{"show": False}],
                     "labels": [{"color": {"solid": {"color": MUTED}},
-                                "fontSize": 9}],
+                                "fontSize": 11}],
                     "categoryAxis": [{"showAxisTitle": False,
                                       "labelColor": {"solid":
                                                      {"color": MUTED}},
-                                      "fontSize": 9,
+                                      "fontSize": 11,
                                       "gridlineShow": False}],
                     "valueAxis": [{"showAxisTitle": False,
                                    "labelColor": {"solid": {"color": MUTED}},
-                                   "fontSize": 9,
+                                   "fontSize": 11,
                                    "gridlineColor": {"solid":
                                                      {"color": LINE}},
                                    "gridlineStyle": "dotted"}],
                     "legend": [{"position": "TopLeft", "showTitle": False,
                                 "labelColor": {"solid": {"color": MUTED}},
-                                "fontSize": 9}],
+                                "fontSize": 11}],
                 },
             },
             "card": {
@@ -174,10 +174,32 @@ def theme() -> dict:
                     # what the number is, so it stays legible rather than
                     # shrinking to a caption.
                     "labels": [{"color": {"solid": {"color": INK}},
-                                "fontSize": 28,
+                                "fontSize": 32,
                                 "fontFamily": "Segoe UI Light"}],
                     "categoryLabels": [{"color": {"solid": {"color": MUTED}},
-                                        "fontSize": 9}],
+                                        "fontSize": 11}],
+                },
+            },
+            "tableEx": {
+                "*": {
+                    "values": [{"fontSize": 11}],
+                    "columnHeaders": [{"fontSize": 11,
+                                       "fontColor": {"solid":
+                                                     {"color": INK}}}],
+                    "total": [{"fontSize": 11}],
+                },
+            },
+            "pivotTable": {
+                "*": {
+                    "values": [{"fontSize": 11}],
+                    "columnHeaders": [{"fontSize": 11}],
+                    "rowHeaders": [{"fontSize": 11}],
+                },
+            },
+            "slicer": {
+                "*": {
+                    "items": [{"fontSize": 11}],
+                    "header": [{"fontSize": 11}],
                 },
             },
             "textbox": {
@@ -422,20 +444,22 @@ def header(page_title: str, subtitle: str) -> list[dict]:
                 "fillColor": {"solid": {"color": literal(f"'{INK}'")}},
             }}],
         }, z=0),
-        text_box(MARGIN, 10, 640, 24, [
-            (page_title, {"fontSize": {"value": "15D"},
+        # 8px down and 30 tall for a 16pt run. At 24 tall the ascender sat
+        # above the box and the page title rendered with its top sliced off.
+        text_box(MARGIN, 8, 640, 30, [
+            (page_title, {"fontSize": {"value": "16D"},
                           "fontWeight": {"value": "bold"},
                           "color": {"value": "#FFFFFF"},
                           "fontFamily": {"value": "Segoe UI"}}),
         ]),
-        text_box(MARGIN, 34, 760, 22, [
-            (subtitle, {"fontSize": {"value": "9D"},
+        text_box(MARGIN, 38, 760, 22, [
+            (subtitle, {"fontSize": {"value": "10D"},
                         "color": {"value": "#C9D6CF"},
                         "fontFamily": {"value": "Segoe UI"}}),
         ]),
-        text_box(W - 380 - MARGIN, 22, 380, 24, [
+        text_box(W - 400 - MARGIN, 20, 400, 26, [
             ("Synthetic data. Drakens Energy is a fictional company.",
-             {"fontSize": {"value": "8D"}, "color": {"value": "#8FA79B"},
+             {"fontSize": {"value": "9D"}, "color": {"value": "#8FA79B"},
               "fontFamily": {"value": "Segoe UI"}}),
         ]),
     ]

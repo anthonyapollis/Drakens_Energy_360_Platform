@@ -21,22 +21,22 @@
   "textClasses": {
     "title": {
       "fontFace": "Segoe UI Semibold",
-      "fontSize": 14,
+      "fontSize": 15,
       "color": "#16211C"
     },
     "header": {
       "fontFace": "Segoe UI Semibold",
-      "fontSize": 11,
+      "fontSize": 12,
       "color": "#16211C"
     },
     "label": {
       "fontFace": "Segoe UI",
-      "fontSize": 9,
+      "fontSize": 11,
       "color": "#5D6B64"
     },
     "callout": {
       "fontFace": "Segoe UI Light",
-      "fontSize": 30,
+      "fontSize": 34,
       "color": "#16211C"
     }
   },
@@ -87,7 +87,7 @@
                 "color": "#16211C"
               }
             },
-            "fontSize": 11,
+            "fontSize": 13,
             "alignment": "left",
             "titleWrap": true
           }
@@ -104,7 +104,7 @@
                 "color": "#5D6B64"
               }
             },
-            "fontSize": 9
+            "fontSize": 11
           }
         ],
         "categoryAxis": [
@@ -115,7 +115,7 @@
                 "color": "#5D6B64"
               }
             },
-            "fontSize": 9,
+            "fontSize": 11,
             "gridlineShow": false
           }
         ],
@@ -127,7 +127,7 @@
                 "color": "#5D6B64"
               }
             },
-            "fontSize": 9,
+            "fontSize": 11,
             "gridlineColor": {
               "solid": {
                 "color": "#DFE5E1"
@@ -145,7 +145,7 @@
                 "color": "#5D6B64"
               }
             },
-            "fontSize": 9
+            "fontSize": 11
           }
         ]
       }
@@ -159,7 +159,7 @@
                 "color": "#16211C"
               }
             },
-            "fontSize": 28,
+            "fontSize": 32,
             "fontFamily": "Segoe UI Light"
           }
         ],
@@ -170,7 +170,64 @@
                 "color": "#5D6B64"
               }
             },
-            "fontSize": 9
+            "fontSize": 11
+          }
+        ]
+      }
+    },
+    "tableEx": {
+      "*": {
+        "values": [
+          {
+            "fontSize": 11
+          }
+        ],
+        "columnHeaders": [
+          {
+            "fontSize": 11,
+            "fontColor": {
+              "solid": {
+                "color": "#16211C"
+              }
+            }
+          }
+        ],
+        "total": [
+          {
+            "fontSize": 11
+          }
+        ]
+      }
+    },
+    "pivotTable": {
+      "*": {
+        "values": [
+          {
+            "fontSize": 11
+          }
+        ],
+        "columnHeaders": [
+          {
+            "fontSize": 11
+          }
+        ],
+        "rowHeaders": [
+          {
+            "fontSize": 11
+          }
+        ]
+      }
+    },
+    "slicer": {
+      "*": {
+        "items": [
+          {
+            "fontSize": 11
+          }
+        ],
+        "header": [
+          {
+            "fontSize": 11
           }
         ]
       }
