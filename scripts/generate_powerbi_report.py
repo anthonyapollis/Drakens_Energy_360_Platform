@@ -424,6 +424,7 @@ def map_visual(x, y, width, height, *, latitude, longitude, size=None,
             # Bubbles, not a filled map: the fact is per site, and a filled
             # map would force it up to a province and throw away the reason
             # the page exists.
+            "mapControls": [{"properties": {"autoZoom": literal("true")}}],
             "mapStyles": [{"properties": {"mapStyle": literal("'road'")}}],
             "bubbles": [{"properties": {"bubbleSize": literal("-20D")}}],
             "dataPoint": [{"properties": {
@@ -546,7 +547,11 @@ def page_executive() -> tuple[str, str, list[dict]]:
 def page_network() -> tuple[str, str, list[dict]]:
     v = header("Network", "Every site, what it earns, and what to do with it")
 
-    x, width = col(0, 9)
+    # Six columns, not nine. The estate runs from Cape Verde to Mauritius and
+    # from Morocco to Lesotho -- taller than it is wide -- so a 795x432
+    # letterbox fitted the points by width and spent the rest on ocean. At
+    # 6 columns the frame is roughly square and the bounding box fills it.
+    x, width = col(0, 6)
     y, height = row(0, 432)
     v.append(map_visual(
         x, y, width, height,
@@ -561,27 +566,29 @@ def page_network() -> tuple[str, str, list[dict]]:
                           "Average Investment Score")],
         title="Network by investment recommendation"))
 
-    x, width = col(9, 3)
-    v.append(slicer(x, y, width, 92, column("dim_site", "Country Code"),
-                    "Market"))
-    v.append(slicer(x, y + 104, width, 92,
-                    column("dim_site", "Urban Class"), "Location type"))
-    v.append(slicer(x, y + 208, width, 92,
-                    column("network_investment_scorecard",
-                           "Investment Recommendation"), "Recommendation"))
-    v.append(card(x, y + 312, width, 120, "network_investment_scorecard",
-                  "Corridor Sites", "Sites on a national route"))
-
-    y2 = row(448, 0)[0]
-    x, width = col(0, 5)
+    x, width = col(6, 3)
     v.append(chart(
-        "clusteredBarChart", x, y2, width, 172,
+        "clusteredBarChart", x, y, width, 208,
         category=[column("network_investment_scorecard",
                          "Investment Recommendation")],
         values=[measure("network_investment_scorecard", "Sites Scored")],
         title="Sites by recommendation"))
+    v.append(card(x, y + 220, width, 100, "network_investment_scorecard",
+                  "Corridor Sites", "Sites on a national route"))
+    v.append(card(x, y + 332, width, 100, "network_investment_scorecard",
+                  "Divest Candidates", "Divest candidates"))
 
-    x, width = col(5, 7)
+    x, width = col(9, 3)
+    v.append(slicer(x, y, width, 132, column("dim_site", "Country Code"),
+                    "Market"))
+    v.append(slicer(x, y + 144, width, 132,
+                    column("dim_site", "Urban Class"), "Location type"))
+    v.append(slicer(x, y + 288, width, 144,
+                    column("network_investment_scorecard",
+                           "Investment Recommendation"), "Recommendation"))
+
+    y2 = row(448, 0)[0]
+    x, width = col(0, 12)
     v.append(table_visual(x, y2, width, 172, [
         column("dim_site", "Site Name"),
         column("dim_site", "Province"),
