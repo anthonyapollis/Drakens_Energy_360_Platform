@@ -222,6 +222,20 @@ def check_artifacts(con: duckdb.DuckDBPyConnection, fact: dict) -> list[str]:
                 f"docs/{name}: still carries the figure 1,050, which no "
                 f"warehouse in this repo produces")
 
+    # The CSV-backed model points at an absolute folder, because Power Query
+    # has no way to resolve a path relative to the project. That is fine
+    # locally and useless to anyone who clones the repo, so it has to be
+    # stated rather than discovered when every table fails to refresh.
+    if bim.exists():
+        text = bim.read_text(encoding="utf-8")
+        found = re.search(r'([A-Za-z]:\\[^"]*?powerbi)', text)
+        if found and "DataFolder" not in (REPO / "README.md").read_text(
+                encoding="utf-8", errors="ignore"):
+            problems.append(
+                "powerbi: model.bim hardcodes an absolute data folder and the "
+                "README does not tell a reader to change it -- every table "
+                "will fail to refresh on any other machine")
+
     report = PBI / "DrakensEnergy360.Report" / "report.json"
     if report.exists():
         sections = json.loads(report.read_text(encoding="utf-8"))["sections"]

@@ -30,6 +30,16 @@ EV and solar, asset maintenance, HSSEQ and finance — a downstream network of
 587 synthetic service stations across 26 African markets, of which 250 are in
 South Africa spanning all nine provinces.
 
+> **Opening the Power BI project.** `powerbi/DrakensEnergy360.pbip` reads the
+> CSV extracts in `powerbi/data/`, which are not committed — they are derived
+> data the warehouse reproduces exactly. Build them with
+> `python scripts/export_powerbi_data.py`, then set the **DataFolder**
+> parameter in Power BI Desktop to your own `powerbi/data/` path: the model
+> stores an absolute one, because Power Query cannot resolve a path relative
+> to the project. Refresh once after opening — a `.pbip` carries no cached
+> data. The report needs **Map and Filled Map visuals** enabled under
+> *File → Options → Global → Security* for the network map to draw.
+
 It is built to demonstrate the parts of data engineering that are actually
 hard, not the parts that demo well.
 
