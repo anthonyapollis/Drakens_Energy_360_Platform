@@ -91,11 +91,27 @@ PAGE_BG = "#EEF2EF"
 WALLPAPER = "#E4EAE6"
 CARD_RULE = ACCENT
 
-# The order single-series charts cycle through. Chosen so neighbours differ in
-# hue as well as lightness -- a palette that only varies lightness reads as one
+# The order single-series charts cycle through. Neighbours differ in hue as
+# well as lightness, because a palette that varies only lightness reads as one
 # colour in a screenshot and as nothing at all to a colour-blind reader.
-ROTATION = [ACCENT, GOLD, "#3A7CA5", "#B3341F", "#4B9B6E", "#8E6FA8",
-            "#D98B4A"]
+#
+# WARN is deliberately absent. Red is not a spare hue: a bar chart of OTIF by
+# province came out entirely red purely because it was fourth in the rotation,
+# which tells the reader those provinces are failing. Red is reserved for
+# measures that are actually bad, and is applied by name.
+ROTATION = ["#0B6E4F", "#2E6F8E", "#C8922A", "#4B9B6E", "#6E5C9E", "#3E8E7E",
+            "#A8703C"]
+
+# Text that sits on the dark header band. Checked, not assumed -- see
+# check_contrast.
+BAND_TEXT = "#FFFFFF"
+BAND_SUBTLE = "#CFDCD5"
+BAND_FAINT = "#AFC3B8"
+
+# KPI cards carry a tint rather than plain white, so a row of numbers reads as
+# a band of its own against the page. Kept very light: the callout on it is
+# INK, and the pair has to pass the same contrast gate as everything else.
+CARD_BG = "#F4F8F5"
 
 # Ordered invest -> divest, matching the mart's seven recommendation strings
 # and the evidence pack's figures. A report and a report-about-the-report that
@@ -169,6 +185,9 @@ def theme() -> dict:
             },
             "card": {
                 "*": {
+                    "background": [{"show": True,
+                                    "color": {"solid": {"color": CARD_BG}},
+                                    "transparency": 0}],
                     # The callout is the number people read from across a
                     # room; the label under it is the only thing that says
                     # what the number is, so it stays legible rather than
@@ -449,17 +468,17 @@ def header(page_title: str, subtitle: str) -> list[dict]:
         text_box(MARGIN, 8, 640, 30, [
             (page_title, {"fontSize": {"value": "16D"},
                           "fontWeight": {"value": "bold"},
-                          "color": {"value": "#FFFFFF"},
+                          "color": {"value": BAND_TEXT},
                           "fontFamily": {"value": "Segoe UI"}}),
         ]),
         text_box(MARGIN, 38, 760, 22, [
             (subtitle, {"fontSize": {"value": "10D"},
-                        "color": {"value": "#C9D6CF"},
+                        "color": {"value": BAND_SUBTLE},
                         "fontFamily": {"value": "Segoe UI"}}),
         ]),
         text_box(W - 400 - MARGIN, 20, 400, 26, [
             ("Synthetic data. Drakens Energy is a fictional company.",
-             {"fontSize": {"value": "9D"}, "color": {"value": "#8FA79B"},
+             {"fontSize": {"value": "9D"}, "color": {"value": BAND_FAINT},
               "fontFamily": {"value": "Segoe UI"}}),
         ]),
     ]
@@ -862,6 +881,60 @@ def model_fields() -> dict[str, set[str]]:
             "aggregating": set(),
         }
     return fields
+
+
+def _luminance(hex_colour: str) -> float:
+    """Relative luminance, per WCAG 2.1."""
+    value = hex_colour.lstrip("#")
+    parts = [int(value[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+              for c in parts]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast_ratio(fg: str, bg: str) -> float:
+    a, b = _luminance(fg), _luminance(bg)
+    lighter, darker = max(a, b), min(a, b)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+# Every pair of colours where one is text and the other is what it sits on.
+# (description, foreground, background, minimum ratio)
+#
+# 4.5 is the WCAG AA threshold for body text and 3.0 for text at 18pt or
+# above. Checking this at generation time is the difference between a palette
+# that was reasoned about and one that happened to look right on the machine
+# it was designed on -- the header disclaimer was two shades from unreadable
+# and nothing would have said so.
+TEXT_ON = [
+    ("page title on the header band", BAND_TEXT, INK, 3.0),
+    ("page subtitle on the header band", BAND_SUBTLE, INK, 4.5),
+    ("synthetic-data disclaimer on the header band", BAND_FAINT, INK, 4.5),
+    ("card callout on a card", INK, CARD_BG, 3.0),
+    ("card category label on a card", MUTED, CARD_BG, 4.5),
+    ("visual title on a tile", INK, "#FFFFFF", 4.5),
+    ("axis and legend labels on a tile", MUTED, "#FFFFFF", 4.5),
+    ("table values on a tile", INK, "#FFFFFF", 4.5),
+]
+
+
+def check_contrast() -> list[str]:
+    problems = []
+    for what, fg, bg, minimum in TEXT_ON:
+        ratio = contrast_ratio(fg, bg)
+        if ratio < minimum:
+            problems.append(
+                f"contrast: {what} is {ratio:.1f}:1 ({fg} on {bg}), below the "
+                f"{minimum}:1 minimum -- it will not be readable")
+    # A chart colour is not text, but a data label sits on top of it.
+    for colour in ROTATION:
+        ratio = contrast_ratio("#FFFFFF", colour)
+        if ratio < 3.0 and contrast_ratio(INK, colour) < 3.0:
+            problems.append(
+                f"contrast: {colour} takes neither white nor dark text "
+                f"legibly ({ratio:.1f}:1 white, "
+                f"{contrast_ratio(INK, colour):.1f}:1 dark)")
+    return problems
 
 
 def check_layout(pages) -> list[str]:
@@ -1270,7 +1343,7 @@ def main() -> int:
     FORMAT = args.format
 
     pages = [fn() for fn in PAGES]
-    problems = check_pages(pages) + check_layout(pages)
+    problems = check_pages(pages) + check_layout(pages) + check_contrast()
 
     if problems:
         print(f"{len(problems)} problem(s) found:")

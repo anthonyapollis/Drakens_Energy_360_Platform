@@ -152,6 +152,17 @@
     },
     "card": {
       "*": {
+        "background": [
+          {
+            "show": true,
+            "color": {
+              "solid": {
+                "color": "#F4F8F5"
+              }
+            },
+            "transparency": 0
+          }
+        ],
         "labels": [
           {
             "color": {
