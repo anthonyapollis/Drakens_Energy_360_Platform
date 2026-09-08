@@ -1,0 +1,116 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0079",
+  "position": {
+    "x": 16.0,
+    "y": 440,
+    "width": 1248.0,
+    "height": 200,
+    "z": 79,
+    "tabOrder": 79
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "obs_reconciliation_controls"
+                    }
+                  },
+                  "Property": "Control Code"
+                }
+              },
+              "queryRef": "obs_reconciliation_controls.Control Code",
+              "nativeQueryRef": "Control Code"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "obs_reconciliation_controls"
+                    }
+                  },
+                  "Property": "Control Description"
+                }
+              },
+              "queryRef": "obs_reconciliation_controls.Control Description",
+              "nativeQueryRef": "Control Description"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "obs_reconciliation_controls"
+                    }
+                  },
+                  "Property": "Control Owner"
+                }
+              },
+              "queryRef": "obs_reconciliation_controls.Control Owner",
+              "nativeQueryRef": "Control Owner"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "obs_reconciliation_controls"
+                    }
+                  },
+                  "Property": "Variance %"
+                }
+              },
+              "queryRef": "obs_reconciliation_controls.Variance %",
+              "nativeQueryRef": "Variance %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "obs_reconciliation_controls"
+                    }
+                  },
+                  "Property": "Is Passing"
+                }
+              },
+              "queryRef": "obs_reconciliation_controls.Is Passing",
+              "nativeQueryRef": "Is Passing"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Reconciliation controls: a wrong number is worse than a late one'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

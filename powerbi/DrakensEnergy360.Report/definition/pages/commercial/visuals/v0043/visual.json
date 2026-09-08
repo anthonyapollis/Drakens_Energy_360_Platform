@@ -1,0 +1,92 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0043",
+  "position": {
+    "x": 16.0,
+    "y": 192,
+    "width": 618.0,
+    "height": 224,
+    "z": 43,
+    "tabOrder": 43
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_customer"
+                    }
+                  },
+                  "Property": "Credit Band"
+                }
+              },
+              "queryRef": "dim_customer.Credit Band",
+              "nativeQueryRef": "Credit Band"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_commercial_orders"
+                    }
+                  },
+                  "Property": "Commercial Revenue"
+                }
+              },
+              "queryRef": "fct_commercial_orders.Commercial Revenue",
+              "nativeQueryRef": "Commercial Revenue"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_commercial_orders"
+                    }
+                  },
+                  "Property": "Commercial Margin"
+                }
+              },
+              "queryRef": "fct_commercial_orders.Commercial Margin",
+              "nativeQueryRef": "Commercial Margin"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Revenue and margin by credit band'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

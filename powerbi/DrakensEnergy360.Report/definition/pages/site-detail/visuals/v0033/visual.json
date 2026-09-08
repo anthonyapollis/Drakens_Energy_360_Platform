@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0033",
+  "position": {
+    "x": 16.0,
+    "y": 192,
+    "width": 618.0,
+    "height": 220,
+    "z": 33,
+    "tabOrder": 33
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "Full Date"
+                }
+              },
+              "queryRef": "dim_date.Full Date",
+              "nativeQueryRef": "Full Date"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agg_site_daily_fuel"
+                    }
+                  },
+                  "Property": "Fuel Volume (L)"
+                }
+              },
+              "queryRef": "agg_site_daily_fuel.Fuel Volume (L)",
+              "nativeQueryRef": "Fuel Volume (L)"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'This site's volume over time'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

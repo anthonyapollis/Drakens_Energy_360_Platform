@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "v0065",
+  "position": {
+    "x": 16.0,
+    "y": 192,
+    "width": 513.0,
+    "height": 224,
+    "z": 65,
+    "tabOrder": 65
+  },
+  "visual": {
+    "visualType": "columnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Asset Age Band"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Asset Age Band",
+              "nativeQueryRef": "Asset Age Band"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_maintenance_work_orders"
+                    }
+                  },
+                  "Property": "Breakdown Rate %"
+                }
+              },
+              "queryRef": "fct_maintenance_work_orders.Breakdown Rate %",
+              "nativeQueryRef": "Breakdown Rate %"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Breakdown rate rises with age'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

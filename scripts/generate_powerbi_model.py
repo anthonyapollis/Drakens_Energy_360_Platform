@@ -606,41 +606,17 @@ def write_project_files() -> None:
                    "00000000-0000-0000-0000-000000000001"},
     }, indent=2), encoding="utf-8")
 
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    (REPORT_DIR / "definition.pbir").write_text(json.dumps({
-        "version": "4.0",
-        "datasetReference": {
-            "byPath": {"path": f"../{PROJECT}.SemanticModel"},
-            "byConnection": None,
-        },
-    }, indent=2), encoding="utf-8")
-
-    # A minimal report. The pages a report author would build are described in
-    # powerbi/semantic_model.md; shipping a stub rather than a fabricated
-    # dashboard keeps the repository honest about what was actually built.
-    (REPORT_DIR / "report.json").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/"
-                   "report/definition/report/1.0.0/schema.json",
-        "themeCollection": {"baseTheme": {"name": "CY24SU02"}},
-        "layoutOptimization": "None",
-        "resourcePackages": [],
-        "sections": [{
-            "name": "ReportSection_Network",
-            "displayName": "Network",
-            "displayOption": "FitToPage",
-            "height": 720.0,
-            "width": 1280.0,
-            "visualContainers": [],
-        }],
-    }, indent=2), encoding="utf-8")
-
-    (REPORT_DIR / ".platform").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/"
-                   "gitIntegration/platformProperties/2.0.0/schema.json",
-        "metadata": {"type": "Report", "displayName": PROJECT},
-        "config": {"version": "2.0", "logicalId":
-                   "00000000-0000-0000-0000-000000000002"},
-    }, indent=2), encoding="utf-8")
+    # The report is deliberately not written here.
+    #
+    # This function used to create a stub report alongside the model, and the
+    # cleanup at the top of write() used to delete REPORT_DIR before doing so.
+    # Between them they destroyed the real report: regenerating the model wiped
+    # 79 visuals across 7 pages and replaced them with an empty page, leaving a
+    # project that opened, bound correctly, and showed nothing.
+    #
+    # Nothing complained, because an empty report is a valid report. Ownership
+    # is now split: this script owns the semantic model and the .pbip, and
+    # scripts/generate_powerbi_report.py owns the report folder.
 
 
 def render_expressions() -> str:
@@ -694,9 +670,10 @@ def main() -> int:
         print(f"warehouse is locked: {str(exc)[:100]}")
         return 1
 
-    for path in (MODEL_DIR, REPORT_DIR):
-        if path.exists():
-            shutil.rmtree(path)
+    # Only the model is cleared. Removing REPORT_DIR here is what silently
+    # deleted the report every time the model was regenerated.
+    if MODEL_DIR.exists():
+        shutil.rmtree(MODEL_DIR)
     (DEFN / "tables").mkdir(parents=True)
 
     # Two passes. Every schema is collected before any DAX is rendered,

@@ -20,3 +20,9 @@ crash.log
 
 # Build logs
 logs_*.log
+
+# Power BI CSV extracts. Regenerate with:
+#   python scripts/export_powerbi_data.py
+# 117 MB of derived data that the warehouse can reproduce exactly; keeping it
+# out of git is the same call as not committing the DuckDB file.
+powerbi/data/*.csv
