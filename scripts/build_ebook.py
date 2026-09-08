@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -24,7 +25,13 @@ REPO = Path(__file__).resolve().parent.parent
 IMG = REPO / "docs" / "img"
 DOCS = REPO / "docs"
 MANIFEST = REPO / "data" / "lake" / "_manifest.json"
-DUCKDB = REPO / "data" / "drakens360.duckdb"
+# Honour the same environment variable as every other build script. This was
+# hardcoded to data/drakens360.duckdb, which is a partial warehouse with no
+# dim_site, so every warehouse query failed and the ebook rendered the
+# hardcoded fallbacks in its KPI strip instead -- numbers that looked measured
+# and were not.
+DUCKDB = Path(os.environ.get(
+    "DRAKENS_DUCKDB_PATH", str(REPO / "data" / "drakens360_test_full.duckdb")))
 OUT_HTML = DOCS / "Drakens_Energy_360_Ebook.html"
 OUT_PDF = DOCS / "Drakens_Energy_360_Ebook.pdf"
 
@@ -65,11 +72,18 @@ def warehouse_facts() -> dict:
         return {}
     out: dict = {}
 
+    failed: list[str] = []
+
     def try_query(key, sql, single=True):
         try:
             df = con.execute(sql).df()
             out[key] = df.iloc[0, 0] if single and not df.empty else df
         except Exception as exc:
+            # Counted, not just printed. A skipped query falls back to a
+            # literal written into the template, which renders as a measured
+            # figure and reads as one. Silence here is how an ebook comes to
+            # describe a warehouse it never opened.
+            failed.append(key)
             print(f"  skipped {key}: {str(exc)[:90]}")
 
     try:
@@ -104,8 +118,13 @@ def warehouse_facts() -> dict:
                    round(sum(total_margin_zar) / 1e6, 1) as margin_m_zar
             from main_gold.network_investment_scorecard
             group by 1 order by avg_score desc""", single=False)
+        try_query("sites_total", """
+            select count(*) from main_gold.dim_site""")
+        try_query("markets", """
+            select count(distinct country_code) from main_gold.dim_site
+            where country_code <> 'ZZ'""")
         try_query("provinces_table", """
-            select province,
+            select case when province = 'Unknown' then 'Outside South Africa' else province end as province,
                    round(sum(fuel_litres) / 1e6, 1) as litres_m,
                    round(sum(total_margin_zar) / 1e6, 1) as margin_m_zar,
                    round(avg(gross_margin_pct), 2) as margin_pct
@@ -113,6 +132,9 @@ def warehouse_facts() -> dict:
             group by 1 order by margin_m_zar desc""", single=False)
     finally:
         con.close()
+    if failed:
+        print(f"  WARNING: {len(failed)} warehouse figure(s) fell back to "
+              f"template defaults: {', '.join(failed)}")
     return out
 
 
@@ -290,8 +312,10 @@ def build_html(manifest: dict, wh: dict, dbx: dict) -> str:
         kpi(str(manifest["fact_tables"]), "fact tables"),
         kpi("70", "conformed dimensions"),
         kpi(f"{dq.get('total_defects_injected', 0)/1e6:.0f}m", "defects injected"),
-        kpi(str(wh.get("sites_za", 1050)), "SA sites"),
-        kpi(str(wh.get("provinces", 9)), "provinces"),
+        kpi(str(wh.get("sites_total", 587)), "sites"),
+        kpi(str(wh.get("markets", 26)), "African markets"),
+        kpi(str(wh.get("sites_za", 250)), "of them in SA"),
+        kpi(str(wh.get("provinces", 9)), "SA provinces"),
     ])
 
     defect_rows = "".join(
@@ -543,7 +567,7 @@ candidates that are the only site within 50&nbsp;km score badly and should
 probably still be kept, because the volume does not transfer to a
 competitor's neighbour 200&nbsp;km away.</p>
 
-{df_table(wh.get('provinces_table'), 'Volume and margin by province.')}
+{df_table(wh.get('provinces_table'), 'Volume and margin by province. Only South African sites carry a province; every other market is grouped as Outside South Africa, which is the largest row.')}
 {fig(8)}
 
 <h2 id="ml">9. Machine learning</h2>

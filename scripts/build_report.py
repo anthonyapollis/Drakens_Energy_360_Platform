@@ -451,8 +451,9 @@ Warehouse: {ctx['warehouse_name']}</p>
 </nav>
 <p>The platform covers retail forecourt, commercial B2B, supply and
 distribution, LPG, lubricants, aviation, marine, loyalty, digital, EV and
-solar, asset maintenance, HSSEQ and finance — modelled on South Africa with
-all nine provinces and roughly 1,050 synthetic service stations. It is built
+solar, asset maintenance, HSSEQ and finance — a downstream network of 587
+synthetic service stations across 26 African markets, of which 250 are in
+South Africa spanning all nine provinces. It is built
 to demonstrate the parts of data engineering that are hard, not the parts that
 demo well: a deliberately dirty landing zone, a cleansing layer whose output
 is measured rather than asserted, and models reported against baselines they
@@ -644,8 +645,15 @@ def main() -> int:
         from main_platform.obs_reconciliation_controls
         order by is_passing, control_code
     """)
+    # The gold aggregate stores 'Unknown' for every site without a South
+    # African province, which is 337 of 587 sites in 25 other African markets
+    # -- the largest row in this table, and 64% of the margin. Labelling that
+    # 'Unresolved' reported the majority of the network as a data-quality
+    # failure. The bucket also absorbs the unknown member (967 of 156,841
+    # site-days), which is why the caption says so rather than pretending the
+    # row is purely geographic.
     province = q(con, """
-        select coalesce(province, 'Unresolved') as "Province",
+        select case when province = 'Unknown' then 'Outside South Africa' else province end as "Province",
                sum(fuel_litres) as "Litres",
                sum(total_margin_zar) as "Margin (R)",
                sum(fuel_transactions) as "Transactions"

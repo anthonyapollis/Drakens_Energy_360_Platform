@@ -73,6 +73,27 @@ CAPTION = ("Independent synthetic portfolio project. Generated data; "
 WAREHOUSE_NOTE = ""
 
 
+def _coverage_note(con) -> str:
+    """Say what a South-Africa-only map leaves out.
+
+    The estate spans 26 African markets and only the South African sites carry
+    a province, so every province map here is a cut of the network rather than
+    the network. A map that does not say so is read as the whole thing, which
+    is a bigger error than any number on it.
+    """
+    try:
+        total, za = con.execute(
+            "select count(*), count(*) filter (where country_code = 'ZA') "
+            "from main_gold.dim_site").fetchone()
+    except Exception:
+        return ""
+    if total == za:
+        return ""
+    return (f" -- the South African estate, {za} of {total} sites; the "
+            f"remaining {total - za} are in other African markets and have "
+            f"no province")
+
+
 def warehouse_caption() -> str:
     return (f"{WAREHOUSE_NOTE} {CAPTION}".strip() if WAREHOUSE_NOTE
             else CAPTION)
@@ -570,7 +591,8 @@ def fig_network_map(con):
                                    zorder=8))
 
     caption = (
-        f"{len(df):,} synthetic sites across {df.province.nunique()} provinces. "
+        f"{len(df):,} synthetic sites across {df.province.nunique()} "
+        f"provinces{_coverage_note(con)}. "
         "Bubble area is total margin; colour is the investment recommendation. "
         "Province boundaries are Natural Earth 1:10m admin-1 (public domain); "
         "everything drawn on them is generated.\n"

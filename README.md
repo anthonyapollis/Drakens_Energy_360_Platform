@@ -26,8 +26,9 @@ business, built on Databricks, Delta Lake, Unity Catalog, dbt and Power BI.**
 A complete downstream-energy data platform: 70 conformed dimensions, 85 fact
 tables, **37.2 million fact rows**, across retail forecourt, commercial B2B,
 supply and distribution, LPG, lubricants, aviation, marine, loyalty, digital,
-EV and solar, asset maintenance, HSSEQ and finance — modelled on South Africa
-with all nine provinces and roughly 1,050 synthetic service stations.
+EV and solar, asset maintenance, HSSEQ and finance — a downstream network of
+587 synthetic service stations across 26 African markets, of which 250 are in
+South Africa spanning all nine provinces.
 
 It is built to demonstrate the parts of data engineering that are actually
 hard, not the parts that demo well.
@@ -129,7 +130,7 @@ table maintenance — green on a clean run.
 | gold | `fct_retail_fuel_sales` | 5,000,000 |
 | gold | `agg_site_daily_fuel` | 971,424 |
 | gold | `agg_executive_daily_kpi` | 8,766 |
-| gold | `network_investment_scorecard` | 1,050 |
+| gold | `network_investment_scorecard` | 587 |
 
 All six reconciliation controls pass: margin reconciles, volume ties to the
 aggregate, no rows lost silver-to-gold, every fact resolves to a site, nine

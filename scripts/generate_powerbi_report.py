@@ -475,9 +475,13 @@ def page_executive() -> tuple[str, str, list[dict]]:
     x, width = col(0, 4)
     v.append(chart(
         "barChart", x, bottom, width, 196,
-        category=[column("dim_site", "Province")],
+        # Country, not province. Province is null for every site outside
+        # South Africa because those sites do not have one, so a chart
+        # grouped by province silently covers 250 of 587 sites and 36% of
+        # the margin while being captioned as the network.
+        category=[column("dim_site", "Country Code")],
         values=[measure("agg_site_daily_fuel", "Margin per Site")],
-        title="Margin per site, by province"))
+        title="Margin per site, by market"))
 
     x, width = col(4, 4)
     v.append(chart(
@@ -515,8 +519,8 @@ def page_network() -> tuple[str, str, list[dict]]:
         title="Network by investment recommendation"))
 
     x, width = col(9, 3)
-    v.append(slicer(x, y, width, 92, column("dim_site", "Province"),
-                    "Province"))
+    v.append(slicer(x, y, width, 92, column("dim_site", "Country Code"),
+                    "Market"))
     v.append(slicer(x, y + 104, width, 92,
                     column("dim_site", "Urban Class"), "Location type"))
     v.append(slicer(x, y + 208, width, 92,
@@ -650,7 +654,7 @@ def page_supply() -> tuple[str, str, list[dict]]:
         "barChart", x, top, width, 224,
         category=[column("fct_deliveries", "Province")],
         values=[measure("fct_deliveries", "OTIF %")],
-        title="OTIF by province"))
+        title="OTIF by province (South Africa)"))
 
     x, width = col(6, 6)
     v.append(chart(
