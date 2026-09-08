@@ -3255,6 +3255,118 @@
         ]
       },
       {
+        "name": "obs_product_coverage",
+        "columns": [
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Products In Dimension",
+            "dataType": "int64",
+            "sourceColumn": "products_in_dimension",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Gold Facts",
+            "dataType": "string",
+            "sourceColumn": "gold_facts",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has Product Key",
+            "dataType": "boolean",
+            "sourceColumn": "has_product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "In Semantic Model",
+            "dataType": "boolean",
+            "sourceColumn": "in_semantic_model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Revenue (R)",
+            "dataType": "double",
+            "sourceColumn": "revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Status",
+            "dataType": "string",
+            "sourceColumn": "status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Note",
+            "dataType": "string",
+            "sourceColumn": "note",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Disclaimer",
+            "dataType": "string",
+            "sourceColumn": "disclaimer",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Reporting Lines",
+            "expression": "COUNTROWS ( obs_product_coverage )",
+            "formatString": "#,0",
+            "displayFolder": "Coverage"
+          },
+          {
+            "name": "Reportable Lines",
+            "expression": "CALCULATE ( COUNTROWS ( obs_product_coverage ), obs_product_coverage[Status] = \"Reportable\" )",
+            "formatString": "#,0",
+            "displayFolder": "Coverage"
+          },
+          {
+            "name": "Lines Without a Gold Fact",
+            "expression": "CALCULATE ( COUNTROWS ( obs_product_coverage ), obs_product_coverage[Status] = \"No gold fact\" )",
+            "formatString": "#,0",
+            "displayFolder": "Coverage"
+          },
+          {
+            "name": "Lines Without a Product Mapping",
+            "expression": "CALCULATE ( COUNTROWS ( obs_product_coverage ), obs_product_coverage[Status] = \"Gold fact exists, no product mapping\" )",
+            "formatString": "#,0",
+            "displayFolder": "Coverage"
+          },
+          {
+            "name": "Coverage %",
+            "expression": "DIVIDE ( [Reportable Lines], [Reporting Lines] )",
+            "formatString": "0.0%",
+            "displayFolder": "Coverage"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_product_coverage",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_product_coverage.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"reporting_line\", \"products_in_dimension\", \"gold_facts\", \"has_product_key\", \"in_semantic_model\", \"revenue_zar\", \"status\", \"note\", \"disclaimer\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"reporting_line\", type text}, {\"products_in_dimension\", Int64.Type}, {\"gold_facts\", type text}, {\"has_product_key\", type logical}, {\"in_semantic_model\", type logical}, {\"revenue_zar\", type number}, {\"status\", type text}, {\"note\", type text}, {\"disclaimer\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
         "name": "obs_geo_site_analysis",
         "columns": [
           {

@@ -80,6 +80,10 @@ TABLES = {
                                          schema="platform"),
     "fct_product_revenue_forecast_12m": dict(mode="import", kind="fact",
                                              schema="platform"),
+    # Which reporting lines the platform can report on, and why not. Written
+    # by scripts/build_product_coverage.py.
+    "obs_product_coverage":         dict(mode="import", kind="observability",
+                                         schema="platform"),
     # Spatial analysis. Written by scripts/build_geo_analysis.py using
     # DuckDB's spatial extension -- point-in-polygon against real province
     # boundaries, and geodesic nearest-neighbour distances.
@@ -531,6 +535,28 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "SUM ( obs_ml_product_forecast_12m[mae_zar] ), "
          "SUM ( obs_ml_product_forecast_12m[naive_mae_zar] ) )",
          "0.0%", "Forecast"),
+    ],
+    "obs_product_coverage": [
+        ("Reporting Lines", "COUNTROWS ( obs_product_coverage )", "#,0",
+         "Coverage"),
+        ("Reportable Lines",
+         "CALCULATE ( COUNTROWS ( obs_product_coverage ), "
+         "obs_product_coverage[status] = \"Reportable\" )", "#,0",
+         "Coverage"),
+        # A blank bar has three causes and they need three different fixes.
+        # Counting them apart is what stops "no data" being the answer to all
+        # of them.
+        ("Lines Without a Gold Fact",
+         "CALCULATE ( COUNTROWS ( obs_product_coverage ), "
+         "obs_product_coverage[status] = \"No gold fact\" )", "#,0",
+         "Coverage"),
+        ("Lines Without a Product Mapping",
+         "CALCULATE ( COUNTROWS ( obs_product_coverage ), "
+         "obs_product_coverage[status] = "
+         "\"Gold fact exists, no product mapping\" )", "#,0", "Coverage"),
+        ("Coverage %",
+         "DIVIDE ( [Reportable Lines], [Reporting Lines] )", "0.0%",
+         "Coverage"),
     ],
     "obs_geo_site_analysis": [
         ("Sites Located", "COUNTROWS ( obs_geo_site_analysis )", "#,0",

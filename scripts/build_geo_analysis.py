@@ -68,6 +68,30 @@ NEAR_M = 5_000
 CATCHMENT_M = 25_000
 
 
+def _assert_distance_axes(con: duckdb.DuckDBPyConnection) -> None:
+    """Refuse to run if ST_Distance_Sphere is being fed the wrong axis order.
+
+    A known pair with a known answer, checked every run. This is here because
+    the swapped version produced plausible numbers -- same order of magnitude,
+    monotonic in the right direction, and wrong by 5% at one bearing and far
+    more at another. Nothing downstream could have caught it, and the
+    catchment counts built on top of it looked entirely reasonable.
+    """
+    # Johannesburg to Cape Town, great-circle, ~1,262 km.
+    got = con.execute("""
+        select ST_Distance_Sphere(ST_Point(-26.2041, 28.0473),
+                                  ST_Point(-33.9249, 18.4241))
+    """).fetchone()[0]
+    expected = 1_261_576
+    if abs(got - expected) > 5_000:
+        raise RuntimeError(
+            f"ST_Distance_Sphere returned {got:,.0f} m for a pair that is "
+            f"{expected:,} m apart. The axis order this build expects "
+            f"(latitude, longitude) does not hold on DuckDB "
+            f"{con.execute('select version()').fetchone()[0]}; every distance "
+            f"in this file would be wrong.")
+
+
 def build(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("install spatial")
     con.execute("load spatial")
@@ -83,16 +107,29 @@ def build(con: duckdb.DuckDBPyConnection) -> None:
         from st_read('{PROVINCES_GPKG.as_posix()}')
     """)
 
+    # Two geometries, deliberately, because the two functions disagree about
+    # axis order and neither one warns.
+    #
+    # ST_Within against the GeoPackage needs planar x/y, which is
+    # (longitude, latitude). ST_Distance_Sphere reads its arguments as
+    # (latitude, longitude). Passing one geometry to both is silent and wrong:
+    # every distance came out on a swapped sphere -- Johannesburg to Cape Town
+    # measured 1,328 km against a true 1,262 km, and the error grows with the
+    # bearing. Naming them apart is the only thing that keeps the mistake from
+    # being reintroduced.
     con.execute("""
         create or replace temp table site_pt as
         select
             site_key, site_id, site_name, country_code, province, city,
             urban_class, site_type, on_national_route, latitude, longitude,
-            ST_Point(longitude, latitude) as geom
+            ST_Point(longitude, latitude) as geom_xy,
+            ST_Point(latitude, longitude) as geom_sphere
         from main_gold.dim_site
         where latitude is not null and longitude is not null
           and site_key <> -1
     """)
+
+    _assert_distance_axes(con)
 
     # 1. Point in polygon. Only meaningful for South African sites: the
     #    boundaries are South African, and a site in Ghana is correctly
@@ -103,7 +140,7 @@ def build(con: duckdb.DuckDBPyConnection) -> None:
             s.*,
             (select p.province_boundary
              from province_geom p
-             where ST_Within(s.geom, p.geom)
+             where ST_Within(s.geom_xy, p.geom)
              limit 1) as boundary_province
         from site_pt s
     """)
@@ -113,12 +150,12 @@ def build(con: duckdb.DuckDBPyConnection) -> None:
         create or replace temp table neighbours as
         select
             a.site_key,
-            min(ST_Distance_Sphere(a.geom, b.geom)) as nearest_site_m,
+            min(ST_Distance_Sphere(a.geom_sphere, b.geom_sphere)) as nearest_site_m,
             count(*) filter (
-                where ST_Distance_Sphere(a.geom, b.geom) <= {NEAR_M}
+                where ST_Distance_Sphere(a.geom_sphere, b.geom_sphere) <= {NEAR_M}
             ) as sites_within_5km,
             count(*) filter (
-                where ST_Distance_Sphere(a.geom, b.geom) <= {CATCHMENT_M}
+                where ST_Distance_Sphere(a.geom_sphere, b.geom_sphere) <= {CATCHMENT_M}
             ) as sites_within_25km
         from site_pt a
         join site_pt b
@@ -144,20 +181,25 @@ def build(con: duckdb.DuckDBPyConnection) -> None:
             round(l.longitude, 5)                       as longitude,
             case
                 when l.country_code <> 'ZA' then 'Not South Africa'
-                when l.boundary_province is null then 'Outside every boundary'
+                when l.boundary_province is null
+                    then 'Outside the mapped province polygons'
                 when l.province is null then 'No province recorded'
                 when l.province = l.boundary_province then 'Matches'
                 else 'Province mismatch'
             end                                         as province_check,
             round(n.nearest_site_m)                     as nearest_site_m,
             round(n.nearest_site_m / 1000.0, 2)         as nearest_site_km,
+            -- Same-country neighbours only. A station across a border is
+            -- a real competitor and is not counted here, so these are
+            -- in-country counts rather than complete catchments.
             coalesce(n.sites_within_5km, 0)             as sites_within_5km,
             coalesce(n.sites_within_25km, 0)            as sites_within_25km,
             case
                 when n.nearest_site_m <= 1000 then 'Overlapping (under 1 km)'
                 when n.nearest_site_m <= {NEAR_M} then 'Competing (under 5 km)'
                 when n.nearest_site_m <= {CATCHMENT_M} then 'Clustered'
-                else 'Isolated'
+                when n.nearest_site_m is null then 'No in-country neighbour'
+                else 'Distant from other sites'
             end                                         as proximity_band,
             'Synthetic data. Drakens Energy is a fictional company. '
             'Coordinates are town centroids plus jitter.' as disclaimer
@@ -175,7 +217,7 @@ def report(con: duckdb.DuckDBPyConnection) -> None:
     total = con.execute("select count(*) from geo").fetchone()[0]
     print(f"wrote {total:,} sites to {OUT.relative_to(REPO)}\n")
 
-    print("point-in-polygon check:")
+    print("point-in-polygon check (against Natural Earth admin-1):")
     for status, n in con.execute("""
         select province_check, count(*) from geo group by 1 order by 2 desc
     """).fetchall():

@@ -1039,7 +1039,17 @@ def page_products() -> tuple[str, str, list[dict]]:
         title="Monthly volume, with margin rate"))
 
     x, width = col(7, 5)
-    v.append(table_visual(x, mid, width, 216, [
+    # Coverage sits next to the product table on purpose. Five of the nine
+    # reporting lines cannot be charted, for three different reasons, and a
+    # reader who sees only the four that can will conclude the other five do
+    # not exist rather than that the platform cannot yet see them.
+    v.append(table_visual(x, mid, width, 100, [
+        column("obs_product_coverage", "Reporting Line"),
+        column("obs_product_coverage", "Status"),
+        column("obs_product_coverage", "Gold Facts"),
+    ], "Why some lines are blank: coverage by reporting line"))
+
+    v.append(table_visual(x, mid + 112, width, 104, [
         column("dim_product", "Product Name"),
         measure("fct_retail_fuel_sales", "Retail Litres"),
         measure("fct_retail_fuel_sales", "Litres Share %"),
