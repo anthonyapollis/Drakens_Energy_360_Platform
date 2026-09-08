@@ -84,6 +84,18 @@ ACCENT_DARK = "#08512F"
 GOLD = "#C8922A"
 WARN = "#B3341F"
 CANVAS = "#FBFCFB"
+# The page sits on a tint and the tiles stay white, so each card reads as a
+# raised surface. White tiles on a white page is why a report looks flat no
+# matter how good the numbers are.
+PAGE_BG = "#EEF2EF"
+WALLPAPER = "#E4EAE6"
+CARD_RULE = ACCENT
+
+# The order single-series charts cycle through. Chosen so neighbours differ in
+# hue as well as lightness -- a palette that only varies lightness reads as one
+# colour in a screenshot and as nothing at all to a colour-blind reader.
+ROTATION = [ACCENT, GOLD, "#3A7CA5", "#B3341F", "#4B9B6E", "#8E6FA8",
+            "#D98B4A"]
 
 # Ordered invest -> divest, matching the mart's seven recommendation strings
 # and the evidence pack's figures. A report and a report-about-the-report that
@@ -127,13 +139,65 @@ def theme() -> dict:
                                     "transparency": 0}],
                     "border": [{"show": True, "color": {"solid":
                                                         {"color": LINE}},
-                                "radius": 6}],
+                                "radius": 8}],
+                    "dropShadow": [{"show": True, "position": "Outer",
+                                    "preset": "BottomRight",
+                                    "color": {"solid": {"color": "#0B2318"}},
+                                    "transparency": 88, "blur": 8}],
                     "title": [{"show": True, "fontColor": {"solid":
                                                            {"color": INK}},
-                               "fontSize": 11, "alignment": "left"}],
+                               "fontSize": 11, "alignment": "left",
+                               "titleWrap": True}],
                     "visualHeader": [{"show": False}],
-                }
-            }
+                    "labels": [{"color": {"solid": {"color": MUTED}},
+                                "fontSize": 9}],
+                    "categoryAxis": [{"showAxisTitle": False,
+                                      "labelColor": {"solid":
+                                                     {"color": MUTED}},
+                                      "fontSize": 9,
+                                      "gridlineShow": False}],
+                    "valueAxis": [{"showAxisTitle": False,
+                                   "labelColor": {"solid": {"color": MUTED}},
+                                   "fontSize": 9,
+                                   "gridlineColor": {"solid":
+                                                     {"color": LINE}},
+                                   "gridlineStyle": "dotted"}],
+                    "legend": [{"position": "TopLeft", "showTitle": False,
+                                "labelColor": {"solid": {"color": MUTED}},
+                                "fontSize": 9}],
+                },
+            },
+            "card": {
+                "*": {
+                    # The callout is the number people read from across a
+                    # room; the label under it is the only thing that says
+                    # what the number is, so it stays legible rather than
+                    # shrinking to a caption.
+                    "labels": [{"color": {"solid": {"color": INK}},
+                                "fontSize": 28,
+                                "fontFamily": "Segoe UI Light"}],
+                    "categoryLabels": [{"color": {"solid": {"color": MUTED}},
+                                        "fontSize": 9}],
+                },
+            },
+            "textbox": {
+                "*": {
+                    # Header text sits on the dark band. A textbox that keeps
+                    # the default white tile paints over the band and hides
+                    # white type on white -- which is exactly how the title
+                    # band rendered as two blank rectangles.
+                    "background": [{"show": False}],
+                    "border": [{"show": False}],
+                    "dropShadow": [{"show": False}],
+                },
+            },
+            "shape": {
+                "*": {
+                    "background": [{"show": False}],
+                    "border": [{"show": False}],
+                    "dropShadow": [{"show": False}],
+                },
+            },
         },
     }
 
@@ -248,7 +312,7 @@ def kpi_row(specs: list[tuple[str, str, str]], y: float,
 
 
 def chart(kind, x, y, width, height, *, category=None, values=None,
-          series=None, title=None, objects=None) -> dict:
+          series=None, title=None, objects=None, color=None) -> dict:
     query: dict = {}
     if category:
         query["Category"] = {"projections": category}
@@ -256,15 +320,52 @@ def chart(kind, x, y, width, height, *, category=None, values=None,
         query["Y"] = {"projections": values}
     if series:
         query["Series"] = {"projections": series}
+    obj = dict(objects or {})
+    if color is None and not series:
+        # Rotate the palette rather than letting every single-series chart
+        # take dataColors[0]. Deterministic, so a regenerated report is the
+        # same report; varied, so a page of seven charts is not seven shades
+        # of one green.
+        color = ROTATION[_counter["n"] % len(ROTATION)]
+    if color and not series:
+        # A single-series chart takes dataColors[0] for every visual on the
+        # page, so seven charts come out in seven shades of the same green.
+        # Naming the colour per chart is what makes a page readable at a
+        # glance instead of merely tidy.
+        obj["dataPoint"] = [{"properties": {
+            "fill": {"solid": {"color": literal(f"'{color}'")}}}}]
     return visual(kind, x, y, width, height, query=query, title=title,
-                  objects=objects)
+                  objects=obj or None)
+
+
+def scatter(x, y, width, height, *, detail, x_measure, y_measure,
+            size=None, title=None) -> dict:
+    """A scatter, which needs its axes named separately.
+
+    Two measures stacked on the Y role is a valid clustered chart and an
+    invalid scatter: Power BI asks for x- and y-axis pairs and refuses to
+    draw. The roles are X and Y, and the category is Details, not Category.
+    """
+    query = {
+        "Details": {"projections": [detail]},
+        "X": {"projections": [x_measure]},
+        "Y": {"projections": [y_measure]},
+    }
+    if size:
+        query["Size"] = {"projections": [size]}
+    return visual("scatterChart", x, y, width, height, query=query,
+                  title=title, objects={
+                      "dataPoint": [{"properties": {
+                          "fill": {"solid": {"color": literal(f"'{GOLD}'")}},
+                      }}],
+                  })
 
 
 def map_visual(x, y, width, height, *, latitude, longitude, size=None,
                legend=None, tooltips=None, title=None) -> dict:
     query = {
-        "Y": {"projections": [latitude]},
-        "X": {"projections": [longitude]},
+        "Latitude": {"projections": [latitude]},
+        "Longitude": {"projections": [longitude]},
     }
     if size:
         query["Size"] = {"projections": [size]}
@@ -272,20 +373,20 @@ def map_visual(x, y, width, height, *, latitude, longitude, size=None,
         query["Category"] = {"projections": [legend]}
     if tooltips:
         query["Tooltips"] = {"projections": tooltips}
+    # The built-in map, not azureMap. Azure Maps renders a sign-in prompt
+    # where the map should be unless the viewer is signed in to a tenant that
+    # allows it, which turns the one visual the network story depends on into
+    # a login screen on someone else's machine.
     return visual(
-        "azureMap", x, y, width, height, query=query, title=title,
+        "map", x, y, width, height, query=query, title=title,
         objects={
             # Bubbles, not a filled map: the fact is per site, and a filled
             # map would force it up to a province and throw away the reason
             # the page exists.
-            "mapControl": [{"properties": {
-                "autoZoom": literal("true"),
-                "style": literal("'grayscale_light'"),
-            }}],
-            "bubbleLayer": [{"properties": {
-                "show": literal("true"),
-                "size": literal("14D"),
-                "transparency": literal("20D"),
+            "mapStyles": [{"properties": {"mapStyle": literal("'road'")}}],
+            "bubbles": [{"properties": {"bubbleSize": literal("-20D")}}],
+            "dataPoint": [{"properties": {
+                "defaultColor": {"solid": {"color": literal(f"'{ACCENT}'")}},
             }}],
         })
 
@@ -567,11 +668,11 @@ def page_supply() -> tuple[str, str, list[dict]]:
         title="OTIF over time"))
 
     x, width = col(7, 5)
-    v.append(chart(
-        "scatterChart", x, bottom, width, 208,
-        category=[column("fct_deliveries", "Route ID")],
-        values=[measure("fct_deliveries", "Average Delay (min)"),
-                measure("fct_deliveries", "Deliveries")],
+    v.append(scatter(
+        x, bottom, width, 208,
+        detail=column("fct_deliveries", "Route ID"),
+        x_measure=measure("fct_deliveries", "Deliveries"),
+        y_measure=measure("fct_deliveries", "Average Delay (min)"),
         title="Delay against volume, by route"))
     return "supply", "Supply and distribution", v
 
@@ -649,7 +750,10 @@ def page_data_quality() -> tuple[str, str, list[dict]]:
         column("obs_cleansing_summary", "Raw Rows"),
         column("obs_cleansing_summary", "Cleansed Rows"),
         column("obs_cleansing_summary", "Quarantined Rows"),
-        column("obs_cleansing_summary", "Quarantine Rate %"),
+        # The model renamed this column because the measure of the same
+        # name won the collision; asking for the old name is a field that
+        # resolves to the wrong kind of thing.
+        column("obs_cleansing_summary", "Quarantine Rate % (row)"),
         column("obs_cleansing_summary", "Quarantine Status"),
     ], "Cleansing outcome, by table"))
 
@@ -657,7 +761,7 @@ def page_data_quality() -> tuple[str, str, list[dict]]:
     v.append(chart(
         "barChart", x, top, width, 232,
         category=[column("obs_quarantine_reasons", "Failed Rule")],
-        values=[column("obs_quarantine_reasons", "Failure Count")],
+        values=[measure("obs_quarantine_reasons", "Rows Rejected")],
         title="Why rows were rejected"))
 
     bottom = row(360, 0)[0]
@@ -680,7 +784,13 @@ PAGES = [page_executive, page_network, page_site_detail, page_commercial,
 # Verification against the model
 # --------------------------------------------------------------------------
 def model_fields() -> dict[str, set[str]]:
-    """Every table, column and measure the model actually defines.
+    """Every column and measure the model defines, kept apart by kind.
+
+    Kind matters. A model that renames a column because a measure already
+    claimed the name -- `Quarantine Rate %` becoming `Quarantine Rate % (row)`
+    -- leaves the name resolving perfectly while meaning something else. A
+    check that pools both kinds into one set of names passes that, and Desktop
+    then refuses the visual with "fields that need to be fixed".
 
     A report is a set of promises about a model. Checking them here means a
     renamed column fails at generation with the field named, rather than in
@@ -692,26 +802,37 @@ def model_fields() -> dict[str, set[str]]:
     makes every field reference unverifiable, and unverifiable reads the same
     as correct.
     """
-    fields: dict[str, set[str]] = {}
+    fields: dict[str, dict[str, set[str]]] = {}
 
     bim = MODEL_DIR / "model.bim"
     if bim.exists():
         model = json.loads(bim.read_text(encoding="utf-8"))["model"]
         for table in model.get("tables", []):
-            names = {c["name"] for c in table.get("columns", [])}
-            names |= {m["name"] for m in table.get("measures", [])}
-            fields[table["name"]] = names
+            columns = table.get("columns", [])
+            fields[table["name"]] = {
+                "column": {c["name"] for c in columns},
+                "measure": {m["name"] for m in table.get("measures", [])},
+                # Only these get aggregated implicitly. A text column, or a
+                # numeric one the model marks summarizeBy "none" (latitude and
+                # longitude, keys, anything pre-averaged), is placed as-is.
+                "aggregating": {
+                    c["name"] for c in columns
+                    if c.get("dataType") in ("int64", "double", "decimal")
+                    and c.get("summarizeBy", "none") != "none"
+                },
+            }
         return fields
 
     tables_dir = MODEL_DIR / "definition" / "tables"
     if not tables_dir.exists():
         return fields
     for path in sorted(tables_dir.glob("*.tmdl")):
-        table = path.stem
         text = path.read_text(encoding="utf-8")
-        names = set(re.findall(r"^\tcolumn '([^']+)'", text, re.M))
-        names |= set(re.findall(r"^\tmeasure '([^']+)'", text, re.M))
-        fields[table] = names
+        fields[path.stem] = {
+            "column": set(re.findall(r"^\tcolumn '([^']+)'", text, re.M)),
+            "measure": set(re.findall(r"^\tmeasure '([^']+)'", text, re.M)),
+            "aggregating": set(),
+        }
     return fields
 
 
@@ -755,6 +876,17 @@ def check_layout(pages) -> list[str]:
     return problems
 
 
+# Where implicit aggregation actually bites.
+#
+# The model sets discourageImplicitMeasures, so a summarisable column dropped
+# on a chart axis has nothing to aggregate it and the visual refuses to draw.
+# Tables and slicers are exempt: they place a column as a column, which is why
+# a detail grid of raw columns renders perfectly while a bar chart built the
+# same way does not.
+AGGREGATING_ROLES = {"Y", "X", "Size"}
+PLACES_COLUMNS_AS_IS = {"tableEx", "pivotTable", "slicer"}
+
+
 def check_pages(pages) -> list[str]:
     fields = model_fields()
     if not fields:
@@ -762,23 +894,45 @@ def check_pages(pages) -> list[str]:
                 "scripts/generate_powerbi_model.py first"]
 
     problems: list[str] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str, str, str]] = set()
     for _, display, visuals in pages:
         for vis in visuals:
+            kind_of_visual = vis["visual"]["visualType"]
             query = vis["visual"].get("query", {}).get("queryState", {})
-            for role in query.values():
+            for role_name, role in query.items():
                 for projection in role.get("projections", []):
                     ref = projection["field"]
                     kind = "Measure" if "Measure" in ref else "Column"
                     entity = ref[kind]["Expression"]["SourceRef"]["Entity"]
                     prop = ref[kind]["Property"]
-                    if (entity, prop) in seen:
+                    want = kind.lower()
+                    key = (entity, prop, want, role_name, kind_of_visual)
+                    if key in seen:
                         continue
-                    seen.add((entity, prop))
+                    seen.add(key)
                     if entity not in fields:
                         problems.append(
                             f"{display}: table '{entity}' is not in the model")
-                    elif prop not in fields[entity]:
+                        continue
+                    defined = fields[entity]
+                    if prop in defined[want]:
+                        if (want == "column"
+                                and role_name in AGGREGATING_ROLES
+                                and kind_of_visual not in PLACES_COLUMNS_AS_IS
+                                and prop in defined["aggregating"]):
+                            problems.append(
+                                f"{display}: {entity}[{prop}] is a "
+                                f"summarisable column on the {role_name} role "
+                                f"of a {kind_of_visual}, and the model "
+                                f"discourages implicit measures -- it needs a "
+                                f"measure")
+                        continue
+                    other = "measure" if want == "column" else "column"
+                    if prop in defined[other]:
+                        problems.append(
+                            f"{display}: {entity}[{prop}] is a {other}, but "
+                            f"the report asks for a {want}")
+                    else:
                         problems.append(
                             f"{display}: {entity}[{prop}] is not in the model")
     return problems
@@ -834,6 +988,32 @@ def _prototype_query(projections: list[dict]) -> dict:
     return {"Version": 2, "From": frm, "Select": select}
 
 
+def _legacy_text(objects: dict) -> dict:
+    """Rewrite textbox styling into the plain strings the legacy format wants.
+
+    PBIR wraps every style value -- `{"fontSize": {"value": "15D"}}`. The
+    legacy format wants CSS-ish literals -- `{"fontSize": "15pt"}` -- and a
+    run whose textStyle it cannot read is not an error: the run is dropped and
+    the textbox renders as an empty white rectangle. That is why the title
+    band came out as blank tiles with the text apparently missing.
+    """
+    out = json.loads(json.dumps(objects))
+    for entry in out.get("general", []):
+        for para in entry.get("properties", {}).get("paragraphs", []):
+            for run in para.get("textRuns", []):
+                style = run.get("textStyle") or {}
+                flat = {}
+                for key, value in style.items():
+                    if isinstance(value, dict) and "value" in value:
+                        value = value["value"]
+                    if key == "fontSize" and isinstance(value, str):
+                        # "15D" is a DAX-style double literal; CSS wants pt.
+                        value = value.rstrip("D") + "pt"
+                    flat[key] = value
+                run["textStyle"] = flat
+    return out
+
+
 def legacy_container(vis: dict) -> dict:
     """One PBIR visual, rewritten as a legacy visualContainer.
 
@@ -853,6 +1033,8 @@ def legacy_container(vis: dict) -> dict:
         every.extend(items)
 
     objects = dict(body.get("objects") or {})
+    if body["visualType"] == "textbox":
+        objects = _legacy_text(objects)
     # `title` is a container property in the legacy format, not a visual one.
     # Left in `objects` it is dropped without complaint and every visual on
     # every page renders untitled.
@@ -899,7 +1081,16 @@ def render_legacy(pages) -> dict:
             "filters": "[]",
             "ordinal": ordinal,
             "visualContainers": [legacy_container(v) for v in visuals],
-            "config": "{}",
+            "config": json.dumps({"objects": {
+                "background": [{"properties": {
+                    "color": {"solid": {"color": literal(f"'{PAGE_BG}'")}},
+                    "transparency": literal("0D"),
+                }}],
+                "outspace": [{"properties": {
+                    "color": {"solid": {"color": literal(f"'{WALLPAPER}'")}},
+                    "transparency": literal("0D"),
+                }}],
+            }}),
             "displayOption": 1,
             "width": W,
             "height": H,
