@@ -189,6 +189,41 @@ def ml_verdicts(ml: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def ml_scorecard() -> pd.DataFrame:
+    """The ML results, from the one place that derives them.
+
+    This module had its own verdict ladder and export_ml_results.py had
+    another, both reading the same MLflow store and disagreeing about what
+    counts as beating a baseline. Two sources of truth for the same claim is
+    how a report and a dashboard end up contradicting each other in front of
+    whoever is reading both.
+    """
+    import export_ml_results as mlx
+
+    if not mlx.MLRUNS.exists():
+        return pd.DataFrame()
+    con = sqlite3.connect(f"file:{mlx.MLRUNS}?mode=ro", uri=True)
+    try:
+        rows = mlx.build_rows(con)
+    finally:
+        con.close()
+    if not rows:
+        return pd.DataFrame()
+    frame = pd.DataFrame(rows)
+    return frame[["model", "use_case", "metric_name", "metric_value",
+                  "baseline_name", "baseline_value", "lift_over_baseline",
+                  "verdict"]].rename(columns={
+        "model": "Model",
+        "use_case": "Use case",
+        "metric_name": "Metric",
+        "metric_value": "Value",
+        "baseline_name": "Baseline",
+        "baseline_value": "Baseline value",
+        "lift_over_baseline": "Lift",
+        "verdict": "Verdict",
+    })
+
+
 FINDINGS = [
     ("A macro that silently corrupted every ratio",
      "safe_divide('a - b', 'c') compiled to a - (b / c) because the macro did "
@@ -538,6 +573,47 @@ baselines, which is the point of having them.</p>
 # ==========================================================================
 # Excel
 # ==========================================================================
+def _add_sheet_chart(book, sheet, name: str, df, last_row: int) -> None:
+    """A chart on the sheets where one earns its place.
+
+    Not on every sheet. A chart of a 12-column detail grid is decoration, and
+    decoration is what makes a reader stop trusting the ones that mean
+    something.
+    """
+    spec = {
+        "Cleansing": ("Quarantined", "Table",
+                      "Quarantined rows by table (top 25)"),
+        "ML results": ("Lift", "Model",
+                       "Lift over baseline (negative means it lost)"),
+        "Province": ("Margin (R)", "Province", "Margin by province"),
+        "Investment by province": ("Uplift (R m)", "province",
+                                   "Modelled uplift by province"),
+    }.get(name)
+    if not spec:
+        return
+    value_col, label_col, chart_title = spec
+    cols = {str(c).lower(): i for i, c in enumerate(df.columns)}
+    vi = cols.get(value_col.lower())
+    li = cols.get(label_col.lower())
+    if vi is None or li is None:
+        return
+
+    rows = min(last_row, 3 + 25)  # top 25; a 128-bar chart is a smear
+    chart = book.add_chart({"type": "column"})
+    chart.add_series({
+        "name": chart_title,
+        "categories": [sheet.get_name(), 4, li, rows, li],
+        "values": [sheet.get_name(), 4, vi, rows, vi],
+        "fill": {"color": "#0b6e4f"},
+    })
+    chart.set_title({"name": chart_title})
+    chart.set_legend({"none": True})
+    chart.set_size({"width": 720, "height": 300})
+    chart.set_y_axis({"major_gridlines": {"visible": True,
+                                          "line": {"color": "#dfe5e1"}}})
+    sheet.insert_chart(last_row + 3, 0, chart)
+
+
 def build_excel(ctx: dict, path: Path) -> None:
     sheets: dict[str, pd.DataFrame] = {
         "Summary": ctx["summary"],
@@ -549,20 +625,50 @@ def build_excel(ctx: dict, path: Path) -> None:
         "Province": ctx["province"],
         "Investment plan": ctx["plan_full"],
         "Investment by province": ctx["plan_province"],
-        "ML results": ctx["ml"],
+        "ML results": ctx.get("ml_scorecard", ctx["ml"]),
         "Findings": pd.DataFrame(FINDINGS, columns=["Finding", "Detail"]),
         "Limitations": pd.DataFrame({"Limitation": LIMITATIONS}),
     }
 
     with pd.ExcelWriter(path, engine="xlsxwriter") as xl:
         book = xl.book
-        title = book.add_format({"bold": True, "font_size": 13,
+        title = book.add_format({"bold": True, "font_size": 14,
                                  "font_color": "#0b6e4f"})
         note = book.add_format({"font_size": 9, "font_color": "#5d6b64",
                                 "text_wrap": True, "valign": "top"})
-        head = book.add_format({"bold": True, "bg_color": "#eef3f0",
-                                "border": 1, "border_color": "#dfe5e1",
-                                "text_wrap": True, "valign": "top"})
+        head = book.add_format({"bold": True, "bg_color": "#0b6e4f",
+                                "font_color": "#ffffff", "border": 1,
+                                "border_color": "#0a5c42", "text_wrap": True,
+                                "valign": "bottom", "align": "left"})
+        # One format per kind of number, picked from the column name. A
+        # workbook where every figure is a bare float makes the reader do the
+        # unit conversion, and they will do it differently each time.
+        money = book.add_format({"num_format": '"R"#,##0', "align": "right"})
+        money_c = book.add_format({"num_format": '"R"#,##0.00',
+                                   "align": "right"})
+        pct = book.add_format({"num_format": "0.0%", "align": "right"})
+        pct_pts = book.add_format({"num_format": "0.00", "align": "right"})
+        count = book.add_format({"num_format": "#,##0", "align": "right"})
+        plain = book.add_format({"valign": "top", "text_wrap": True})
+
+        def column_format(col: str, series):
+            label = str(col).lower()
+            if "%" in label or label.endswith("pct") or "rate" in label:
+                # Stored as a fraction in some frames and as points in others;
+                # formatting 8.86 as 886% would be worse than leaving it bare.
+                sample = series.dropna()
+                if len(sample) and float(sample.abs().max()) <= 1.5:
+                    return pct
+                return pct_pts
+            if "(r)" in label or label.endswith("zar") or "capex" in label:
+                return money
+            if "value" in label and "metric" in label:
+                return pct_pts
+            if pd.api.types.is_float_dtype(series):
+                return money_c if "margin" in label else count
+            if pd.api.types.is_integer_dtype(series):
+                return count
+            return None
 
         for name, df in sheets.items():
             # Header rows are written by hand so every sheet carries the
@@ -571,8 +677,23 @@ def build_excel(ctx: dict, path: Path) -> None:
             sheet = book.add_worksheet(name[:31])
             xl.sheets[name[:31]] = sheet
             sheet.write(0, 0, f"Drakens Energy 360 — {name}", title)
-            sheet.write(1, 0, DISCLAIMER, note)
-            sheet.set_row(1, 30)
+
+            # Merged across the used width and given a height that fits the
+            # text. A fixed 30pt row clipped the disclaimer on every sheet:
+            # wrapping was on, but the row could not grow to hold the wrap.
+            width = max(4, 0 if df is None or df.empty else len(df.columns))
+            sheet.merge_range(1, 0, 1, width - 1, DISCLAIMER, note)
+            sheet.set_row(1, 34)
+
+            # Print setup, so a sheet sent to a printer or a PDF is readable
+            # rather than a column per page.
+            sheet.set_landscape()
+            sheet.set_paper(9)  # A4
+            sheet.fit_to_pages(1, 0)
+            sheet.repeat_rows(3)
+            sheet.set_header(f"&L{name}&RDrakens Energy 360")
+            sheet.set_footer("&LSynthetic data — fictional company&RPage "
+                             "&P of &N")
 
             if df is None or df.empty:
                 sheet.write(3, 0, "Not available in this run.", note)
@@ -584,9 +705,22 @@ def build_excel(ctx: dict, path: Path) -> None:
                 sheet.write(3, i, str(col), head)
                 longest = max([len(str(col))]
                               + [len(str(v)) for v in df[col].head(200)])
-                sheet.set_column(i, i, min(max(longest + 2, 11), 62))
+                fmt = column_format(col, df[col])
+                sheet.set_column(i, i, min(max(longest + 2, 11), 62),
+                                 fmt or plain)
+            sheet.set_row(3, 30)
             sheet.freeze_panes(4, 0)
             sheet.autofilter(3, 0, 3 + len(df), len(df.columns) - 1)
+
+            # Banding, applied as a conditional format so it survives sorting
+            # and filtering rather than being painted onto fixed rows.
+            last = 3 + len(df)
+            sheet.conditional_format(
+                4, 0, last, len(df.columns) - 1,
+                {"type": "formula", "criteria": "=MOD(ROW(),2)=0",
+                 "format": book.add_format({"bg_color": "#f4f8f5"})})
+
+            _add_sheet_chart(book, sheet, name, df, last)
 
 
 # ==========================================================================
@@ -709,7 +843,8 @@ def main() -> int:
                build_tables=build_tables, defects=defects,
                cleansing=cleansing, quarantine=quarantine, controls=controls,
                province=province, plan_summary=plan_summary,
-               plan_province=plan_province, plan_full=plan_full, ml=ml)
+               plan_province=plan_province, plan_full=plan_full, ml=ml,
+               ml_scorecard=ml_scorecard())
 
     DOCS.mkdir(parents=True, exist_ok=True)
     OUT_HTML.write_text(build_html(ctx), encoding="utf-8")
