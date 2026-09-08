@@ -1,0 +1,3439 @@
+{
+  "name": "DrakensEnergy360",
+  "compatibilityLevel": 1567,
+  "model": {
+    "culture": "en-ZA",
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "discourageImplicitMeasures": true,
+    "sourceQueryCulture": "en-ZA",
+    "tables": [
+      {
+        "name": "dim_date",
+        "dataCategory": "Time",
+        "columns": [
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Full Date",
+            "dataType": "dateTime",
+            "sourceColumn": "full_date",
+            "summarizeBy": "none",
+            "isKey": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Day Of Month",
+            "dataType": "int64",
+            "sourceColumn": "day_of_month",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Day Of Week",
+            "dataType": "int64",
+            "sourceColumn": "day_of_week",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Day Name",
+            "dataType": "string",
+            "sourceColumn": "day_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Day Of Year",
+            "dataType": "int64",
+            "sourceColumn": "day_of_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Week Of Year",
+            "dataType": "int64",
+            "sourceColumn": "week_of_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Month Number",
+            "dataType": "int64",
+            "sourceColumn": "month_number",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Month Name",
+            "dataType": "string",
+            "sourceColumn": "month_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Quarter Number",
+            "dataType": "int64",
+            "sourceColumn": "quarter_number",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Quarter Name",
+            "dataType": "string",
+            "sourceColumn": "quarter_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Calendar Year",
+            "dataType": "int64",
+            "sourceColumn": "calendar_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fiscal Year",
+            "dataType": "int64",
+            "sourceColumn": "fiscal_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fiscal Quarter",
+            "dataType": "int64",
+            "sourceColumn": "fiscal_quarter",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Fiscal Period",
+            "dataType": "int64",
+            "sourceColumn": "fiscal_period",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Is Weekend",
+            "dataType": "boolean",
+            "sourceColumn": "is_weekend",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Public Holiday ZA",
+            "dataType": "boolean",
+            "sourceColumn": "is_public_holiday_za",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Trading Day",
+            "dataType": "boolean",
+            "sourceColumn": "is_trading_day",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Season Southern",
+            "dataType": "string",
+            "sourceColumn": "season_southern",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "School Holiday ZA",
+            "dataType": "boolean",
+            "sourceColumn": "school_holiday_za",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Year Month",
+            "dataType": "string",
+            "sourceColumn": "year_month",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fiscal Year Label",
+            "dataType": "string",
+            "sourceColumn": "fiscal_year_label",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Non Working Day",
+            "dataType": "boolean",
+            "sourceColumn": "is_non_working_day",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "dim_date",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"dim_date.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"date_key\", \"full_date\", \"day_of_month\", \"day_of_week\", \"day_name\", \"day_of_year\", \"week_of_year\", \"month_number\", \"month_name\", \"quarter_number\", \"quarter_name\", \"calendar_year\", \"fiscal_year\", \"fiscal_quarter\", \"fiscal_period\", \"is_weekend\", \"is_public_holiday_za\", \"is_trading_day\", \"season_southern\", \"school_holiday_za\", \"year_month\", \"fiscal_year_label\", \"is_non_working_day\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"date_key\", Int64.Type}, {\"full_date\", type datetime}, {\"day_of_month\", Int64.Type}, {\"day_of_week\", Int64.Type}, {\"day_name\", type text}, {\"day_of_year\", Int64.Type}, {\"week_of_year\", Int64.Type}, {\"month_number\", Int64.Type}, {\"month_name\", type text}, {\"quarter_number\", Int64.Type}, {\"quarter_name\", type text}, {\"calendar_year\", Int64.Type}, {\"fiscal_year\", Int64.Type}, {\"fiscal_quarter\", Int64.Type}, {\"fiscal_period\", Int64.Type}, {\"is_weekend\", type logical}, {\"is_public_holiday_za\", type logical}, {\"is_trading_day\", type logical}, {\"season_southern\", type text}, {\"school_holiday_za\", type logical}, {\"year_month\", type text}, {\"fiscal_year_label\", type text}, {\"is_non_working_day\", type logical}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "dim_site",
+        "columns": [
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Name",
+            "dataType": "string",
+            "sourceColumn": "site_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Type",
+            "dataType": "string",
+            "sourceColumn": "site_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ownership Model",
+            "dataType": "string",
+            "sourceColumn": "ownership_model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Status",
+            "dataType": "string",
+            "sourceColumn": "site_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Latitude",
+            "dataType": "double",
+            "sourceColumn": "latitude",
+            "summarizeBy": "none",
+            "dataCategory": "Latitude"
+          },
+          {
+            "name": "Longitude",
+            "dataType": "double",
+            "sourceColumn": "longitude",
+            "summarizeBy": "none",
+            "dataCategory": "Longitude"
+          },
+          {
+            "name": "On National Route",
+            "dataType": "boolean",
+            "sourceColumn": "on_national_route",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Forecourt Lanes",
+            "dataType": "int64",
+            "sourceColumn": "forecourt_lanes",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Has Convenience",
+            "dataType": "boolean",
+            "sourceColumn": "has_convenience",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has QSR",
+            "dataType": "boolean",
+            "sourceColumn": "has_qsr",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has Car Wash",
+            "dataType": "boolean",
+            "sourceColumn": "has_car_wash",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has EV Charging",
+            "dataType": "boolean",
+            "sourceColumn": "has_ev_charging",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has Solar",
+            "dataType": "boolean",
+            "sourceColumn": "has_solar",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has LPG",
+            "dataType": "boolean",
+            "sourceColumn": "has_lpg",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is 24 Hour",
+            "dataType": "boolean",
+            "sourceColumn": "is_24_hour",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Opened Date",
+            "dataType": "dateTime",
+            "sourceColumn": "opened_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Demand Index",
+            "dataType": "double",
+            "sourceColumn": "demand_index",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Demand Band",
+            "dataType": "string",
+            "sourceColumn": "demand_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Offer Tier",
+            "dataType": "string",
+            "sourceColumn": "offer_tier",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "New Energy Profile",
+            "dataType": "string",
+            "sourceColumn": "new_energy_profile",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Age Years",
+            "dataType": "double",
+            "sourceColumn": "site_age_years",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Is South Africa",
+            "dataType": "boolean",
+            "sourceColumn": "is_south_africa",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Effective From Date",
+            "dataType": "dateTime",
+            "sourceColumn": "effective_from_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Effective To Date",
+            "dataType": "dateTime",
+            "sourceColumn": "effective_to_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Is Current",
+            "dataType": "boolean",
+            "sourceColumn": "is_current",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Scd Version",
+            "dataType": "int64",
+            "sourceColumn": "scd_version",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Dw Hash Diff",
+            "dataType": "string",
+            "sourceColumn": "dw_hash_diff",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Record Source",
+            "dataType": "string",
+            "sourceColumn": "record_source",
+            "summarizeBy": "none",
+            "isHidden": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "dim_site",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"dim_site.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"site_key\", \"site_id\", \"site_name\", \"country_code\", \"province\", \"city\", \"urban_class\", \"site_type\", \"ownership_model\", \"site_status\", \"latitude\", \"longitude\", \"on_national_route\", \"forecourt_lanes\", \"has_convenience\", \"has_qsr\", \"has_car_wash\", \"has_ev_charging\", \"has_solar\", \"has_lpg\", \"is_24_hour\", \"opened_date\", \"demand_index\", \"demand_band\", \"offer_tier\", \"new_energy_profile\", \"site_age_years\", \"is_south_africa\", \"effective_from_date\", \"effective_to_date\", \"is_current\", \"scd_version\", \"dw_hash_diff\", \"record_source\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"site_key\", Int64.Type}, {\"site_id\", type text}, {\"site_name\", type text}, {\"country_code\", type text}, {\"province\", type text}, {\"city\", type text}, {\"urban_class\", type text}, {\"site_type\", type text}, {\"ownership_model\", type text}, {\"site_status\", type text}, {\"latitude\", type number}, {\"longitude\", type number}, {\"on_national_route\", type logical}, {\"forecourt_lanes\", Int64.Type}, {\"has_convenience\", type logical}, {\"has_qsr\", type logical}, {\"has_car_wash\", type logical}, {\"has_ev_charging\", type logical}, {\"has_solar\", type logical}, {\"has_lpg\", type logical}, {\"is_24_hour\", type logical}, {\"opened_date\", type datetime}, {\"demand_index\", type number}, {\"demand_band\", type text}, {\"offer_tier\", type text}, {\"new_energy_profile\", type text}, {\"site_age_years\", type number}, {\"is_south_africa\", type logical}, {\"effective_from_date\", type datetime}, {\"effective_to_date\", type datetime}, {\"is_current\", type logical}, {\"scd_version\", Int64.Type}, {\"dw_hash_diff\", type text}, {\"record_source\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "dim_product",
+        "columns": [
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Category",
+            "dataType": "string",
+            "sourceColumn": "category",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Subcategory",
+            "dataType": "string",
+            "sourceColumn": "subcategory",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Brand",
+            "dataType": "string",
+            "sourceColumn": "brand",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Uom",
+            "dataType": "string",
+            "sourceColumn": "uom",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Base Price (R)",
+            "dataType": "double",
+            "sourceColumn": "base_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Base Cost (R)",
+            "dataType": "double",
+            "sourceColumn": "base_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Regulated",
+            "dataType": "boolean",
+            "sourceColumn": "regulated",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Hazard Class",
+            "dataType": "string",
+            "sourceColumn": "hazard_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Shelf Life Days",
+            "dataType": "int64",
+            "sourceColumn": "shelf_life_days",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Base Unit Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "base_unit_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Base Margin %",
+            "dataType": "double",
+            "sourceColumn": "base_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Price Regime",
+            "dataType": "string",
+            "sourceColumn": "price_regime",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Effective From Date",
+            "dataType": "dateTime",
+            "sourceColumn": "effective_from_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Effective To Date",
+            "dataType": "dateTime",
+            "sourceColumn": "effective_to_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Is Current",
+            "dataType": "boolean",
+            "sourceColumn": "is_current",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Scd Version",
+            "dataType": "int64",
+            "sourceColumn": "scd_version",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Dw Hash Diff",
+            "dataType": "string",
+            "sourceColumn": "dw_hash_diff",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Record Source",
+            "dataType": "string",
+            "sourceColumn": "record_source",
+            "summarizeBy": "none",
+            "isHidden": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "dim_product",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"dim_product.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"product_key\", \"product_id\", \"product_name\", \"category\", \"subcategory\", \"brand\", \"uom\", \"base_price_zar\", \"base_cost_zar\", \"regulated\", \"hazard_class\", \"shelf_life_days\", \"base_unit_margin_zar\", \"base_margin_pct\", \"price_regime\", \"reporting_line\", \"effective_from_date\", \"effective_to_date\", \"is_current\", \"scd_version\", \"dw_hash_diff\", \"record_source\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"product_key\", Int64.Type}, {\"product_id\", type text}, {\"product_name\", type text}, {\"category\", type text}, {\"subcategory\", type text}, {\"brand\", type text}, {\"uom\", type text}, {\"base_price_zar\", type number}, {\"base_cost_zar\", type number}, {\"regulated\", type logical}, {\"hazard_class\", type text}, {\"shelf_life_days\", Int64.Type}, {\"base_unit_margin_zar\", type number}, {\"base_margin_pct\", type number}, {\"price_regime\", type text}, {\"reporting_line\", type text}, {\"effective_from_date\", type datetime}, {\"effective_to_date\", type datetime}, {\"is_current\", type logical}, {\"scd_version\", Int64.Type}, {\"dw_hash_diff\", type text}, {\"record_source\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "dim_customer",
+        "columns": [
+          {
+            "name": "Customer Key",
+            "dataType": "int64",
+            "sourceColumn": "customer_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Customer ID",
+            "dataType": "string",
+            "sourceColumn": "customer_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer Name",
+            "dataType": "string",
+            "sourceColumn": "customer_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sector",
+            "dataType": "string",
+            "sourceColumn": "sector",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Segment",
+            "dataType": "string",
+            "sourceColumn": "segment",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Credit Band",
+            "dataType": "string",
+            "sourceColumn": "credit_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Credit Limit (R)",
+            "dataType": "double",
+            "sourceColumn": "credit_limit_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Payment Terms Days",
+            "dataType": "int64",
+            "sourceColumn": "payment_terms_days",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Onboarded Date",
+            "dataType": "dateTime",
+            "sourceColumn": "onboarded_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Is Active",
+            "dataType": "boolean",
+            "sourceColumn": "is_active",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Revenue Index",
+            "dataType": "double",
+            "sourceColumn": "revenue_index",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Service Model",
+            "dataType": "string",
+            "sourceColumn": "service_model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Credit Risk Tier",
+            "dataType": "string",
+            "sourceColumn": "credit_risk_tier",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Industrial",
+            "dataType": "boolean",
+            "sourceColumn": "is_industrial",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer Tenure Days",
+            "dataType": "int64",
+            "sourceColumn": "customer_tenure_days",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Effective From Date",
+            "dataType": "dateTime",
+            "sourceColumn": "effective_from_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Effective To Date",
+            "dataType": "dateTime",
+            "sourceColumn": "effective_to_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Is Current",
+            "dataType": "boolean",
+            "sourceColumn": "is_current",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Scd Version",
+            "dataType": "int64",
+            "sourceColumn": "scd_version",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Dw Hash Diff",
+            "dataType": "string",
+            "sourceColumn": "dw_hash_diff",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Record Source",
+            "dataType": "string",
+            "sourceColumn": "record_source",
+            "summarizeBy": "none",
+            "isHidden": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "dim_customer",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"dim_customer.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"customer_key\", \"customer_id\", \"customer_name\", \"sector\", \"segment\", \"country_code\", \"credit_band\", \"credit_limit_zar\", \"payment_terms_days\", \"onboarded_date\", \"is_active\", \"revenue_index\", \"service_model\", \"credit_risk_tier\", \"is_industrial\", \"customer_tenure_days\", \"effective_from_date\", \"effective_to_date\", \"is_current\", \"scd_version\", \"dw_hash_diff\", \"record_source\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"customer_key\", Int64.Type}, {\"customer_id\", type text}, {\"customer_name\", type text}, {\"sector\", type text}, {\"segment\", type text}, {\"country_code\", type text}, {\"credit_band\", type text}, {\"credit_limit_zar\", type number}, {\"payment_terms_days\", Int64.Type}, {\"onboarded_date\", type datetime}, {\"is_active\", type logical}, {\"revenue_index\", type number}, {\"service_model\", type text}, {\"credit_risk_tier\", type text}, {\"is_industrial\", type logical}, {\"customer_tenure_days\", Int64.Type}, {\"effective_from_date\", type datetime}, {\"effective_to_date\", type datetime}, {\"is_current\", type logical}, {\"scd_version\", Int64.Type}, {\"dw_hash_diff\", type text}, {\"record_source\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_retail_fuel_sales",
+        "columns": [
+          {
+            "name": "Transaction ID",
+            "dataType": "string",
+            "sourceColumn": "transaction_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Transaction Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "transaction_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Time Key",
+            "dataType": "int64",
+            "sourceColumn": "time_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Type",
+            "dataType": "string",
+            "sourceColumn": "site_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ownership Model",
+            "dataType": "string",
+            "sourceColumn": "ownership_model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Demand Band",
+            "dataType": "string",
+            "sourceColumn": "demand_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fuel Grade",
+            "dataType": "string",
+            "sourceColumn": "fuel_grade",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Regulated Price",
+            "dataType": "boolean",
+            "sourceColumn": "is_regulated_price",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Site",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_site",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Product",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_product",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Pump Number",
+            "dataType": "int64",
+            "sourceColumn": "pump_number",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Forecourt Lane",
+            "dataType": "int64",
+            "sourceColumn": "forecourt_lane",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Shift Name",
+            "dataType": "string",
+            "sourceColumn": "shift_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Payment Method",
+            "dataType": "string",
+            "sourceColumn": "payment_method",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Loyalty Flag",
+            "dataType": "boolean",
+            "sourceColumn": "loyalty_flag",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Loyalty Member ID",
+            "dataType": "string",
+            "sourceColumn": "loyalty_member_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Fleet Sale",
+            "dataType": "boolean",
+            "sourceColumn": "is_fleet_sale",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Litres",
+            "dataType": "double",
+            "sourceColumn": "litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Gross Sales (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_sales_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Unit Price (R)",
+            "dataType": "double",
+            "sourceColumn": "unit_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Line Margin %",
+            "dataType": "double",
+            "sourceColumn": "line_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Margin Cents Per Litre",
+            "dataType": "double",
+            "sourceColumn": "margin_cents_per_litre",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_retail_fuel_sales",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_retail_fuel_sales.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"transaction_id\", \"transaction_ts\", \"date_key\", \"time_key\", \"site_key\", \"product_key\", \"site_id\", \"product_id\", \"province\", \"city\", \"country_code\", \"urban_class\", \"site_type\", \"ownership_model\", \"demand_band\", \"product_name\", \"fuel_grade\", \"reporting_line\", \"is_regulated_price\", \"is_unmatched_site\", \"is_unmatched_product\", \"pump_number\", \"forecourt_lane\", \"shift_name\", \"payment_method\", \"loyalty_flag\", \"loyalty_member_id\", \"is_fleet_sale\", \"litres\", \"gross_sales_zar\", \"cogs_zar\", \"gross_margin_zar\", \"unit_price_zar\", \"line_margin_pct\", \"margin_cents_per_litre\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"transaction_id\", type text}, {\"transaction_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"time_key\", Int64.Type}, {\"site_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"site_id\", type text}, {\"product_id\", type text}, {\"province\", type text}, {\"city\", type text}, {\"country_code\", type text}, {\"urban_class\", type text}, {\"site_type\", type text}, {\"ownership_model\", type text}, {\"demand_band\", type text}, {\"product_name\", type text}, {\"fuel_grade\", type text}, {\"reporting_line\", type text}, {\"is_regulated_price\", type logical}, {\"is_unmatched_site\", type logical}, {\"is_unmatched_product\", type logical}, {\"pump_number\", Int64.Type}, {\"forecourt_lane\", Int64.Type}, {\"shift_name\", type text}, {\"payment_method\", type text}, {\"loyalty_flag\", type logical}, {\"loyalty_member_id\", type text}, {\"is_fleet_sale\", type logical}, {\"litres\", type number}, {\"gross_sales_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"unit_price_zar\", type number}, {\"line_margin_pct\", type number}, {\"margin_cents_per_litre\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "agg_site_daily_fuel",
+        "columns": [
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Type",
+            "dataType": "string",
+            "sourceColumn": "site_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Demand Band",
+            "dataType": "string",
+            "sourceColumn": "demand_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Transaction Count (row)",
+            "dataType": "int64",
+            "sourceColumn": "transaction_count",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Grades Sold",
+            "dataType": "int64",
+            "sourceColumn": "grades_sold",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Litres",
+            "dataType": "double",
+            "sourceColumn": "litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Gross Sales (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_sales_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Diesel Litres",
+            "dataType": "double",
+            "sourceColumn": "diesel_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Petrol Litres",
+            "dataType": "double",
+            "sourceColumn": "petrol_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Loyalty Transactions",
+            "dataType": "int64",
+            "sourceColumn": "loyalty_transactions",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Fleet Transactions",
+            "dataType": "int64",
+            "sourceColumn": "fleet_transactions",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Cash Sales (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cash_sales_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin % (row)",
+            "dataType": "double",
+            "sourceColumn": "gross_margin_pct",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Litres Per Transaction",
+            "dataType": "double",
+            "sourceColumn": "litres_per_transaction",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Average Transaction (R)",
+            "dataType": "double",
+            "sourceColumn": "average_transaction_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Loyalty Penetration %",
+            "dataType": "double",
+            "sourceColumn": "loyalty_penetration_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Diesel Share %",
+            "dataType": "double",
+            "sourceColumn": "diesel_share_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Full Date",
+            "dataType": "dateTime",
+            "sourceColumn": "full_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Day Name",
+            "dataType": "string",
+            "sourceColumn": "day_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Month Name",
+            "dataType": "string",
+            "sourceColumn": "month_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Calendar Year",
+            "dataType": "int64",
+            "sourceColumn": "calendar_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fiscal Year",
+            "dataType": "int64",
+            "sourceColumn": "fiscal_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Weekend",
+            "dataType": "boolean",
+            "sourceColumn": "is_weekend",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Public Holiday ZA",
+            "dataType": "boolean",
+            "sourceColumn": "is_public_holiday_za",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Season Southern",
+            "dataType": "string",
+            "sourceColumn": "season_southern",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Fuel Volume (L)",
+            "expression": "SUM ( agg_site_daily_fuel[Litres] )",
+            "formatString": "#,0",
+            "displayFolder": "Volume"
+          },
+          {
+            "name": "Volume per Site (L)",
+            "expression": "DIVIDE ( [Fuel Volume (L)], [Trading Sites] )",
+            "formatString": "#,0",
+            "displayFolder": "Volume"
+          },
+          {
+            "name": "Trading Sites",
+            "expression": "DISTINCTCOUNT ( agg_site_daily_fuel[Site Key] )",
+            "formatString": "#,0",
+            "displayFolder": "Volume"
+          },
+          {
+            "name": "Fuel Revenue",
+            "expression": "SUM ( agg_site_daily_fuel[Gross Sales (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Value"
+          },
+          {
+            "name": "Gross Margin",
+            "expression": "SUM ( agg_site_daily_fuel[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Value"
+          },
+          {
+            "name": "Gross Margin %",
+            "expression": "DIVIDE ( [Gross Margin], [Fuel Revenue] )",
+            "formatString": "0.0%",
+            "displayFolder": "Value"
+          },
+          {
+            "name": "Margin per Litre (c)",
+            "expression": "DIVIDE ( [Gross Margin], [Fuel Volume (L)] ) * 100",
+            "formatString": "#,0.0",
+            "displayFolder": "Value"
+          },
+          {
+            "name": "Transaction Count",
+            "expression": "SUM ( agg_site_daily_fuel[Transaction Count (row)] )",
+            "formatString": "#,0",
+            "displayFolder": "Volume"
+          },
+          {
+            "name": "Average Transaction Value",
+            "expression": "DIVIDE ( [Fuel Revenue], [Transaction Count] )",
+            "formatString": "\"R\"#,0.00",
+            "displayFolder": "Value"
+          },
+          {
+            "name": "Fuel Volume LY",
+            "expression": "CALCULATE ( [Fuel Volume (L)], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )",
+            "formatString": "#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Fuel Volume YoY %",
+            "expression": "DIVIDE ( [Fuel Volume (L)] - [Fuel Volume LY], [Fuel Volume LY] )",
+            "formatString": "0.0%",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Gross Margin YTD",
+            "expression": "TOTALYTD ( [Gross Margin], dim_date[Full Date] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Fuel Volume 7D Average",
+            "expression": "AVERAGEX ( DATESINPERIOD ( dim_date[Full Date], MAX ( dim_date[Full Date] ), -7, DAY ), [Fuel Volume (L)] )",
+            "formatString": "#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Margin per Site",
+            "expression": "DIVIDE ( [Gross Margin], DISTINCTCOUNT ( dim_site[Site Key] ) )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Network"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "agg_site_daily_fuel",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"agg_site_daily_fuel.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"date_key\", \"site_key\", \"site_id\", \"province\", \"urban_class\", \"site_type\", \"demand_band\", \"transaction_count\", \"grades_sold\", \"litres\", \"gross_sales_zar\", \"cogs_zar\", \"gross_margin_zar\", \"diesel_litres\", \"petrol_litres\", \"loyalty_transactions\", \"fleet_transactions\", \"cash_sales_zar\", \"gross_margin_pct\", \"litres_per_transaction\", \"average_transaction_zar\", \"loyalty_penetration_pct\", \"diesel_share_pct\", \"full_date\", \"day_name\", \"month_name\", \"calendar_year\", \"fiscal_year\", \"is_weekend\", \"is_public_holiday_za\", \"season_southern\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"date_key\", Int64.Type}, {\"site_key\", Int64.Type}, {\"site_id\", type text}, {\"province\", type text}, {\"urban_class\", type text}, {\"site_type\", type text}, {\"demand_band\", type text}, {\"transaction_count\", Int64.Type}, {\"grades_sold\", Int64.Type}, {\"litres\", type number}, {\"gross_sales_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"diesel_litres\", type number}, {\"petrol_litres\", type number}, {\"loyalty_transactions\", Int64.Type}, {\"fleet_transactions\", Int64.Type}, {\"cash_sales_zar\", type number}, {\"gross_margin_pct\", type number}, {\"litres_per_transaction\", type number}, {\"average_transaction_zar\", type number}, {\"loyalty_penetration_pct\", type number}, {\"diesel_share_pct\", type number}, {\"full_date\", type datetime}, {\"day_name\", type text}, {\"month_name\", type text}, {\"calendar_year\", Int64.Type}, {\"fiscal_year\", Int64.Type}, {\"is_weekend\", type logical}, {\"is_public_holiday_za\", type logical}, {\"season_southern\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "agg_executive_daily_kpi",
+        "columns": [
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Full Date",
+            "dataType": "dateTime",
+            "sourceColumn": "full_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Day Name",
+            "dataType": "string",
+            "sourceColumn": "day_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Month Name",
+            "dataType": "string",
+            "sourceColumn": "month_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Calendar Year",
+            "dataType": "int64",
+            "sourceColumn": "calendar_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fiscal Year",
+            "dataType": "int64",
+            "sourceColumn": "fiscal_year",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fiscal Quarter",
+            "dataType": "int64",
+            "sourceColumn": "fiscal_quarter",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Is Weekend",
+            "dataType": "boolean",
+            "sourceColumn": "is_weekend",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Public Holiday ZA",
+            "dataType": "boolean",
+            "sourceColumn": "is_public_holiday_za",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "Trading Sites",
+            "dataType": "int64",
+            "sourceColumn": "trading_sites",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Fuel Litres",
+            "dataType": "double",
+            "sourceColumn": "fuel_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Fuel Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "fuel_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Fuel Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "fuel_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Fuel Transactions",
+            "dataType": "int64",
+            "sourceColumn": "fuel_transactions",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Shop Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "shop_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Shop Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "shop_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Total Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "total_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Total Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "total_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Delivery Count",
+            "dataType": "int64",
+            "sourceColumn": "delivery_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "OTIF Deliveries",
+            "dataType": "int64",
+            "sourceColumn": "otif_deliveries",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "OTIF %",
+            "dataType": "double",
+            "sourceColumn": "otif_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Incident Count",
+            "dataType": "int64",
+            "sourceColumn": "incident_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Reportable Incidents",
+            "dataType": "int64",
+            "sourceColumn": "reportable_incidents",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Lost Time Injuries",
+            "dataType": "int64",
+            "sourceColumn": "lost_time_injuries",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "EV Sessions",
+            "dataType": "int64",
+            "sourceColumn": "ev_sessions",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "EV kWh",
+            "dataType": "double",
+            "sourceColumn": "ev_kwh",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Gross Margin %",
+            "dataType": "double",
+            "sourceColumn": "gross_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Non Fuel Margin Share %",
+            "dataType": "double",
+            "sourceColumn": "non_fuel_margin_share_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Litres Per Site",
+            "dataType": "double",
+            "sourceColumn": "litres_per_site",
+            "summarizeBy": "sum"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "agg_executive_daily_kpi",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"agg_executive_daily_kpi.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"date_key\", \"full_date\", \"day_name\", \"month_name\", \"calendar_year\", \"fiscal_year\", \"fiscal_quarter\", \"is_weekend\", \"is_public_holiday_za\", \"province\", \"trading_sites\", \"fuel_litres\", \"fuel_revenue_zar\", \"fuel_margin_zar\", \"fuel_transactions\", \"shop_revenue_zar\", \"shop_margin_zar\", \"total_revenue_zar\", \"total_margin_zar\", \"delivery_count\", \"otif_deliveries\", \"otif_pct\", \"incident_count\", \"reportable_incidents\", \"lost_time_injuries\", \"ev_sessions\", \"ev_kwh\", \"gross_margin_pct\", \"non_fuel_margin_share_pct\", \"litres_per_site\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"date_key\", Int64.Type}, {\"full_date\", type datetime}, {\"day_name\", type text}, {\"month_name\", type text}, {\"calendar_year\", Int64.Type}, {\"fiscal_year\", Int64.Type}, {\"fiscal_quarter\", Int64.Type}, {\"is_weekend\", type logical}, {\"is_public_holiday_za\", type logical}, {\"province\", type text}, {\"trading_sites\", Int64.Type}, {\"fuel_litres\", type number}, {\"fuel_revenue_zar\", type number}, {\"fuel_margin_zar\", type number}, {\"fuel_transactions\", Int64.Type}, {\"shop_revenue_zar\", type number}, {\"shop_margin_zar\", type number}, {\"total_revenue_zar\", type number}, {\"total_margin_zar\", type number}, {\"delivery_count\", Int64.Type}, {\"otif_deliveries\", Int64.Type}, {\"otif_pct\", type number}, {\"incident_count\", Int64.Type}, {\"reportable_incidents\", Int64.Type}, {\"lost_time_injuries\", Int64.Type}, {\"ev_sessions\", Int64.Type}, {\"ev_kwh\", type number}, {\"gross_margin_pct\", type number}, {\"non_fuel_margin_share_pct\", type number}, {\"litres_per_site\", type number}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "network_investment_scorecard",
+        "columns": [
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Name",
+            "dataType": "string",
+            "sourceColumn": "site_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Type",
+            "dataType": "string",
+            "sourceColumn": "site_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ownership Model",
+            "dataType": "string",
+            "sourceColumn": "ownership_model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Status",
+            "dataType": "string",
+            "sourceColumn": "site_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "On National Route",
+            "dataType": "boolean",
+            "sourceColumn": "on_national_route",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Offer Tier",
+            "dataType": "string",
+            "sourceColumn": "offer_tier",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "New Energy Profile",
+            "dataType": "string",
+            "sourceColumn": "new_energy_profile",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has Convenience",
+            "dataType": "boolean",
+            "sourceColumn": "has_convenience",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has EV Charging",
+            "dataType": "boolean",
+            "sourceColumn": "has_ev_charging",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Has Solar",
+            "dataType": "boolean",
+            "sourceColumn": "has_solar",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Age Years",
+            "dataType": "double",
+            "sourceColumn": "site_age_years",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Latitude",
+            "dataType": "double",
+            "sourceColumn": "latitude",
+            "summarizeBy": "none",
+            "dataCategory": "Latitude"
+          },
+          {
+            "name": "Longitude",
+            "dataType": "double",
+            "sourceColumn": "longitude",
+            "summarizeBy": "none",
+            "dataCategory": "Longitude"
+          },
+          {
+            "name": "Demand Band",
+            "dataType": "string",
+            "sourceColumn": "demand_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Trading Days",
+            "dataType": "int64",
+            "sourceColumn": "trading_days",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Litres Total",
+            "dataType": "double",
+            "sourceColumn": "litres_total",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Avg Daily Litres",
+            "dataType": "double",
+            "sourceColumn": "avg_daily_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Fuel Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "fuel_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Fuel Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "fuel_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Transaction Count",
+            "dataType": "int64",
+            "sourceColumn": "transaction_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Shop Revenue (R)",
+            "dataType": "double",
+            "sourceColumn": "shop_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Shop Margin (R)",
+            "dataType": "double",
+            "sourceColumn": "shop_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "EV Session Count",
+            "dataType": "int64",
+            "sourceColumn": "ev_session_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "EV Margin (R)",
+            "dataType": "double",
+            "sourceColumn": "ev_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Solar kWh",
+            "dataType": "double",
+            "sourceColumn": "solar_kwh",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "CO2 Avoided kg",
+            "dataType": "double",
+            "sourceColumn": "co2_avoided_kg",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Work Order Count",
+            "dataType": "int64",
+            "sourceColumn": "work_order_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Breakdown Count",
+            "dataType": "int64",
+            "sourceColumn": "breakdown_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Maintenance Cost (R)",
+            "dataType": "double",
+            "sourceColumn": "maintenance_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Avg Asset Age Years",
+            "dataType": "double",
+            "sourceColumn": "avg_asset_age_years",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Downtime Hours (row)",
+            "dataType": "double",
+            "sourceColumn": "downtime_hours",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Downtime Lost Revenue (R)",
+            "dataType": "double",
+            "sourceColumn": "downtime_lost_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Incident Count",
+            "dataType": "int64",
+            "sourceColumn": "incident_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Reportable Incident Count",
+            "dataType": "int64",
+            "sourceColumn": "reportable_incident_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Incident Cost (R)",
+            "dataType": "double",
+            "sourceColumn": "incident_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Volume Growth %",
+            "dataType": "double",
+            "sourceColumn": "volume_growth_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Demand Volatility",
+            "dataType": "double",
+            "sourceColumn": "demand_volatility",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Total Margin (R)",
+            "dataType": "double",
+            "sourceColumn": "total_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Total Revenue (R)",
+            "dataType": "double",
+            "sourceColumn": "total_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Total Site Cost (R)",
+            "dataType": "double",
+            "sourceColumn": "total_site_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Contribution (R)",
+            "dataType": "double",
+            "sourceColumn": "contribution_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Non Fuel Margin Share %",
+            "dataType": "double",
+            "sourceColumn": "non_fuel_margin_share_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Breakdown Rate %",
+            "dataType": "double",
+            "sourceColumn": "breakdown_rate_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "R Contribution",
+            "dataType": "double",
+            "sourceColumn": "r_contribution",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Throughput",
+            "dataType": "double",
+            "sourceColumn": "r_throughput",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Growth",
+            "dataType": "double",
+            "sourceColumn": "r_growth",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Non Fuel",
+            "dataType": "double",
+            "sourceColumn": "r_non_fuel",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Reliability",
+            "dataType": "double",
+            "sourceColumn": "r_reliability",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Uptime",
+            "dataType": "double",
+            "sourceColumn": "r_uptime",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Safety",
+            "dataType": "double",
+            "sourceColumn": "r_safety",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "R Asset Condition",
+            "dataType": "double",
+            "sourceColumn": "r_asset_condition",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Investment Score",
+            "dataType": "double",
+            "sourceColumn": "investment_score",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Investment Quartile",
+            "dataType": "int64",
+            "sourceColumn": "investment_quartile",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Investment Recommendation",
+            "dataType": "string",
+            "sourceColumn": "investment_recommendation",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Sites Scored",
+            "expression": "COUNTROWS ( network_investment_scorecard )",
+            "formatString": "#,0",
+            "displayFolder": "Network"
+          },
+          {
+            "name": "Average Investment Score",
+            "expression": "AVERAGE ( network_investment_scorecard[Investment Score] )",
+            "formatString": "#,0.0",
+            "displayFolder": "Network"
+          },
+          {
+            "name": "Divest Candidates",
+            "expression": "CALCULATE ( [Sites Scored], CONTAINSSTRING ( network_investment_scorecard[Investment Recommendation], \"Divest\" ) )",
+            "formatString": "#,0",
+            "displayFolder": "Network"
+          },
+          {
+            "name": "Margin at Risk",
+            "expression": "CALCULATE ( SUM ( network_investment_scorecard[Total Margin (R)] ), CONTAINSSTRING ( network_investment_scorecard[Investment Recommendation], \"Divest\" ) )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Network"
+          },
+          {
+            "name": "Downtime Hours",
+            "expression": "SUM ( network_investment_scorecard[Downtime Hours (row)] )",
+            "formatString": "#,0",
+            "displayFolder": "Assets"
+          },
+          {
+            "name": "Corridor Sites",
+            "expression": "CALCULATE ( DISTINCTCOUNT ( dim_site[Site Key] ), dim_site[On National Route] = TRUE () )",
+            "formatString": "#,0",
+            "displayFolder": "Network"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "network_investment_scorecard",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"network_investment_scorecard.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"site_key\", \"site_id\", \"site_name\", \"country_code\", \"province\", \"city\", \"urban_class\", \"site_type\", \"ownership_model\", \"site_status\", \"on_national_route\", \"offer_tier\", \"new_energy_profile\", \"has_convenience\", \"has_ev_charging\", \"has_solar\", \"site_age_years\", \"latitude\", \"longitude\", \"demand_band\", \"trading_days\", \"litres_total\", \"avg_daily_litres\", \"fuel_revenue_zar\", \"fuel_margin_zar\", \"transaction_count\", \"shop_revenue_zar\", \"shop_margin_zar\", \"ev_session_count\", \"ev_margin_zar\", \"solar_kwh\", \"co2_avoided_kg\", \"work_order_count\", \"breakdown_count\", \"maintenance_cost_zar\", \"avg_asset_age_years\", \"downtime_hours\", \"downtime_lost_revenue_zar\", \"incident_count\", \"reportable_incident_count\", \"incident_cost_zar\", \"volume_growth_pct\", \"demand_volatility\", \"total_margin_zar\", \"total_revenue_zar\", \"total_site_cost_zar\", \"contribution_zar\", \"non_fuel_margin_share_pct\", \"breakdown_rate_pct\", \"r_contribution\", \"r_throughput\", \"r_growth\", \"r_non_fuel\", \"r_reliability\", \"r_uptime\", \"r_safety\", \"r_asset_condition\", \"investment_score\", \"investment_quartile\", \"investment_recommendation\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"site_key\", Int64.Type}, {\"site_id\", type text}, {\"site_name\", type text}, {\"country_code\", type text}, {\"province\", type text}, {\"city\", type text}, {\"urban_class\", type text}, {\"site_type\", type text}, {\"ownership_model\", type text}, {\"site_status\", type text}, {\"on_national_route\", type logical}, {\"offer_tier\", type text}, {\"new_energy_profile\", type text}, {\"has_convenience\", type logical}, {\"has_ev_charging\", type logical}, {\"has_solar\", type logical}, {\"site_age_years\", type number}, {\"latitude\", type number}, {\"longitude\", type number}, {\"demand_band\", type text}, {\"trading_days\", Int64.Type}, {\"litres_total\", type number}, {\"avg_daily_litres\", type number}, {\"fuel_revenue_zar\", type number}, {\"fuel_margin_zar\", type number}, {\"transaction_count\", Int64.Type}, {\"shop_revenue_zar\", type number}, {\"shop_margin_zar\", type number}, {\"ev_session_count\", Int64.Type}, {\"ev_margin_zar\", type number}, {\"solar_kwh\", type number}, {\"co2_avoided_kg\", type number}, {\"work_order_count\", Int64.Type}, {\"breakdown_count\", Int64.Type}, {\"maintenance_cost_zar\", type number}, {\"avg_asset_age_years\", type number}, {\"downtime_hours\", type number}, {\"downtime_lost_revenue_zar\", type number}, {\"incident_count\", Int64.Type}, {\"reportable_incident_count\", Int64.Type}, {\"incident_cost_zar\", type number}, {\"volume_growth_pct\", type number}, {\"demand_volatility\", type number}, {\"total_margin_zar\", type number}, {\"total_revenue_zar\", type number}, {\"total_site_cost_zar\", type number}, {\"contribution_zar\", type number}, {\"non_fuel_margin_share_pct\", type number}, {\"breakdown_rate_pct\", type number}, {\"r_contribution\", type number}, {\"r_throughput\", type number}, {\"r_growth\", type number}, {\"r_non_fuel\", type number}, {\"r_reliability\", type number}, {\"r_uptime\", type number}, {\"r_safety\", type number}, {\"r_asset_condition\", type number}, {\"investment_score\", type number}, {\"investment_quartile\", Int64.Type}, {\"investment_recommendation\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_deliveries",
+        "columns": [
+          {
+            "name": "Delivery ID",
+            "dataType": "string",
+            "sourceColumn": "delivery_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Planned Arrival Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "planned_arrival_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Actual Arrival Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "actual_arrival_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Destination Site Key",
+            "dataType": "int64",
+            "sourceColumn": "destination_site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Is Unmatched Destination",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_destination",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Route ID",
+            "dataType": "string",
+            "sourceColumn": "route_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Origin Terminal ID",
+            "dataType": "string",
+            "sourceColumn": "origin_terminal_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Destination Site ID",
+            "dataType": "string",
+            "sourceColumn": "destination_site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Vehicle ID",
+            "dataType": "string",
+            "sourceColumn": "vehicle_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Driver ID",
+            "dataType": "string",
+            "sourceColumn": "driver_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Carrier ID",
+            "dataType": "string",
+            "sourceColumn": "carrier_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Planned Litres",
+            "dataType": "double",
+            "sourceColumn": "planned_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Delivered Litres",
+            "dataType": "double",
+            "sourceColumn": "delivered_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Fill Rate %",
+            "dataType": "double",
+            "sourceColumn": "fill_rate_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Distance km",
+            "dataType": "double",
+            "sourceColumn": "distance_km",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Drop Count",
+            "dataType": "int64",
+            "sourceColumn": "drop_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Delay Minutes",
+            "dataType": "int64",
+            "sourceColumn": "delay_minutes",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Delivery Status",
+            "dataType": "string",
+            "sourceColumn": "delivery_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reason Code",
+            "dataType": "string",
+            "sourceColumn": "reason_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is On Time",
+            "dataType": "boolean",
+            "sourceColumn": "is_on_time",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is In Full",
+            "dataType": "boolean",
+            "sourceColumn": "is_in_full",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is OTIF",
+            "dataType": "boolean",
+            "sourceColumn": "is_otif",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Punctuality Band",
+            "dataType": "string",
+            "sourceColumn": "punctuality_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "km Per Drop",
+            "dataType": "double",
+            "sourceColumn": "km_per_drop",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Litres Per km",
+            "dataType": "double",
+            "sourceColumn": "litres_per_km",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Deliveries",
+            "expression": "COUNTROWS ( fct_deliveries )",
+            "formatString": "#,0",
+            "displayFolder": "Supply"
+          },
+          {
+            "name": "OTIF Deliveries",
+            "expression": "CALCULATE ( [Deliveries], fct_deliveries[Is OTIF] = TRUE () )",
+            "formatString": "#,0",
+            "displayFolder": "Supply"
+          },
+          {
+            "name": "OTIF %",
+            "expression": "DIVIDE ( [OTIF Deliveries], [Deliveries] )",
+            "formatString": "0.0%",
+            "displayFolder": "Supply"
+          },
+          {
+            "name": "Average Delay (min)",
+            "expression": "AVERAGE ( fct_deliveries[Delay Minutes] )",
+            "formatString": "#,0",
+            "displayFolder": "Supply"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_deliveries",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_deliveries.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"delivery_id\", \"planned_arrival_ts\", \"actual_arrival_ts\", \"date_key\", \"destination_site_key\", \"product_key\", \"is_unmatched_destination\", \"route_id\", \"origin_terminal_id\", \"destination_site_id\", \"vehicle_id\", \"driver_id\", \"carrier_id\", \"product_id\", \"province\", \"city\", \"urban_class\", \"product_name\", \"planned_litres\", \"delivered_litres\", \"fill_rate_pct\", \"distance_km\", \"drop_count\", \"delay_minutes\", \"delivery_status\", \"reason_code\", \"is_on_time\", \"is_in_full\", \"is_otif\", \"punctuality_band\", \"km_per_drop\", \"litres_per_km\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"delivery_id\", type text}, {\"planned_arrival_ts\", type datetime}, {\"actual_arrival_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"destination_site_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"is_unmatched_destination\", type logical}, {\"route_id\", type text}, {\"origin_terminal_id\", type text}, {\"destination_site_id\", type text}, {\"vehicle_id\", type text}, {\"driver_id\", type text}, {\"carrier_id\", type text}, {\"product_id\", type text}, {\"province\", type text}, {\"city\", type text}, {\"urban_class\", type text}, {\"product_name\", type text}, {\"planned_litres\", type number}, {\"delivered_litres\", type number}, {\"fill_rate_pct\", type number}, {\"distance_km\", type number}, {\"drop_count\", Int64.Type}, {\"delay_minutes\", Int64.Type}, {\"delivery_status\", type text}, {\"reason_code\", type text}, {\"is_on_time\", type logical}, {\"is_in_full\", type logical}, {\"is_otif\", type logical}, {\"punctuality_band\", type text}, {\"km_per_drop\", type number}, {\"litres_per_km\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_commercial_orders",
+        "columns": [
+          {
+            "name": "Order ID",
+            "dataType": "string",
+            "sourceColumn": "order_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Order Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "order_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Customer Key",
+            "dataType": "int64",
+            "sourceColumn": "customer_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Is Unmatched Customer",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_customer",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer ID",
+            "dataType": "string",
+            "sourceColumn": "customer_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Contract ID",
+            "dataType": "string",
+            "sourceColumn": "contract_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer Name",
+            "dataType": "string",
+            "sourceColumn": "customer_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sector",
+            "dataType": "string",
+            "sourceColumn": "sector",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Segment",
+            "dataType": "string",
+            "sourceColumn": "segment",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Credit Band",
+            "dataType": "string",
+            "sourceColumn": "credit_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Credit Risk Tier",
+            "dataType": "string",
+            "sourceColumn": "credit_risk_tier",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Service Model",
+            "dataType": "string",
+            "sourceColumn": "service_model",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Industrial",
+            "dataType": "boolean",
+            "sourceColumn": "is_industrial",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Channel",
+            "dataType": "string",
+            "sourceColumn": "channel",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Order Status",
+            "dataType": "string",
+            "sourceColumn": "order_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Requested Delivery Date",
+            "dataType": "dateTime",
+            "sourceColumn": "requested_delivery_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Payment Terms Days",
+            "dataType": "int64",
+            "sourceColumn": "payment_terms_days",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Volume Litres",
+            "dataType": "double",
+            "sourceColumn": "volume_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "List Price (R)",
+            "dataType": "double",
+            "sourceColumn": "list_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Discount Cents Per Litre",
+            "dataType": "double",
+            "sourceColumn": "discount_cents_per_litre",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Net Price (R)",
+            "dataType": "double",
+            "sourceColumn": "net_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Discount Value (R)",
+            "dataType": "decimal",
+            "sourceColumn": "discount_value_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Margin %",
+            "dataType": "double",
+            "sourceColumn": "margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Margin Cents Per Litre",
+            "dataType": "double",
+            "sourceColumn": "margin_cents_per_litre",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Is Open Order",
+            "dataType": "boolean",
+            "sourceColumn": "is_open_order",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Cancelled",
+            "dataType": "boolean",
+            "sourceColumn": "is_cancelled",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Order Size Band",
+            "dataType": "string",
+            "sourceColumn": "order_size_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Commercial Revenue",
+            "expression": "SUM ( fct_commercial_orders[Revenue (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Commercial"
+          },
+          {
+            "name": "Commercial Margin",
+            "expression": "SUM ( fct_commercial_orders[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Commercial"
+          },
+          {
+            "name": "Unmatched Customer Revenue %",
+            "expression": "DIVIDE ( CALCULATE ( [Commercial Revenue], fct_commercial_orders[Customer Key] = -1 ), [Commercial Revenue] )",
+            "formatString": "0.00%",
+            "displayFolder": "Data quality"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_commercial_orders",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_commercial_orders.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"order_id\", \"order_ts\", \"date_key\", \"customer_key\", \"product_key\", \"is_unmatched_customer\", \"customer_id\", \"contract_id\", \"product_id\", \"customer_name\", \"sector\", \"segment\", \"credit_band\", \"credit_risk_tier\", \"service_model\", \"is_industrial\", \"product_name\", \"reporting_line\", \"channel\", \"order_status\", \"requested_delivery_date\", \"payment_terms_days\", \"volume_litres\", \"list_price_zar\", \"discount_cents_per_litre\", \"net_price_zar\", \"revenue_zar\", \"cogs_zar\", \"gross_margin_zar\", \"discount_value_zar\", \"margin_pct\", \"margin_cents_per_litre\", \"is_open_order\", \"is_cancelled\", \"order_size_band\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"order_id\", type text}, {\"order_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"customer_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"is_unmatched_customer\", type logical}, {\"customer_id\", type text}, {\"contract_id\", type text}, {\"product_id\", type text}, {\"customer_name\", type text}, {\"sector\", type text}, {\"segment\", type text}, {\"credit_band\", type text}, {\"credit_risk_tier\", type text}, {\"service_model\", type text}, {\"is_industrial\", type logical}, {\"product_name\", type text}, {\"reporting_line\", type text}, {\"channel\", type text}, {\"order_status\", type text}, {\"requested_delivery_date\", type datetime}, {\"payment_terms_days\", Int64.Type}, {\"volume_litres\", type number}, {\"list_price_zar\", type number}, {\"discount_cents_per_litre\", type number}, {\"net_price_zar\", type number}, {\"revenue_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"discount_value_zar\", type number}, {\"margin_pct\", type number}, {\"margin_cents_per_litre\", type number}, {\"is_open_order\", type logical}, {\"is_cancelled\", type logical}, {\"order_size_band\", type text}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_maintenance_work_orders",
+        "columns": [
+          {
+            "name": "Work Order ID",
+            "dataType": "string",
+            "sourceColumn": "work_order_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Raised Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "raised_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Completed Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "completed_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Asset ID",
+            "dataType": "string",
+            "sourceColumn": "asset_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Demand Band",
+            "dataType": "string",
+            "sourceColumn": "demand_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Asset Type",
+            "dataType": "string",
+            "sourceColumn": "asset_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Criticality",
+            "dataType": "string",
+            "sourceColumn": "criticality",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Asset Age Years",
+            "dataType": "double",
+            "sourceColumn": "asset_age_years",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Maintenance Type",
+            "dataType": "string",
+            "sourceColumn": "maintenance_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Failure Mode",
+            "dataType": "string",
+            "sourceColumn": "failure_mode",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Priority",
+            "dataType": "string",
+            "sourceColumn": "priority",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Technician Employee ID",
+            "dataType": "string",
+            "sourceColumn": "technician_employee_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Response Hours",
+            "dataType": "double",
+            "sourceColumn": "response_hours",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Labour Hours",
+            "dataType": "double",
+            "sourceColumn": "labour_hours",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Labour Cost (R)",
+            "dataType": "decimal",
+            "sourceColumn": "labour_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Parts Cost (R)",
+            "dataType": "decimal",
+            "sourceColumn": "parts_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Total Cost (R)",
+            "dataType": "decimal",
+            "sourceColumn": "total_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Is Completed",
+            "dataType": "boolean",
+            "sourceColumn": "is_completed",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Breakdown",
+            "dataType": "boolean",
+            "sourceColumn": "is_breakdown",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "SLA Breached",
+            "dataType": "boolean",
+            "sourceColumn": "sla_breached",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Planned",
+            "dataType": "boolean",
+            "sourceColumn": "is_planned",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Asset Age Band",
+            "dataType": "string",
+            "sourceColumn": "asset_age_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Total Hours Out Of Service",
+            "dataType": "double",
+            "sourceColumn": "total_hours_out_of_service",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Work Orders",
+            "expression": "COUNTROWS ( fct_maintenance_work_orders )",
+            "formatString": "#,0",
+            "displayFolder": "Assets"
+          },
+          {
+            "name": "Breakdown Rate %",
+            "expression": "DIVIDE ( CALCULATE ( [Work Orders], fct_maintenance_work_orders[Is Breakdown] = TRUE () ), [Work Orders] )",
+            "formatString": "0.0%",
+            "displayFolder": "Assets"
+          },
+          {
+            "name": "Maintenance Cost",
+            "expression": "SUM ( fct_maintenance_work_orders[Total Cost (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Assets"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_maintenance_work_orders",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_maintenance_work_orders.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"work_order_id\", \"raised_ts\", \"completed_ts\", \"date_key\", \"site_key\", \"asset_id\", \"site_id\", \"province\", \"urban_class\", \"demand_band\", \"asset_type\", \"criticality\", \"asset_age_years\", \"maintenance_type\", \"failure_mode\", \"priority\", \"technician_employee_id\", \"response_hours\", \"labour_hours\", \"labour_cost_zar\", \"parts_cost_zar\", \"total_cost_zar\", \"is_completed\", \"is_breakdown\", \"sla_breached\", \"is_planned\", \"asset_age_band\", \"total_hours_out_of_service\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"work_order_id\", type text}, {\"raised_ts\", type datetime}, {\"completed_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"site_key\", Int64.Type}, {\"asset_id\", type text}, {\"site_id\", type text}, {\"province\", type text}, {\"urban_class\", type text}, {\"demand_band\", type text}, {\"asset_type\", type text}, {\"criticality\", type text}, {\"asset_age_years\", type number}, {\"maintenance_type\", type text}, {\"failure_mode\", type text}, {\"priority\", type text}, {\"technician_employee_id\", type text}, {\"response_hours\", type number}, {\"labour_hours\", type number}, {\"labour_cost_zar\", type number}, {\"parts_cost_zar\", type number}, {\"total_cost_zar\", type number}, {\"is_completed\", type logical}, {\"is_breakdown\", type logical}, {\"sla_breached\", type logical}, {\"is_planned\", type logical}, {\"asset_age_band\", type text}, {\"total_hours_out_of_service\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "bridge_security_user_scope",
+        "columns": [
+          {
+            "name": "User Principal",
+            "dataType": "string",
+            "sourceColumn": "user_principal",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Scope Type",
+            "dataType": "string",
+            "sourceColumn": "scope_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Scope Value",
+            "dataType": "string",
+            "sourceColumn": "scope_value",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Grants Everything",
+            "dataType": "boolean",
+            "sourceColumn": "grants_everything",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Dw Loaded At",
+            "dataType": "dateTime",
+            "sourceColumn": "dw_loaded_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "bridge_security_user_scope",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"bridge_security_user_scope.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"user_principal\", \"scope_type\", \"scope_value\", \"grants_everything\", \"dw_loaded_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"user_principal\", type text}, {\"scope_type\", type text}, {\"scope_value\", type text}, {\"grants_everything\", type logical}, {\"dw_loaded_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "obs_cleansing_summary",
+        "columns": [
+          {
+            "name": "Table Name",
+            "dataType": "string",
+            "sourceColumn": "table_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Raw Rows",
+            "dataType": "int64",
+            "sourceColumn": "raw_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Cleansed Rows",
+            "dataType": "int64",
+            "sourceColumn": "cleansed_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Quarantined Rows",
+            "dataType": "int64",
+            "sourceColumn": "quarantined_rows",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Duplicates Removed",
+            "dataType": "int64",
+            "sourceColumn": "duplicates_removed",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Quarantine Rate % (row)",
+            "dataType": "double",
+            "sourceColumn": "quarantine_rate_pct",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Duplicate Rate % (row)",
+            "dataType": "double",
+            "sourceColumn": "duplicate_rate_pct",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Pass Rate %",
+            "dataType": "double",
+            "sourceColumn": "pass_rate_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Quarantine Status",
+            "dataType": "string",
+            "sourceColumn": "quarantine_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Row Count Reconciles",
+            "dataType": "boolean",
+            "sourceColumn": "row_count_reconciles",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Evaluated At",
+            "dataType": "dateTime",
+            "sourceColumn": "evaluated_at",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Rows Landed",
+            "expression": "SUM ( obs_cleansing_summary[Raw Rows] )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Rows Cleansed",
+            "expression": "SUM ( obs_cleansing_summary[Cleansed Rows] )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Rows Quarantined",
+            "expression": "SUM ( obs_cleansing_summary[Quarantined Rows] )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Quarantine Rate %",
+            "expression": "DIVIDE ( [Rows Quarantined], [Rows Landed] )",
+            "formatString": "0.00%",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Duplicate Rate %",
+            "expression": "DIVIDE ( SUM ( obs_cleansing_summary[Duplicates Removed] ), [Rows Landed] )",
+            "formatString": "0.00%",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Tables Monitored",
+            "expression": "DISTINCTCOUNT ( obs_cleansing_summary[Table Name] )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Tables Not Reconciling",
+            "expression": "CALCULATE ( [Tables Monitored], obs_cleansing_summary[Row Count Reconciles] = FALSE () )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_cleansing_summary",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_cleansing_summary.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"table_name\", \"raw_rows\", \"cleansed_rows\", \"quarantined_rows\", \"duplicates_removed\", \"quarantine_rate_pct\", \"duplicate_rate_pct\", \"pass_rate_pct\", \"quarantine_status\", \"row_count_reconciles\", \"evaluated_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"table_name\", type text}, {\"raw_rows\", Int64.Type}, {\"cleansed_rows\", Int64.Type}, {\"quarantined_rows\", Int64.Type}, {\"duplicates_removed\", Int64.Type}, {\"quarantine_rate_pct\", type number}, {\"duplicate_rate_pct\", type number}, {\"pass_rate_pct\", type number}, {\"quarantine_status\", type text}, {\"row_count_reconciles\", type logical}, {\"evaluated_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "obs_quarantine_reasons",
+        "columns": [
+          {
+            "name": "Table Name",
+            "dataType": "string",
+            "sourceColumn": "table_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Failed Rule",
+            "dataType": "string",
+            "sourceColumn": "failed_rule",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Failure Count",
+            "dataType": "int64",
+            "sourceColumn": "failure_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Failure Category",
+            "dataType": "string",
+            "sourceColumn": "failure_category",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Likely Owner",
+            "dataType": "string",
+            "sourceColumn": "likely_owner",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Evaluated At",
+            "dataType": "dateTime",
+            "sourceColumn": "evaluated_at",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Rows Rejected",
+            "expression": "SUM ( obs_quarantine_reasons[Failure Count] )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Distinct Rules Firing",
+            "expression": "DISTINCTCOUNT ( obs_quarantine_reasons[Failed Rule] )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_quarantine_reasons",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_quarantine_reasons.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"table_name\", \"failed_rule\", \"failure_count\", \"failure_category\", \"likely_owner\", \"evaluated_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"table_name\", type text}, {\"failed_rule\", type text}, {\"failure_count\", Int64.Type}, {\"failure_category\", type text}, {\"likely_owner\", type text}, {\"evaluated_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "obs_reconciliation_controls",
+        "columns": [
+          {
+            "name": "Control Code",
+            "dataType": "string",
+            "sourceColumn": "control_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Control Description",
+            "dataType": "string",
+            "sourceColumn": "control_description",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Control Owner",
+            "dataType": "string",
+            "sourceColumn": "control_owner",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Expected Value",
+            "dataType": "double",
+            "sourceColumn": "expected_value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Actual Value",
+            "dataType": "double",
+            "sourceColumn": "actual_value",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Variance Absolute",
+            "dataType": "double",
+            "sourceColumn": "variance_absolute",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Variance %",
+            "dataType": "double",
+            "sourceColumn": "variance_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Tolerance %",
+            "dataType": "decimal",
+            "sourceColumn": "tolerance_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Is Passing",
+            "dataType": "boolean",
+            "sourceColumn": "is_passing",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Evaluated At",
+            "dataType": "dateTime",
+            "sourceColumn": "evaluated_at",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Controls",
+            "expression": "COUNTROWS ( obs_reconciliation_controls )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Controls Passing",
+            "expression": "CALCULATE ( [Controls], obs_reconciliation_controls[Is Passing] = TRUE () )",
+            "formatString": "#,0",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Control Pass Rate %",
+            "expression": "DIVIDE ( [Controls Passing], [Controls] )",
+            "formatString": "0.0%",
+            "displayFolder": "Data quality"
+          },
+          {
+            "name": "Worst Control Variance %",
+            "expression": "MAX ( obs_reconciliation_controls[Variance %] )",
+            "formatString": "0.000%",
+            "displayFolder": "Data quality"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_reconciliation_controls",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_reconciliation_controls.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"control_code\", \"control_description\", \"control_owner\", \"expected_value\", \"actual_value\", \"variance_absolute\", \"variance_pct\", \"tolerance_pct\", \"is_passing\", \"evaluated_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"control_code\", type text}, {\"control_description\", type text}, {\"control_owner\", type text}, {\"expected_value\", type number}, {\"actual_value\", type number}, {\"variance_absolute\", type number}, {\"variance_pct\", type number}, {\"tolerance_pct\", type number}, {\"is_passing\", type logical}, {\"evaluated_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "obs_table_freshness",
+        "columns": [
+          {
+            "name": "Table Name",
+            "dataType": "string",
+            "sourceColumn": "table_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Data Source Code",
+            "dataType": "string",
+            "sourceColumn": "data_source_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Data Source Name",
+            "dataType": "string",
+            "sourceColumn": "data_source_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingestion Pattern",
+            "dataType": "string",
+            "sourceColumn": "ingestion_pattern",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Owning Domain",
+            "dataType": "string",
+            "sourceColumn": "owning_domain",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "SLA Minutes",
+            "dataType": "int64",
+            "sourceColumn": "sla_minutes",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Is Pii Bearing",
+            "dataType": "boolean",
+            "sourceColumn": "is_pii_bearing",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Watermark Column",
+            "dataType": "string",
+            "sourceColumn": "watermark_column",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Row Count",
+            "dataType": "int64",
+            "sourceColumn": "row_count",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Min Event Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "min_event_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Max Event Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "max_event_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Max Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "max_ingested_at",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Ingestion Lag Minutes",
+            "dataType": "int64",
+            "sourceColumn": "ingestion_lag_minutes",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Is SLA Breached",
+            "dataType": "boolean",
+            "sourceColumn": "is_sla_breached",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "SLA Status",
+            "dataType": "string",
+            "sourceColumn": "sla_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "SLA Consumption %",
+            "dataType": "double",
+            "sourceColumn": "sla_consumption_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_table_freshness",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_table_freshness.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"table_name\", \"data_source_code\", \"data_source_name\", \"ingestion_pattern\", \"owning_domain\", \"sla_minutes\", \"is_pii_bearing\", \"watermark_column\", \"row_count\", \"min_event_ts\", \"max_event_ts\", \"max_ingested_at\", \"ingestion_lag_minutes\", \"is_sla_breached\", \"sla_status\", \"sla_consumption_pct\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"table_name\", type text}, {\"data_source_code\", type text}, {\"data_source_name\", type text}, {\"ingestion_pattern\", type text}, {\"owning_domain\", type text}, {\"sla_minutes\", Int64.Type}, {\"is_pii_bearing\", type logical}, {\"watermark_column\", type text}, {\"row_count\", Int64.Type}, {\"min_event_ts\", type datetime}, {\"max_event_ts\", type datetime}, {\"max_ingested_at\", type datetime}, {\"ingestion_lag_minutes\", Int64.Type}, {\"is_sla_breached\", type logical}, {\"sla_status\", type text}, {\"sla_consumption_pct\", type number}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "rel_retail_date",
+        "fromTable": "fct_retail_fuel_sales",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_retail_site",
+        "fromTable": "fct_retail_fuel_sales",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_retail_product",
+        "fromTable": "fct_retail_fuel_sales",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_aggsite_date",
+        "fromTable": "agg_site_daily_fuel",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_aggsite_site",
+        "fromTable": "agg_site_daily_fuel",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_exec_date",
+        "fromTable": "agg_executive_daily_kpi",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_deliveries_date",
+        "fromTable": "fct_deliveries",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_deliveries_site",
+        "fromTable": "fct_deliveries",
+        "fromColumn": "Destination Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_orders_date",
+        "fromTable": "fct_commercial_orders",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_orders_customer",
+        "fromTable": "fct_commercial_orders",
+        "fromColumn": "Customer Key",
+        "toTable": "dim_customer",
+        "toColumn": "Customer Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_wo_date",
+        "fromTable": "fct_maintenance_work_orders",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_wo_site",
+        "fromTable": "fct_maintenance_work_orders",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_scorecard_site",
+        "fromTable": "network_investment_scorecard",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      }
+    ],
+    "annotations": [
+      {
+        "name": "__PBI_TimeIntelligenceEnabled",
+        "value": "0"
+      }
+    ],
+    "expressions": [
+      {
+        "name": "DataFolder",
+        "kind": "m",
+        "expression": "\"C:\\\\Users\\\\Anthony.DESKTOP-ES5HL78\\\\Downloads\\\\Vivo_Energy_360_Platform\\\\powerbi\\\\data\\\\\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]"
+      }
+    ],
+    "roles": [
+      {
+        "name": "Regional Analyst",
+        "modelPermission": "read",
+        "tablePermissions": [
+          {
+            "name": "dim_site",
+            "filterExpression": "VAR UserScope = CALCULATETABLE ( VALUES ( bridge_security_user_scope[Scope Value] ), bridge_security_user_scope[User Principal] = USERPRINCIPALNAME () ) RETURN dim_site[Province] IN UserScope || \"all\" IN CALCULATETABLE ( VALUES ( bridge_security_user_scope[Scope Type] ), bridge_security_user_scope[User Principal] = USERPRINCIPALNAME () )"
+          }
+        ]
+      },
+      {
+        "name": "Executive",
+        "modelPermission": "read",
+        "tablePermissions": [
+          {
+            "name": "dim_site",
+            "filterExpression": "TRUE ()"
+          }
+        ]
+      }
+    ]
+  }
+}

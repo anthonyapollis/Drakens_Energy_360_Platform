@@ -771,7 +771,7 @@ def write(pages) -> None:
         legacy.unlink()
 
     (REPORT_DIR / "definition.pbir").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/1.0.0/schema.json",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
         "datasetReference": {
             "byPath": {"path": f"../{PROJECT}.SemanticModel"},
@@ -829,7 +829,7 @@ def write(pages) -> None:
     }, indent=2), encoding="utf-8")
 
     (PBI / f"{PROJECT}.pbip").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/pbip/definitionProperties/1.0.0/schema.json",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [{"report": {"path": f"{PROJECT}.Report"}}],
         "settings": {"enableAutoRecovery": True},

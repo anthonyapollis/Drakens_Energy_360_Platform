@@ -38,6 +38,13 @@ OUT = DEFN
 # and opens anywhere; `databricks` is the deployed shape. Set by --source.
 SOURCE = "csv"
 
+# How the semantic model is serialised. `bim` is TMSL, the single JSON file
+# every version of Desktop reads. `tmdl` is the newer text format, nicer to
+# review and gated behind a preview feature that governs writing rather than
+# reading -- Desktop 2.156 refuses a TMDL project with "Missing required
+# artifact 'model.bim'" even with that feature switched on. Set by --format.
+FORMAT = "bim"
+
 # Tables the semantic model exposes, and how each is stored.
 #
 # Storage mode is a deliberate choice per table, not a global setting:
@@ -129,6 +136,31 @@ def friendly(name: str) -> str:
     return " ".join(keep.get(w.lower(), w.capitalize()) for w in words)
 
 
+def measure_names(table: str) -> set[str]:
+    return {m for m, _, _, _ in MEASURES.get(table, [])}
+
+
+def column_name(table: str, physical: str) -> str:
+    """The name a column takes in the model, avoiding its own table's measures.
+
+    A measure and a column cannot share a name within a table, and five pairs
+    here did: agg_site_daily_fuel carries a per-row `gross_margin_pct` and also
+    needs a `Gross Margin %` measure computed over the whole filter context.
+    Desktop refuses the model outright -- "the measure cannot be created
+    because a column with the same name already exists" -- naming one pair at a
+    time, so the model opens five failures deep.
+
+    The column is renamed rather than the measure. The measure is the object a
+    report should bind to, because it recalculates in filter context and the
+    pre-aggregated column does not; a report author who picks the column
+    instead gets a number that is right for one row and wrong for any total.
+    Suffixing and hiding the column makes that mistake unavailable while
+    keeping the value in the model for anyone who genuinely wants the row.
+    """
+    name = friendly(physical)
+    return f"{name} (row)" if name in measure_names(table) else name
+
+
 def resolve_dax(expression: str, columns: dict[str, set[str]]) -> str:
     """Rewrite physical column references in DAX to the model's column names.
 
@@ -149,7 +181,7 @@ def resolve_dax(expression: str, columns: dict[str, set[str]]) -> str:
     def replace(match: re.Match) -> str:
         table, column = match.group(1), match.group(2)
         if table in columns and column in columns[table]:
-            return f"{table}[{friendly(column)}]"
+            return f"{table}[{column_name(table, column)}]"
         return match.group(0)
 
     return re.sub(r"(\w+)\[([a-z0-9_]+)\]", replace, expression)
@@ -491,7 +523,17 @@ def source_query(table: str, cfg: dict,
         "    Headers = Table.PromoteHeaders(Source, "
         "[PromoteAllScalars=true]),",
         f"    Chosen  = Table.SelectColumns(Headers, {{{names}}}),",
-        f"    Typed   = Table.TransformColumnTypes(Chosen, {{{types}}})",
+        # The culture is pinned to en-US, matching how DuckDB writes the
+        # extracts: a dot decimal separator and ISO timestamps.
+        #
+        # Without it Power Query types the columns in the model's culture,
+        # which is en-ZA, where the decimal separator is a comma. Every
+        # numeric cell then fails to parse and the table loads with as many
+        # errors as it has rows -- 128 rows, 128 errors -- while still
+        # reporting success. The measures come back blank and the model looks
+        # empty rather than broken.
+        f'    Typed   = Table.TransformColumnTypes(Chosen, {{{types}}}, '
+        f'"en-US")',
         "in",
         "    Typed",
     ]
@@ -584,7 +626,7 @@ def write_project_files() -> None:
     # declares a version it does not recognise, and does it by opening blank
     # rather than by saying so.
     (PBI / f"{PROJECT}.pbip").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/pbip/definitionProperties/1.0.0/schema.json",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [
             {"report": {"path": f"{PROJECT}.Report"}},
@@ -593,7 +635,7 @@ def write_project_files() -> None:
     }, indent=2), encoding="utf-8")
 
     (MODEL_DIR / "definition.pbism").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definition/1.0.0/schema.json",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
         "settings": {},
     }, indent=2), encoding="utf-8")
@@ -648,6 +690,168 @@ def render_expressions() -> str:
     ])
 
 
+
+# --------------------------------------------------------------------------
+# TMSL
+# --------------------------------------------------------------------------
+def bim_column(name: str, sql_type: str, table: str) -> dict:
+    """One column, in TMSL's JSON rather than TMDL's text.
+
+    The same decisions as `render_column`, expressed twice because the two
+    formats are not convertible by string manipulation. Keeping them in one
+    file at least makes a divergence visible in a diff.
+    """
+    dtype = tmdl_type(sql_type)
+    column: dict = {
+        "name": column_name(table, name),
+        "dataType": dtype,
+        "sourceColumn": name,
+    }
+    if dtype in ("int64", "double", "decimal"):
+        column["summarizeBy"] = ("none" if NEVER_SUMMARISE.search(name)
+                                 else "sum")
+    else:
+        column["summarizeBy"] = "none"
+
+    if table == "dim_date" and name == "full_date":
+        column["isKey"] = True
+    if name in DATA_CATEGORY:
+        column["dataCategory"] = DATA_CATEGORY[name]
+    if HIDDEN.search(name) or column_name(table, name) != friendly(name):
+        column["isHidden"] = True
+    if name.endswith("_zar"):
+        column["formatString"] = '"R"#,0.00'
+    elif name.endswith("_pct"):
+        column["formatString"] = "0.0%"
+    elif dtype == "dateTime":
+        column["formatString"] = "yyyy-mm-dd"
+    return column
+
+
+def bim_table(table: str, columns: list[tuple[str, str]], cfg: dict,
+              colmap: dict[str, set[str]]) -> dict:
+    body: dict = {"name": table}
+    if table == "dim_date":
+        body["dataCategory"] = "Time"
+
+    body["columns"] = [bim_column(n, t, table) for n, t in columns]
+
+    measures = []
+    for mname, expr, fmt, folder in MEASURES.get(table, []):
+        measures.append({
+            "name": mname,
+            "expression": resolve_dax(expr, colmap),
+            "formatString": fmt,
+            "displayFolder": folder,
+        })
+    if measures:
+        body["measures"] = measures
+
+    mode = ("import" if (SOURCE == "csv" or cfg["mode"] == "import")
+            else "directQuery")
+    body["partitions"] = [{
+        "name": table,
+        "mode": mode,
+        "source": {
+            "type": "m",
+            # TMSL takes the M as a list of lines. A single string with
+            # newlines also parses, but Desktop rewrites it to a list on the
+            # first save, which makes the next diff unreadable.
+            "expression": ["let", *source_query(table, cfg, columns)],
+        },
+    }]
+    return body
+
+
+def render_bim(schemas: dict[str, list[tuple[str, str]]],
+               colmap: dict[str, set[str]],
+               relationships: list, roles: list[str]) -> str:
+    """The whole model as TMSL.
+
+    This exists because TMDL did not open. Power BI Desktop 2.156 reports
+    `Missing required artifact 'model.bim'` for a TMDL project even with the
+    "Store semantic model using TMDL format" preview feature switched on --
+    the flag governs how Desktop *writes* a project, not what it will read.
+
+    TMSL has no such dependency: it is the format every version of Desktop and
+    every XMLA endpoint has always accepted. It is less pleasant to read than
+    TMDL and still perfectly diffable, which is the right trade for an
+    artifact whose main job is to open on someone else's machine.
+    """
+    tables = [bim_table(t, cols, TABLES[t], colmap)
+              for t, cols in schemas.items()]
+
+    model: dict = {
+        "culture": "en-ZA",
+        "defaultPowerBIDataSourceVersion": "powerBI_V3",
+        "discourageImplicitMeasures": True,
+        "sourceQueryCulture": "en-ZA",
+        "tables": tables,
+        "relationships": [
+            {
+                "name": name,
+                "fromTable": ft,
+                "fromColumn": column_name(ft, fc),
+                "toTable": tt,
+                "toColumn": column_name(tt, tc),
+                "crossFilteringBehavior": cf,
+            }
+            for name, ft, fc, tt, tc, cf in relationships
+        ],
+        "annotations": [
+            {"name": "__PBI_TimeIntelligenceEnabled", "value": "0"},
+        ],
+    }
+
+    expressions = bim_expressions()
+    if expressions:
+        model["expressions"] = expressions
+
+    role_objects = []
+    for name, table, expr in ROLES:
+        if name not in roles:
+            continue
+        role_objects.append({
+            "name": name,
+            "modelPermission": "read",
+            "tablePermissions": [
+                {"name": table, "filterExpression": resolve_dax(expr, colmap)},
+            ],
+        })
+    if role_objects:
+        model["roles"] = role_objects
+
+    return json.dumps({
+        "name": PROJECT,
+        "compatibilityLevel": 1567,
+        "model": model,
+    }, indent=2)
+
+
+def bim_expressions() -> list[dict]:
+    if SOURCE == "csv":
+        folder = str(REPO / "powerbi" / "data").replace("\\", "\\\\") + "\\\\"
+        return [{
+            "name": "DataFolder",
+            "kind": "m",
+            "expression": f'"{folder}" meta [IsParameterQuery=true, '
+                          'Type="Text", IsParameterQueryRequired=true]',
+        }]
+    return [
+        {"name": "ServerHostname", "kind": "m",
+         "expression": '"adb-0000000000000000.0.azuredatabricks.net" meta '
+                       '[IsParameterQuery=true, Type="Text", '
+                       "IsParameterQueryRequired=true]"},
+        {"name": "HttpPath", "kind": "m",
+         "expression": '"/sql/1.0/warehouses/0000000000000000" meta '
+                       '[IsParameterQuery=true, Type="Text", '
+                       "IsParameterQueryRequired=true]"},
+        {"name": "CatalogName", "kind": "m",
+         "expression": '"drakens_prod" meta [IsParameterQuery=true, '
+                       'Type="Text", IsParameterQueryRequired=true]'},
+    ]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--warehouse", default=os.environ.get(
@@ -655,10 +859,14 @@ def main() -> int:
     ap.add_argument("--source", choices=("csv", "databricks"), default="csv",
                     help="csv opens without a workspace; databricks is the "
                          "deployed shape")
+    ap.add_argument("--format", choices=("bim", "tmdl"), default="bim",
+                    help="bim opens in any Desktop; tmdl is the text format "
+                         "and needs the TMDL preview feature")
     args = ap.parse_args()
 
-    global SOURCE
+    global SOURCE, FORMAT
     SOURCE = args.source
+    FORMAT = args.format
 
     wh = Path(args.warehouse)
     if not wh.exists():
@@ -674,7 +882,9 @@ def main() -> int:
     # deleted the report every time the model was regenerated.
     if MODEL_DIR.exists():
         shutil.rmtree(MODEL_DIR)
-    (DEFN / "tables").mkdir(parents=True)
+    MODEL_DIR.mkdir(parents=True)
+    if FORMAT == "tmdl":
+        (DEFN / "tables").mkdir(parents=True)
 
     # Two passes. Every schema is collected before any DAX is rendered,
     # because a measure on the first table may reference a column on the last.
@@ -692,15 +902,18 @@ def main() -> int:
     con.close()
 
     colmap = {t: {c for c, _ in cols} for t, cols in schemas.items()}
-    written: list[str] = []
-    for table, cols in schemas.items():
-        (DEFN / "tables" / f"{table}.tmdl").write_text(
-            render_table(table, cols, TABLES[table], colmap), encoding="utf-8")
-        written.append(table)
+    written: list[str] = list(schemas)
 
     if not written:
         print("no gold tables found; build the warehouse first")
         return 1
+
+    if FORMAT == "tmdl":
+        (DEFN / "tables").mkdir(parents=True, exist_ok=True)
+        for table, cols in schemas.items():
+            (DEFN / "tables" / f"{table}.tmdl").write_text(
+                render_table(table, cols, TABLES[table], colmap),
+                encoding="utf-8")
 
     # Only relationships whose endpoints both exist are emitted. A dangling
     # relationship makes the whole model fail to load, with an error that
@@ -712,7 +925,6 @@ def main() -> int:
     # model. Emitting one that references a missing table does not fail
     # loudly -- the whole model refuses to load, and the error names the role
     # rather than the table it could not find.
-    (DEFN / "roles").mkdir(exist_ok=True)
     skipped_roles: list[tuple[str, list[str]]] = []
     emitted_roles: list[str] = []
     for name, table, expr in ROLES:
@@ -721,23 +933,36 @@ def main() -> int:
         if table not in written or absent:
             skipped_roles.append((name, absent or [table]))
             continue
-        (DEFN / "roles" / f"{name}.tmdl").write_text(
-            render_role(name, table, expr, colmap), encoding="utf-8")
         emitted_roles.append(name)
 
-    (DEFN / "database.tmdl").write_text(
-        "database\n\tcompatibilityLevel: 1567\n", encoding="utf-8")
-    (DEFN / "model.tmdl").write_text(
-        render_model(written, emitted_roles), encoding="utf-8")
-    (DEFN / "relationships.tmdl").write_text(
-        render_relationships(kept), encoding="utf-8")
-    (DEFN / "expressions.tmdl").write_text(
-        render_expressions(), encoding="utf-8")
+    if FORMAT == "tmdl":
+        (DEFN / "roles").mkdir(parents=True, exist_ok=True)
+        for name, table, expr in ROLES:
+            if name in emitted_roles:
+                (DEFN / "roles" / f"{name}.tmdl").write_text(
+                    render_role(name, table, expr, colmap), encoding="utf-8")
+
+        (DEFN / "database.tmdl").write_text(
+            "database\n\tcompatibilityLevel: 1567\n", encoding="utf-8")
+        (DEFN / "model.tmdl").write_text(
+            render_model(written, emitted_roles), encoding="utf-8")
+        (DEFN / "relationships.tmdl").write_text(
+            render_relationships(kept), encoding="utf-8")
+        (DEFN / "expressions.tmdl").write_text(
+            render_expressions(), encoding="utf-8")
+    else:
+        # TMSL goes in a single model.bim beside definition.pbism, which is
+        # where every version of Desktop looks for it. The `definition`
+        # folder must not also exist: a semantic model folder holding both a
+        # model.bim and a definition folder is two models in one place.
+        (MODEL_DIR / "model.bim").write_text(
+            render_bim(schemas, colmap, kept, emitted_roles),
+            encoding="utf-8")
 
     write_project_files()
 
     n_measures = sum(len(v) for k, v in MEASURES.items() if k in written)
-    print(f"wrote {PROJECT}.pbip")
+    print(f"wrote {PROJECT}.pbip ({FORMAT}, {SOURCE})")
     print(f"  {len(written)} tables, {len(kept)} relationships, "
           f"{n_measures} measures, {len(emitted_roles)} roles")
     if missing:

@@ -1,3 +1,0 @@
-/// Where the CSV extracts live. One parameter, so moving the
-/// project to another machine is one edit rather than sixteen.
-expression DataFolder = "C:\\Users\\Anthony.DESKTOP-ES5HL78\\Downloads\\Vivo_Energy_360_Platform\\powerbi\\data\\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
