@@ -59,7 +59,11 @@ W, H = 1280, 720
 # nudging pixels. `col()` and `row()` turn grid units into the absolute
 # coordinates PBIR wants.
 MARGIN, GUTTER, COLS = 16, 12, 12
-HEADER_H = 64
+# 92, not 64. A 16pt title and a 10pt subtitle need about 70px of type plus
+# the padding a textbox adds on its own; at 64 the title lost its ascender to
+# the top of the band and the subtitle lost its descender to the bottom, and
+# both looked like a font-size problem rather than a box-height one.
+HEADER_H = 92
 COL_W = (W - 2 * MARGIN - (COLS - 1) * GUTTER) / COLS
 
 
@@ -352,13 +356,28 @@ def kpi_row(specs: list[tuple[str, str, str]], y: float,
     return out
 
 
+# Data roles are per visual type, and a projection on a role the visual does
+# not have is not an error -- the visual simply draws nothing. A treemap took
+# Category/Y like every bar chart in this file and rendered an empty tile.
+ROLES = {
+    "treemap":       {"category": "Group",    "values": "Values"},
+    "pieChart":      {"category": "Category", "values": "Y"},
+    "donutChart":    {"category": "Category", "values": "Y"},
+    "funnel":        {"category": "Category", "values": "Y"},
+    "gauge":         {"category": None,       "values": "Y"},
+    "waterfallChart": {"category": "Category", "values": "Y"},
+}
+DEFAULT_ROLES = {"category": "Category", "values": "Y"}
+
+
 def chart(kind, x, y, width, height, *, category=None, values=None,
           series=None, title=None, objects=None, color=None) -> dict:
+    roles = ROLES.get(kind, DEFAULT_ROLES)
     query: dict = {}
-    if category:
-        query["Category"] = {"projections": category}
+    if category and roles["category"]:
+        query[roles["category"]] = {"projections": category}
     if values:
-        query["Y"] = {"projections": values}
+        query[roles["values"]] = {"projections": values}
     if series:
         query["Series"] = {"projections": series}
     obj = dict(objects or {})
@@ -379,6 +398,29 @@ def chart(kind, x, y, width, height, *, category=None, values=None,
                   objects=obj or None)
 
 
+def combo(x, y, width, height, *, category, columns, line, title) -> dict:
+    """Columns on one scale, a line on its own.
+
+    Revenue and margin were plotted as two lines on a shared axis. Revenue is
+    an order of magnitude larger, so margin rendered as a flat trace along the
+    bottom -- a chart that technically contained the number and showed nothing
+    about it. A rate belongs on its own axis.
+    """
+    return visual(
+        "lineClusteredColumnComboChart", x, y, width, height,
+        query={
+            "Category": {"projections": category},
+            "Y": {"projections": columns},
+            "Y2": {"projections": line},
+        },
+        title=title,
+        objects={
+            "dataPoint": [{"properties": {
+                "fill": {"solid": {"color": literal(f"'{ACCENT}'")}}}}],
+            "y2Axis": [{"properties": {"show": literal("true")}}],
+        })
+
+
 def scatter(x, y, width, height, *, detail, x_measure, y_measure,
             size=None, title=None) -> dict:
     """A scatter, which needs its axes named separately.
@@ -387,8 +429,11 @@ def scatter(x, y, width, height, *, detail, x_measure, y_measure,
     invalid scatter: Power BI asks for x- and y-axis pairs and refuses to
     draw. The roles are X and Y, and the category is Details, not Category.
     """
+    # The details role is called Category. Named "Details" -- which is its
+    # label in the field well -- every row aggregated into a single point, and
+    # the chart drew one dot where 618 routes should be.
     query = {
-        "Details": {"projections": [detail]},
+        "Category": {"projections": [detail]},
         "X": {"projections": [x_measure]},
         "Y": {"projections": [y_measure]},
     }
@@ -466,18 +511,18 @@ def header(page_title: str, subtitle: str) -> list[dict]:
         }, z=0),
         # 8px down and 30 tall for a 16pt run. At 24 tall the ascender sat
         # above the box and the page title rendered with its top sliced off.
-        text_box(MARGIN, 8, 640, 30, [
-            (page_title, {"fontSize": {"value": "16D"},
+        text_box(MARGIN, 12, 700, 38, [
+            (page_title, {"fontSize": {"value": "20D"},
                           "fontWeight": {"value": "bold"},
                           "color": {"value": BAND_TEXT},
                           "fontFamily": {"value": "Segoe UI"}}),
         ]),
-        text_box(MARGIN, 38, 760, 22, [
-            (subtitle, {"fontSize": {"value": "10D"},
+        text_box(MARGIN, 52, 820, 28, [
+            (subtitle, {"fontSize": {"value": "11D"},
                         "color": {"value": BAND_SUBTLE},
                         "fontFamily": {"value": "Segoe UI"}}),
         ]),
-        text_box(W - 400 - MARGIN, 20, 400, 26, [
+        text_box(W - 420 - MARGIN, 34, 420, 26, [
             ("Synthetic data. Drakens Energy is a fictional company.",
              {"fontSize": {"value": "9D"}, "color": {"value": BAND_FAINT},
               "fontFamily": {"value": "Segoe UI"}}),
@@ -492,21 +537,27 @@ def page_executive() -> tuple[str, str, list[dict]]:
     v = header("Executive", "Network performance, one screen, no drill "
                             "required")
 
+    # Six, so growth sits next to the level it applies to. A page that shows
+    # only totals asks the reader to remember last year.
     v += kpi_row([
         ("agg_site_daily_fuel", "Fuel Volume (L)", "Fuel volume"),
+        ("agg_site_daily_fuel", "Fuel Volume YoY %", "Volume vs last year"),
         ("agg_site_daily_fuel", "Gross Margin", "Gross margin"),
+        ("agg_site_daily_fuel", "Gross Margin YoY %", "Margin vs last year"),
         ("agg_site_daily_fuel", "Gross Margin %", "Margin rate"),
         ("agg_site_daily_fuel", "Trading Sites", "Trading sites"),
     ], y=row(0, 0)[0])
 
     top = row(112, 0)[0]
     x, width = col(0, 8)
-    v.append(chart(
-        "lineChart", x, top, width, 236,
-        category=[column("dim_date", "Full Date")],
-        values=[measure("agg_site_daily_fuel", "Gross Margin"),
-                measure("agg_site_daily_fuel", "Fuel Revenue")],
-        title="Revenue and margin over time"))
+    v.append(combo(
+        x, top, width, 236,
+        # Monthly, not daily. 974 daily points in 700px is a texture, not a
+        # trend; the month is the grain this number is actually reviewed at.
+        category=[column("dim_date", "Year Month")],
+        columns=[measure("agg_site_daily_fuel", "Fuel Revenue")],
+        line=[measure("agg_site_daily_fuel", "Gross Margin %")],
+        title="Revenue by month, with margin rate"))
 
     x, width = col(8, 4)
     v.append(chart(
@@ -531,8 +582,11 @@ def page_executive() -> tuple[str, str, list[dict]]:
     v.append(chart(
         "columnChart", x, bottom, width, 196,
         category=[column("dim_date", "Day Name")],
-        values=[measure("agg_site_daily_fuel", "Fuel Volume (L)")],
-        title="Volume by day of week"))
+        # The average of a weekday, not its total. Totals compare seven bars
+        # whose day counts differ across a part-year window, so the tallest
+        # bar can be the one that simply occurred most often.
+        values=[measure("agg_site_daily_fuel", "Average Daily Volume (L)")],
+        title="Average volume by day of week"))
 
     x, width = col(8, 4)
     v.append(chart(
@@ -552,7 +606,7 @@ def page_network() -> tuple[str, str, list[dict]]:
     # letterbox fitted the points by width and spent the rest on ocean. At
     # 6 columns the frame is roughly square and the bounding box fills it.
     x, width = col(0, 6)
-    y, height = row(0, 432)
+    y, height = row(0, 404)
     v.append(map_visual(
         x, y, width, height,
         latitude=column("dim_site", "Latitude"),
@@ -568,28 +622,28 @@ def page_network() -> tuple[str, str, list[dict]]:
 
     x, width = col(6, 3)
     v.append(chart(
-        "clusteredBarChart", x, y, width, 208,
+        "clusteredBarChart", x, y, width, 196,
         category=[column("network_investment_scorecard",
                          "Investment Recommendation")],
         values=[measure("network_investment_scorecard", "Sites Scored")],
         title="Sites by recommendation"))
-    v.append(card(x, y + 220, width, 100, "network_investment_scorecard",
+    v.append(card(x, y + 208, width, 92, "network_investment_scorecard",
                   "Corridor Sites", "Sites on a national route"))
-    v.append(card(x, y + 332, width, 100, "network_investment_scorecard",
+    v.append(card(x, y + 312, width, 92, "network_investment_scorecard",
                   "Divest Candidates", "Divest candidates"))
 
     x, width = col(9, 3)
-    v.append(slicer(x, y, width, 132, column("dim_site", "Country Code"),
+    v.append(slicer(x, y, width, 124, column("dim_site", "Country Code"),
                     "Market"))
-    v.append(slicer(x, y + 144, width, 132,
+    v.append(slicer(x, y + 136, width, 124,
                     column("dim_site", "Urban Class"), "Location type"))
-    v.append(slicer(x, y + 288, width, 144,
+    v.append(slicer(x, y + 272, width, 132,
                     column("network_investment_scorecard",
                            "Investment Recommendation"), "Recommendation"))
 
-    y2 = row(448, 0)[0]
+    y2 = row(420, 0)[0]
     x, width = col(0, 12)
-    v.append(table_visual(x, y2, width, 172, [
+    v.append(table_visual(x, y2, width, 168, [
         column("dim_site", "Site Name"),
         column("dim_site", "Province"),
         measure("agg_site_daily_fuel", "Fuel Volume (L)"),
@@ -654,6 +708,10 @@ def page_commercial() -> tuple[str, str, list[dict]]:
     v += kpi_row([
         ("fct_commercial_orders", "Commercial Revenue", "Revenue"),
         ("fct_commercial_orders", "Commercial Margin", "Margin"),
+        ("fct_commercial_orders", "Commercial Revenue YoY %",
+         "Revenue vs last year"),
+        ("fct_commercial_orders", "Average Monthly Commercial Revenue",
+         "Average month"),
         ("fct_commercial_orders", "Unmatched Customer Revenue %",
          "Revenue on an unmatched customer"),
     ], y=y)

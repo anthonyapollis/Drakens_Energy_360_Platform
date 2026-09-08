@@ -1297,6 +1297,84 @@
             "displayFolder": "Time"
           },
           {
+            "name": "Fuel Revenue LY",
+            "expression": "CALCULATE ( [Fuel Revenue], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Fuel Revenue YoY %",
+            "expression": "DIVIDE ( [Fuel Revenue] - [Fuel Revenue LY], [Fuel Revenue LY] )",
+            "formatString": "0.0%",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Gross Margin LY",
+            "expression": "CALCULATE ( [Gross Margin], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Gross Margin YoY %",
+            "expression": "DIVIDE ( [Gross Margin] - [Gross Margin LY], [Gross Margin LY] )",
+            "formatString": "0.0%",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Margin per Litre LY (c)",
+            "expression": "CALCULATE ( [Margin per Litre (c)], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )",
+            "formatString": "#,0.0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Average Daily Volume (L)",
+            "expression": "AVERAGEX ( VALUES ( dim_date[Full Date] ), [Fuel Volume (L)] )",
+            "formatString": "#,0",
+            "displayFolder": "Averages"
+          },
+          {
+            "name": "Average Weekly Volume (L)",
+            "expression": "AVERAGEX ( SUMMARIZE ( dim_date, dim_date[Calendar Year], dim_date[Week Of Year] ), [Fuel Volume (L)] )",
+            "formatString": "#,0",
+            "displayFolder": "Averages"
+          },
+          {
+            "name": "Average Yearly Volume (L)",
+            "expression": "AVERAGEX ( VALUES ( dim_date[Calendar Year] ), [Fuel Volume (L)] )",
+            "formatString": "#,0",
+            "displayFolder": "Averages"
+          },
+          {
+            "name": "Average Monthly Volume (L)",
+            "expression": "AVERAGEX ( VALUES ( dim_date[Year Month] ), [Fuel Volume (L)] )",
+            "formatString": "#,0",
+            "displayFolder": "Averages"
+          },
+          {
+            "name": "Average Monthly Margin",
+            "expression": "AVERAGEX ( VALUES ( dim_date[Year Month] ), [Gross Margin] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Averages"
+          },
+          {
+            "name": "Average Daily Margin",
+            "expression": "AVERAGEX ( VALUES ( dim_date[Full Date] ), [Gross Margin] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Averages"
+          },
+          {
+            "name": "Fuel Volume 30D Average",
+            "expression": "AVERAGEX ( DATESINPERIOD ( dim_date[Full Date], MAX ( dim_date[Full Date] ), -30, DAY ), [Fuel Volume (L)] )",
+            "formatString": "#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Margin 30D Average",
+            "expression": "AVERAGEX ( DATESINPERIOD ( dim_date[Full Date], MAX ( dim_date[Full Date] ), -30, DAY ), [Gross Margin] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Time"
+          },
+          {
             "name": "Margin per Site",
             "expression": "DIVIDE ( [Gross Margin], DISTINCTCOUNT ( dim_site[Site Key] ) )",
             "formatString": "\"R\"#,0",
@@ -2504,6 +2582,24 @@
           }
         ],
         "measures": [
+          {
+            "name": "Commercial Revenue LY",
+            "expression": "CALCULATE ( [Commercial Revenue], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Commercial Revenue YoY %",
+            "expression": "DIVIDE ( [Commercial Revenue] - [Commercial Revenue LY], [Commercial Revenue LY] )",
+            "formatString": "0.0%",
+            "displayFolder": "Time"
+          },
+          {
+            "name": "Average Monthly Commercial Revenue",
+            "expression": "AVERAGEX ( VALUES ( dim_date[Year Month] ), [Commercial Revenue] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Averages"
+          },
           {
             "name": "Commercial Revenue",
             "expression": "SUM ( fct_commercial_orders[Revenue (R)] )",

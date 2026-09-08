@@ -271,6 +271,60 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "AVERAGEX ( DATESINPERIOD ( dim_date[full_date], "
          "MAX ( dim_date[full_date] ), -7, DAY ), [Fuel Volume (L)] )",
          "#,0", "Time"),
+        # Growth, on the three measures a downstream business is actually run
+        # on. Volume already had a year-on-year pair; revenue and margin did
+        # not, so a page could show margin falling while only volume carried a
+        # comparison -- and a reader assumes the arrow they can see applies to
+        # the number next to it.
+        ("Fuel Revenue LY",
+         "CALCULATE ( [Fuel Revenue], "
+         "SAMEPERIODLASTYEAR ( dim_date[full_date] ) )", '"R"#,0', "Time"),
+        ("Fuel Revenue YoY %",
+         "DIVIDE ( [Fuel Revenue] - [Fuel Revenue LY], [Fuel Revenue LY] )",
+         "0.0%", "Time"),
+        ("Gross Margin LY",
+         "CALCULATE ( [Gross Margin], "
+         "SAMEPERIODLASTYEAR ( dim_date[full_date] ) )", '"R"#,0', "Time"),
+        ("Gross Margin YoY %",
+         "DIVIDE ( [Gross Margin] - [Gross Margin LY], [Gross Margin LY] )",
+         "0.0%", "Time"),
+        ("Margin per Litre LY (c)",
+         "CALCULATE ( [Margin per Litre (c)], "
+         "SAMEPERIODLASTYEAR ( dim_date[full_date] ) )", "#,0.0", "Time"),
+
+        # Period averages. AVERAGEX over the *visible* days rather than a
+        # total divided by a constant: divide by 365 and a part-year filter
+        # silently understates every average on the page.
+        ("Average Daily Volume (L)",
+         "AVERAGEX ( VALUES ( dim_date[full_date] ), [Fuel Volume (L)] )",
+         "#,0", "Averages"),
+        ("Average Weekly Volume (L)",
+         "AVERAGEX ( SUMMARIZE ( dim_date, dim_date[calendar_year], "
+         "dim_date[week_of_year] ), [Fuel Volume (L)] )",
+         "#,0", "Averages"),
+        ("Average Yearly Volume (L)",
+         "AVERAGEX ( VALUES ( dim_date[calendar_year] ), "
+         "[Fuel Volume (L)] )", "#,0", "Averages"),
+        ("Average Monthly Volume (L)",
+         "AVERAGEX ( VALUES ( dim_date[year_month] ), [Fuel Volume (L)] )",
+         "#,0", "Averages"),
+        ("Average Monthly Margin",
+         "AVERAGEX ( VALUES ( dim_date[year_month] ), [Gross Margin] )",
+         '"R"#,0', "Averages"),
+        ("Average Daily Margin",
+         "AVERAGEX ( VALUES ( dim_date[full_date] ), [Gross Margin] )",
+         '"R"#,0', "Averages"),
+
+        # A 30-day mean plotted beside the daily series, so a reader can see
+        # the trend through the noise instead of being asked to imagine it.
+        ("Fuel Volume 30D Average",
+         "AVERAGEX ( DATESINPERIOD ( dim_date[full_date], "
+         "MAX ( dim_date[full_date] ), -30, DAY ), [Fuel Volume (L)] )",
+         "#,0", "Time"),
+        ("Margin 30D Average",
+         "AVERAGEX ( DATESINPERIOD ( dim_date[full_date], "
+         "MAX ( dim_date[full_date] ), -30, DAY ), [Gross Margin] )",
+         '"R"#,0', "Time"),
         # The map's headline ratio. The denominator counts the *filtered*
         # dim_site, so a regional analyst under row-level security sees their
         # own provinces' figure rather than a filtered numerator divided by a
@@ -369,6 +423,15 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "#,0", "Data quality"),
     ],
     "fct_commercial_orders": [
+        ("Commercial Revenue LY",
+         "CALCULATE ( [Commercial Revenue], "
+         "SAMEPERIODLASTYEAR ( dim_date[full_date] ) )", '"R"#,0', "Time"),
+        ("Commercial Revenue YoY %",
+         "DIVIDE ( [Commercial Revenue] - [Commercial Revenue LY], "
+         "[Commercial Revenue LY] )", "0.0%", "Time"),
+        ("Average Monthly Commercial Revenue",
+         "AVERAGEX ( VALUES ( dim_date[year_month] ), [Commercial Revenue] )",
+         '"R"#,0', "Averages"),
         ("Commercial Revenue",
          "SUM ( fct_commercial_orders[revenue_zar] )", '"R"#,0', "Commercial"),
         ("Commercial Margin",
