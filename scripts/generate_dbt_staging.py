@@ -488,9 +488,19 @@ def render_sources(tables: dict[str, dict]) -> str:
         ]
         for t in names:
             lines.append(f"      - name: {t}")
+            # No row count here, deliberately. This file is checked for
+            # staleness by regenerating it and diffing, so anything in it that
+            # changes with the *data* rather than the *schema* makes that check
+            # impossible to pass: CI builds the test profile, a developer
+            # builds whatever they last built, and the counts disagree even
+            # though both generated the file correctly.
+            #
+            # The volume is not lost. obs_cleansing_summary carries raw_rows
+            # per table for whatever was actually built, which is a measured
+            # figure rather than one frozen into a comment at generation time.
             lines.append(
-                f"        description: \"Raw {t} -- {tables[t]['rows']:,} rows "
-                f"as delivered by the source system.\"")
+                f"        description: \"Raw {t} as delivered by the source "
+                f"system.\"")
     return "\n".join(lines) + "\n"
 
 

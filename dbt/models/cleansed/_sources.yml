@@ -14,169 +14,169 @@ sources:
         read_parquet('{{ env_var('DRAKENS_LAKE', '../data/lake') }}/dimensions/{name}/*.parquet', union_by_name=true)
     tables:
       - name: bridge_asset_site
-        description: "Raw bridge_asset_site -- 50,000 rows as delivered by the source system."
+        description: "Raw bridge_asset_site as delivered by the source system."
       - name: bridge_customer_contract
-        description: "Raw bridge_customer_contract -- 225,069 rows as delivered by the source system."
+        description: "Raw bridge_customer_contract as delivered by the source system."
       - name: bridge_customer_hierarchy
-        description: "Raw bridge_customer_hierarchy -- 150,000 rows as delivered by the source system."
+        description: "Raw bridge_customer_hierarchy as delivered by the source system."
       - name: bridge_customer_site
-        description: "Raw bridge_customer_site -- 79,634 rows as delivered by the source system."
+        description: "Raw bridge_customer_site as delivered by the source system."
       - name: bridge_employee_site
-        description: "Raw bridge_employee_site -- 64,552 rows as delivered by the source system."
+        description: "Raw bridge_employee_site as delivered by the source system."
       - name: bridge_product_hierarchy
-        description: "Raw bridge_product_hierarchy -- 31 rows as delivered by the source system."
+        description: "Raw bridge_product_hierarchy as delivered by the source system."
       - name: bridge_route_site
-        description: "Raw bridge_route_site -- 12,137 rows as delivered by the source system."
+        description: "Raw bridge_route_site as delivered by the source system."
       - name: bridge_security_user_scope
-        description: "Raw bridge_security_user_scope -- 89 rows as delivered by the source system."
+        description: "Raw bridge_security_user_scope as delivered by the source system."
       - name: bridge_site_hierarchy
-        description: "Raw bridge_site_hierarchy -- 4,200 rows as delivered by the source system."
+        description: "Raw bridge_site_hierarchy as delivered by the source system."
       - name: bridge_site_product
-        description: "Raw bridge_site_product -- 25,248 rows as delivered by the source system."
+        description: "Raw bridge_site_product as delivered by the source system."
       - name: bridge_site_promotion
-        description: "Raw bridge_site_promotion -- 7,267 rows as delivered by the source system."
+        description: "Raw bridge_site_promotion as delivered by the source system."
       - name: bridge_supplier_product
-        description: "Raw bridge_supplier_product -- 9,225 rows as delivered by the source system."
+        description: "Raw bridge_supplier_product as delivered by the source system."
       - name: dim_airline
-        description: "Raw dim_airline -- 18 rows as delivered by the source system."
+        description: "Raw dim_airline as delivered by the source system."
       - name: dim_airport
-        description: "Raw dim_airport -- 12 rows as delivered by the source system."
+        description: "Raw dim_airport as delivered by the source system."
       - name: dim_asset
-        description: "Raw dim_asset -- 50,000 rows as delivered by the source system."
+        description: "Raw dim_asset as delivered by the source system."
       - name: dim_asset_type
-        description: "Raw dim_asset_type -- 12 rows as delivered by the source system."
+        description: "Raw dim_asset_type as delivered by the source system."
       - name: dim_budget_version
-        description: "Raw dim_budget_version -- 4 rows as delivered by the source system."
+        description: "Raw dim_budget_version as delivered by the source system."
       - name: dim_business_unit
-        description: "Raw dim_business_unit -- 8 rows as delivered by the source system."
+        description: "Raw dim_business_unit as delivered by the source system."
       - name: dim_campaign
-        description: "Raw dim_campaign -- 320 rows as delivered by the source system."
+        description: "Raw dim_campaign as delivered by the source system."
       - name: dim_carrier
-        description: "Raw dim_carrier -- 375 rows as delivered by the source system."
+        description: "Raw dim_carrier as delivered by the source system."
       - name: dim_channel
-        description: "Raw dim_channel -- 5 rows as delivered by the source system."
+        description: "Raw dim_channel as delivered by the source system."
       - name: dim_city
-        description: "Raw dim_city -- 88 rows as delivered by the source system."
+        description: "Raw dim_city as delivered by the source system."
       - name: dim_contract
-        description: "Raw dim_contract -- 40,000 rows as delivered by the source system."
+        description: "Raw dim_contract as delivered by the source system."
       - name: dim_contract_type
-        description: "Raw dim_contract_type -- 5 rows as delivered by the source system."
+        description: "Raw dim_contract_type as delivered by the source system."
       - name: dim_cost_centre
-        description: "Raw dim_cost_centre -- 14 rows as delivered by the source system."
+        description: "Raw dim_cost_centre as delivered by the source system."
       - name: dim_country
-        description: "Raw dim_country -- 29 rows as delivered by the source system."
+        description: "Raw dim_country as delivered by the source system."
       - name: dim_currency
-        description: "Raw dim_currency -- 25 rows as delivered by the source system."
+        description: "Raw dim_currency as delivered by the source system."
       - name: dim_customer
-        description: "Raw dim_customer -- 150,000 rows as delivered by the source system."
+        description: "Raw dim_customer as delivered by the source system."
       - name: dim_customer_sector
-        description: "Raw dim_customer_sector -- 12 rows as delivered by the source system."
+        description: "Raw dim_customer_sector as delivered by the source system."
       - name: dim_customer_segment
-        description: "Raw dim_customer_segment -- 5 rows as delivered by the source system."
+        description: "Raw dim_customer_segment as delivered by the source system."
       - name: dim_data_source
-        description: "Raw dim_data_source -- 14 rows as delivered by the source system."
+        description: "Raw dim_data_source as delivered by the source system."
       - name: dim_date
-        description: "Raw dim_date -- 974 rows as delivered by the source system."
+        description: "Raw dim_date as delivered by the source system."
       - name: dim_delivery_status
-        description: "Raw dim_delivery_status -- 6 rows as delivered by the source system."
+        description: "Raw dim_delivery_status as delivered by the source system."
       - name: dim_depot
-        description: "Raw dim_depot -- 120 rows as delivered by the source system."
+        description: "Raw dim_depot as delivered by the source system."
       - name: dim_device
-        description: "Raw dim_device -- 6 rows as delivered by the source system."
+        description: "Raw dim_device as delivered by the source system."
       - name: dim_digital_user
-        description: "Raw dim_digital_user -- 1,800,000 rows as delivered by the source system."
+        description: "Raw dim_digital_user as delivered by the source system."
       - name: dim_driver
-        description: "Raw dim_driver -- 18,000 rows as delivered by the source system."
+        description: "Raw dim_driver as delivered by the source system."
       - name: dim_employee
-        description: "Raw dim_employee -- 45,000 rows as delivered by the source system."
+        description: "Raw dim_employee as delivered by the source system."
       - name: dim_energy_source
-        description: "Raw dim_energy_source -- 4 rows as delivered by the source system."
+        description: "Raw dim_energy_source as delivered by the source system."
       - name: dim_equipment
-        description: "Raw dim_equipment -- 12,500 rows as delivered by the source system."
+        description: "Raw dim_equipment as delivered by the source system."
       - name: dim_ev_charger
-        description: "Raw dim_ev_charger -- 2,600 rows as delivered by the source system."
+        description: "Raw dim_ev_charger as delivered by the source system."
       - name: dim_failure_mode
-        description: "Raw dim_failure_mode -- 8 rows as delivered by the source system."
+        description: "Raw dim_failure_mode as delivered by the source system."
       - name: dim_forecast_version
-        description: "Raw dim_forecast_version -- 8 rows as delivered by the source system."
+        description: "Raw dim_forecast_version as delivered by the source system."
       - name: dim_forecourt_lane
-        description: "Raw dim_forecourt_lane -- 12 rows as delivered by the source system."
+        description: "Raw dim_forecourt_lane as delivered by the source system."
       - name: dim_gl_account
-        description: "Raw dim_gl_account -- 20 rows as delivered by the source system."
+        description: "Raw dim_gl_account as delivered by the source system."
       - name: dim_incident_severity
-        description: "Raw dim_incident_severity -- 5 rows as delivered by the source system."
+        description: "Raw dim_incident_severity as delivered by the source system."
       - name: dim_incident_type
-        description: "Raw dim_incident_type -- 9 rows as delivered by the source system."
+        description: "Raw dim_incident_type as delivered by the source system."
       - name: dim_legal_entity
-        description: "Raw dim_legal_entity -- 12 rows as delivered by the source system."
+        description: "Raw dim_legal_entity as delivered by the source system."
       - name: dim_loyalty_member
-        description: "Raw dim_loyalty_member -- 2,400,000 rows as delivered by the source system."
+        description: "Raw dim_loyalty_member as delivered by the source system."
       - name: dim_lpg_cylinder_type
-        description: "Raw dim_lpg_cylinder_type -- 4 rows as delivered by the source system."
+        description: "Raw dim_lpg_cylinder_type as delivered by the source system."
       - name: dim_maintenance_type
-        description: "Raw dim_maintenance_type -- 5 rows as delivered by the source system."
+        description: "Raw dim_maintenance_type as delivered by the source system."
       - name: dim_order_status
-        description: "Raw dim_order_status -- 7 rows as delivered by the source system."
+        description: "Raw dim_order_status as delivered by the source system."
       - name: dim_payment_method
-        description: "Raw dim_payment_method -- 6 rows as delivered by the source system."
+        description: "Raw dim_payment_method as delivered by the source system."
       - name: dim_port
-        description: "Raw dim_port -- 8 rows as delivered by the source system."
+        description: "Raw dim_port as delivered by the source system."
       - name: dim_price_zone
-        description: "Raw dim_price_zone -- 30 rows as delivered by the source system."
+        description: "Raw dim_price_zone as delivered by the source system."
       - name: dim_product
-        description: "Raw dim_product -- 31 rows as delivered by the source system."
+        description: "Raw dim_product as delivered by the source system."
       - name: dim_product_brand
-        description: "Raw dim_product_brand -- 4 rows as delivered by the source system."
+        description: "Raw dim_product_brand as delivered by the source system."
       - name: dim_product_category
-        description: "Raw dim_product_category -- 5 rows as delivered by the source system."
+        description: "Raw dim_product_category as delivered by the source system."
       - name: dim_profit_centre
-        description: "Raw dim_profit_centre -- 20 rows as delivered by the source system."
+        description: "Raw dim_profit_centre as delivered by the source system."
       - name: dim_promotion
-        description: "Raw dim_promotion -- 420 rows as delivered by the source system."
+        description: "Raw dim_promotion as delivered by the source system."
       - name: dim_province
-        description: "Raw dim_province -- 9 rows as delivered by the source system."
+        description: "Raw dim_province as delivered by the source system."
       - name: dim_pump
-        description: "Raw dim_pump -- 38,000 rows as delivered by the source system."
+        description: "Raw dim_pump as delivered by the source system."
       - name: dim_reason_code
-        description: "Raw dim_reason_code -- 9 rows as delivered by the source system."
+        description: "Raw dim_reason_code as delivered by the source system."
       - name: dim_region
-        description: "Raw dim_region -- 7 rows as delivered by the source system."
+        description: "Raw dim_region as delivered by the source system."
       - name: dim_role
-        description: "Raw dim_role -- 12 rows as delivered by the source system."
+        description: "Raw dim_role as delivered by the source system."
       - name: dim_route
-        description: "Raw dim_route -- 4,000 rows as delivered by the source system."
+        description: "Raw dim_route as delivered by the source system."
       - name: dim_scenario
-        description: "Raw dim_scenario -- 5 rows as delivered by the source system."
+        description: "Raw dim_scenario as delivered by the source system."
       - name: dim_shift
-        description: "Raw dim_shift -- 3 rows as delivered by the source system."
+        description: "Raw dim_shift as delivered by the source system."
       - name: dim_site
-        description: "Raw dim_site -- 4,200 rows as delivered by the source system."
+        description: "Raw dim_site as delivered by the source system."
       - name: dim_site_type
-        description: "Raw dim_site_type -- 7 rows as delivered by the source system."
+        description: "Raw dim_site_type as delivered by the source system."
       - name: dim_solar_asset
-        description: "Raw dim_solar_asset -- 1,900 rows as delivered by the source system."
+        description: "Raw dim_solar_asset as delivered by the source system."
       - name: dim_supplier
-        description: "Raw dim_supplier -- 3,000 rows as delivered by the source system."
+        description: "Raw dim_supplier as delivered by the source system."
       - name: dim_supplier_type
-        description: "Raw dim_supplier_type -- 8 rows as delivered by the source system."
+        description: "Raw dim_supplier_type as delivered by the source system."
       - name: dim_tank
-        description: "Raw dim_tank -- 21,000 rows as delivered by the source system."
+        description: "Raw dim_tank as delivered by the source system."
       - name: dim_tax
-        description: "Raw dim_tax -- 5 rows as delivered by the source system."
+        description: "Raw dim_tax as delivered by the source system."
       - name: dim_terminal
-        description: "Raw dim_terminal -- 180 rows as delivered by the source system."
+        description: "Raw dim_terminal as delivered by the source system."
       - name: dim_time
-        description: "Raw dim_time -- 1,440 rows as delivered by the source system."
+        description: "Raw dim_time as delivered by the source system."
       - name: dim_unit_of_measure
-        description: "Raw dim_unit_of_measure -- 6 rows as delivered by the source system."
+        description: "Raw dim_unit_of_measure as delivered by the source system."
       - name: dim_vehicle
-        description: "Raw dim_vehicle -- 15,000 rows as delivered by the source system."
+        description: "Raw dim_vehicle as delivered by the source system."
       - name: dim_vessel
-        description: "Raw dim_vessel -- 640 rows as delivered by the source system."
+        description: "Raw dim_vessel as delivered by the source system."
       - name: dim_warehouse
-        description: "Raw dim_warehouse -- 60 rows as delivered by the source system."
+        description: "Raw dim_warehouse as delivered by the source system."
       - name: dim_weather
-        description: "Raw dim_weather -- 7 rows as delivered by the source system."
+        description: "Raw dim_weather as delivered by the source system."
   - name: lake_facts
     description: >
       Bronze landing zone for facts. Deliberately dirty: numbers
@@ -189,172 +189,172 @@ sources:
         read_parquet('{{ env_var('DRAKENS_LAKE', '../data/lake') }}/facts/{name}/*.parquet', union_by_name=true)
     tables:
       - name: fact_accounts_payable
-        description: "Raw fact_accounts_payable -- 300,000 rows as delivered by the source system."
+        description: "Raw fact_accounts_payable as delivered by the source system."
       - name: fact_accounts_receivable
-        description: "Raw fact_accounts_receivable -- 380,000 rows as delivered by the source system."
+        description: "Raw fact_accounts_receivable as delivered by the source system."
       - name: fact_aircraft_uplifts
-        description: "Raw fact_aircraft_uplifts -- 130,000 rows as delivered by the source system."
+        description: "Raw fact_aircraft_uplifts as delivered by the source system."
       - name: fact_asset_downtime
-        description: "Raw fact_asset_downtime -- 120,000 rows as delivered by the source system."
+        description: "Raw fact_asset_downtime as delivered by the source system."
       - name: fact_asset_failures
-        description: "Raw fact_asset_failures -- 70,000 rows as delivered by the source system."
+        description: "Raw fact_asset_failures as delivered by the source system."
       - name: fact_asset_inspections
-        description: "Raw fact_asset_inspections -- 200,000 rows as delivered by the source system."
+        description: "Raw fact_asset_inspections as delivered by the source system."
       - name: fact_asset_meter_readings
-        description: "Raw fact_asset_meter_readings -- 900,000 rows as delivered by the source system."
+        description: "Raw fact_asset_meter_readings as delivered by the source system."
       - name: fact_aviation_inventory_snapshot
-        description: "Raw fact_aviation_inventory_snapshot -- 40,000 rows as delivered by the source system."
+        description: "Raw fact_aviation_inventory_snapshot as delivered by the source system."
       - name: fact_aviation_sales
-        description: "Raw fact_aviation_sales -- 120,000 rows as delivered by the source system."
+        description: "Raw fact_aviation_sales as delivered by the source system."
       - name: fact_budget
-        description: "Raw fact_budget -- 260,000 rows as delivered by the source system."
+        description: "Raw fact_budget as delivered by the source system."
       - name: fact_budget_vs_actual
-        description: "Raw fact_budget_vs_actual -- 240,000 rows as delivered by the source system."
+        description: "Raw fact_budget_vs_actual as delivered by the source system."
       - name: fact_bunker_deliveries
-        description: "Raw fact_bunker_deliveries -- 60,000 rows as delivered by the source system."
+        description: "Raw fact_bunker_deliveries as delivered by the source system."
       - name: fact_campaign_responses
-        description: "Raw fact_campaign_responses -- 260,000 rows as delivered by the source system."
+        description: "Raw fact_campaign_responses as delivered by the source system."
       - name: fact_capex
-        description: "Raw fact_capex -- 40,000 rows as delivered by the source system."
+        description: "Raw fact_capex as delivered by the source system."
       - name: fact_cashflow
-        description: "Raw fact_cashflow -- 120,000 rows as delivered by the source system."
+        description: "Raw fact_cashflow as delivered by the source system."
       - name: fact_commercial_deliveries
-        description: "Raw fact_commercial_deliveries -- 380,000 rows as delivered by the source system."
+        description: "Raw fact_commercial_deliveries as delivered by the source system."
       - name: fact_commercial_order_lines
-        description: "Raw fact_commercial_order_lines -- 900,000 rows as delivered by the source system."
+        description: "Raw fact_commercial_order_lines as delivered by the source system."
       - name: fact_commercial_orders
-        description: "Raw fact_commercial_orders -- 550,000 rows as delivered by the source system."
+        description: "Raw fact_commercial_orders as delivered by the source system."
       - name: fact_contract_pricing
-        description: "Raw fact_contract_pricing -- 120,000 rows as delivered by the source system."
+        description: "Raw fact_contract_pricing as delivered by the source system."
       - name: fact_contract_volume_commitments
-        description: "Raw fact_contract_volume_commitments -- 90,000 rows as delivered by the source system."
+        description: "Raw fact_contract_volume_commitments as delivered by the source system."
       - name: fact_customer_credit_exposure
-        description: "Raw fact_customer_credit_exposure -- 300,000 rows as delivered by the source system."
+        description: "Raw fact_customer_credit_exposure as delivered by the source system."
       - name: fact_customer_invoices
-        description: "Raw fact_customer_invoices -- 620,000 rows as delivered by the source system."
+        description: "Raw fact_customer_invoices as delivered by the source system."
       - name: fact_customer_receipts
-        description: "Raw fact_customer_receipts -- 560,000 rows as delivered by the source system."
+        description: "Raw fact_customer_receipts as delivered by the source system."
       - name: fact_customer_service_cases
-        description: "Raw fact_customer_service_cases -- 70,000 rows as delivered by the source system."
+        description: "Raw fact_customer_service_cases as delivered by the source system."
       - name: fact_daily_executive_kpi
-        description: "Raw fact_daily_executive_kpi -- 380,000 rows as delivered by the source system."
+        description: "Raw fact_daily_executive_kpi as delivered by the source system."
       - name: fact_deliveries
-        description: "Raw fact_deliveries -- 300,000 rows as delivered by the source system."
+        description: "Raw fact_deliveries as delivered by the source system."
       - name: fact_delivery_events
-        description: "Raw fact_delivery_events -- 1,100,000 rows as delivered by the source system."
+        description: "Raw fact_delivery_events as delivered by the source system."
       - name: fact_digital_events
-        description: "Raw fact_digital_events -- 1,500,000 rows as delivered by the source system."
+        description: "Raw fact_digital_events as delivered by the source system."
       - name: fact_digital_sessions
-        description: "Raw fact_digital_sessions -- 700,000 rows as delivered by the source system."
+        description: "Raw fact_digital_sessions as delivered by the source system."
       - name: fact_energy_costs
-        description: "Raw fact_energy_costs -- 160,000 rows as delivered by the source system."
+        description: "Raw fact_energy_costs as delivered by the source system."
       - name: fact_environmental_events
-        description: "Raw fact_environmental_events -- 22,000 rows as delivered by the source system."
+        description: "Raw fact_environmental_events as delivered by the source system."
       - name: fact_ev_charger_status
-        description: "Raw fact_ev_charger_status -- 400,000 rows as delivered by the source system."
+        description: "Raw fact_ev_charger_status as delivered by the source system."
       - name: fact_ev_charging_sessions
-        description: "Raw fact_ev_charging_sessions -- 150,000 rows as delivered by the source system."
+        description: "Raw fact_ev_charging_sessions as delivered by the source system."
       - name: fact_finance_revenue_cost
-        description: "Raw fact_finance_revenue_cost -- 420,000 rows as delivered by the source system."
+        description: "Raw fact_finance_revenue_cost as delivered by the source system."
       - name: fact_fleet_costs
-        description: "Raw fact_fleet_costs -- 180,000 rows as delivered by the source system."
+        description: "Raw fact_fleet_costs as delivered by the source system."
       - name: fact_forecast
-        description: "Raw fact_forecast -- 300,000 rows as delivered by the source system."
+        description: "Raw fact_forecast as delivered by the source system."
       - name: fact_forecourt_shift
-        description: "Raw fact_forecourt_shift -- 420,000 rows as delivered by the source system."
+        description: "Raw fact_forecourt_shift as delivered by the source system."
       - name: fact_general_ledger
-        description: "Raw fact_general_ledger -- 1,400,000 rows as delivered by the source system."
+        description: "Raw fact_general_ledger as delivered by the source system."
       - name: fact_grid_import_export
-        description: "Raw fact_grid_import_export -- 380,000 rows as delivered by the source system."
+        description: "Raw fact_grid_import_export as delivered by the source system."
       - name: fact_hsseq_incidents
-        description: "Raw fact_hsseq_incidents -- 15,000 rows as delivered by the source system."
+        description: "Raw fact_hsseq_incidents as delivered by the source system."
       - name: fact_import_cargoes
-        description: "Raw fact_import_cargoes -- 9,000 rows as delivered by the source system."
+        description: "Raw fact_import_cargoes as delivered by the source system."
       - name: fact_inventory_adjustments
-        description: "Raw fact_inventory_adjustments -- 120,000 rows as delivered by the source system."
+        description: "Raw fact_inventory_adjustments as delivered by the source system."
       - name: fact_inventory_movements
-        description: "Raw fact_inventory_movements -- 900,000 rows as delivered by the source system."
+        description: "Raw fact_inventory_movements as delivered by the source system."
       - name: fact_inventory_snapshot
-        description: "Raw fact_inventory_snapshot -- 1,200,000 rows as delivered by the source system."
+        description: "Raw fact_inventory_snapshot as delivered by the source system."
       - name: fact_loyalty_points_balance
-        description: "Raw fact_loyalty_points_balance -- 480,000 rows as delivered by the source system."
+        description: "Raw fact_loyalty_points_balance as delivered by the source system."
       - name: fact_loyalty_transactions
-        description: "Raw fact_loyalty_transactions -- 2,000,000 rows as delivered by the source system."
+        description: "Raw fact_loyalty_transactions as delivered by the source system."
       - name: fact_lpg_bulk_deliveries
-        description: "Raw fact_lpg_bulk_deliveries -- 70,000 rows as delivered by the source system."
+        description: "Raw fact_lpg_bulk_deliveries as delivered by the source system."
       - name: fact_lpg_cylinder_movements
-        description: "Raw fact_lpg_cylinder_movements -- 300,000 rows as delivered by the source system."
+        description: "Raw fact_lpg_cylinder_movements as delivered by the source system."
       - name: fact_lpg_inventory_snapshot
-        description: "Raw fact_lpg_inventory_snapshot -- 120,000 rows as delivered by the source system."
+        description: "Raw fact_lpg_inventory_snapshot as delivered by the source system."
       - name: fact_lpg_sales
-        description: "Raw fact_lpg_sales -- 400,000 rows as delivered by the source system."
+        description: "Raw fact_lpg_sales as delivered by the source system."
       - name: fact_lubricant_inventory_snapshot
-        description: "Raw fact_lubricant_inventory_snapshot -- 110,000 rows as delivered by the source system."
+        description: "Raw fact_lubricant_inventory_snapshot as delivered by the source system."
       - name: fact_lubricant_orders
-        description: "Raw fact_lubricant_orders -- 150,000 rows as delivered by the source system."
+        description: "Raw fact_lubricant_orders as delivered by the source system."
       - name: fact_lubricant_sales
-        description: "Raw fact_lubricant_sales -- 350,000 rows as delivered by the source system."
+        description: "Raw fact_lubricant_sales as delivered by the source system."
       - name: fact_maintenance_work_orders
-        description: "Raw fact_maintenance_work_orders -- 80,000 rows as delivered by the source system."
+        description: "Raw fact_maintenance_work_orders as delivered by the source system."
       - name: fact_marine_inventory_snapshot
-        description: "Raw fact_marine_inventory_snapshot -- 30,000 rows as delivered by the source system."
+        description: "Raw fact_marine_inventory_snapshot as delivered by the source system."
       - name: fact_marine_sales
-        description: "Raw fact_marine_sales -- 90,000 rows as delivered by the source system."
+        description: "Raw fact_marine_sales as delivered by the source system."
       - name: fact_mobile_payments
-        description: "Raw fact_mobile_payments -- 520,000 rows as delivered by the source system."
+        description: "Raw fact_mobile_payments as delivered by the source system."
       - name: fact_near_misses
-        description: "Raw fact_near_misses -- 46,000 rows as delivered by the source system."
+        description: "Raw fact_near_misses as delivered by the source system."
       - name: fact_opex
-        description: "Raw fact_opex -- 320,000 rows as delivered by the source system."
+        description: "Raw fact_opex as delivered by the source system."
       - name: fact_permit_to_work
-        description: "Raw fact_permit_to_work -- 150,000 rows as delivered by the source system."
+        description: "Raw fact_permit_to_work as delivered by the source system."
       - name: fact_price_changes
-        description: "Raw fact_price_changes -- 260,000 rows as delivered by the source system."
+        description: "Raw fact_price_changes as delivered by the source system."
       - name: fact_procurement_orders
-        description: "Raw fact_procurement_orders -- 190,000 rows as delivered by the source system."
+        description: "Raw fact_procurement_orders as delivered by the source system."
       - name: fact_procurement_receipts
-        description: "Raw fact_procurement_receipts -- 250,000 rows as delivered by the source system."
+        description: "Raw fact_procurement_receipts as delivered by the source system."
       - name: fact_promotions
-        description: "Raw fact_promotions -- 40,000 rows as delivered by the source system."
+        description: "Raw fact_promotions as delivered by the source system."
       - name: fact_pump_meter_readings
-        description: "Raw fact_pump_meter_readings -- 800,000 rows as delivered by the source system."
+        description: "Raw fact_pump_meter_readings as delivered by the source system."
       - name: fact_replenishment_orders
-        description: "Raw fact_replenishment_orders -- 260,000 rows as delivered by the source system."
+        description: "Raw fact_replenishment_orders as delivered by the source system."
       - name: fact_retail_fuel_payments
-        description: "Raw fact_retail_fuel_payments -- 900,000 rows as delivered by the source system."
+        description: "Raw fact_retail_fuel_payments as delivered by the source system."
       - name: fact_retail_fuel_sales
-        description: "Raw fact_retail_fuel_sales -- 5,000,000 rows as delivered by the source system."
+        description: "Raw fact_retail_fuel_sales as delivered by the source system."
       - name: fact_route_performance
-        description: "Raw fact_route_performance -- 150,000 rows as delivered by the source system."
+        description: "Raw fact_route_performance as delivered by the source system."
       - name: fact_safety_observations
-        description: "Raw fact_safety_observations -- 180,000 rows as delivered by the source system."
+        description: "Raw fact_safety_observations as delivered by the source system."
       - name: fact_shop_returns
-        description: "Raw fact_shop_returns -- 60,000 rows as delivered by the source system."
+        description: "Raw fact_shop_returns as delivered by the source system."
       - name: fact_shop_sales
-        description: "Raw fact_shop_sales -- 3,000,000 rows as delivered by the source system."
+        description: "Raw fact_shop_sales as delivered by the source system."
       - name: fact_site_daily_operations
-        description: "Raw fact_site_daily_operations -- 500,000 rows as delivered by the source system."
+        description: "Raw fact_site_daily_operations as delivered by the source system."
       - name: fact_site_energy_consumption
-        description: "Raw fact_site_energy_consumption -- 600,000 rows as delivered by the source system."
+        description: "Raw fact_site_energy_consumption as delivered by the source system."
       - name: fact_solar_generation
-        description: "Raw fact_solar_generation -- 650,000 rows as delivered by the source system."
+        description: "Raw fact_solar_generation as delivered by the source system."
       - name: fact_spare_parts_usage
-        description: "Raw fact_spare_parts_usage -- 190,000 rows as delivered by the source system."
+        description: "Raw fact_spare_parts_usage as delivered by the source system."
       - name: fact_stock_losses
-        description: "Raw fact_stock_losses -- 60,000 rows as delivered by the source system."
+        description: "Raw fact_stock_losses as delivered by the source system."
       - name: fact_tank_dips
-        description: "Raw fact_tank_dips -- 700,000 rows as delivered by the source system."
+        description: "Raw fact_tank_dips as delivered by the source system."
       - name: fact_terminal_issues
-        description: "Raw fact_terminal_issues -- 210,000 rows as delivered by the source system."
+        description: "Raw fact_terminal_issues as delivered by the source system."
       - name: fact_terminal_receipts
-        description: "Raw fact_terminal_receipts -- 140,000 rows as delivered by the source system."
+        description: "Raw fact_terminal_receipts as delivered by the source system."
       - name: fact_terminal_throughput
-        description: "Raw fact_terminal_throughput -- 180,000 rows as delivered by the source system."
+        description: "Raw fact_terminal_throughput as delivered by the source system."
       - name: fact_training_compliance
-        description: "Raw fact_training_compliance -- 260,000 rows as delivered by the source system."
+        description: "Raw fact_training_compliance as delivered by the source system."
       - name: fact_vehicle_safety_events
-        description: "Raw fact_vehicle_safety_events -- 90,000 rows as delivered by the source system."
+        description: "Raw fact_vehicle_safety_events as delivered by the source system."
       - name: fact_vehicle_trips
-        description: "Raw fact_vehicle_trips -- 340,000 rows as delivered by the source system."
+        description: "Raw fact_vehicle_trips as delivered by the source system."
       - name: fact_working_capital
-        description: "Raw fact_working_capital -- 90,000 rows as delivered by the source system."
+        description: "Raw fact_working_capital as delivered by the source system."
