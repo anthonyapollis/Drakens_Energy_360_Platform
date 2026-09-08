@@ -45,6 +45,36 @@ TABLES = {
 }
 
 
+def select_list(con: duckdb.DuckDBPyConnection, schema: str,
+                table: str) -> str:
+    """The column list to export, with timezone-aware timestamps flattened.
+
+    A TIMESTAMPTZ lands in CSV as `2026-09-07 20:42:37.29855+02`, and Power
+    Query cannot read that as a datetime: the offset is not part of the format
+    it parses, so every row of the table fails conversion. The load still
+    reports success and the rows still arrive -- they just arrive as errors,
+    which is how a table can show 128 rows and 128 errors at once.
+
+    Casting to a plain TIMESTAMP under a pinned UTC session removes the offset
+    and the ambiguity together. Sub-millisecond precision is kept: Power Query
+    stores 100-nanosecond ticks, so the six fractional digits DuckDB writes
+    survive the round trip untouched.
+    """
+    rows = con.execute(
+        "select column_name, data_type from information_schema.columns "
+        "where table_schema = ? and table_name = ? order by ordinal_position",
+        [schema, table]).fetchall()
+    if not rows:
+        raise duckdb.CatalogException(f"{schema}.{table} not found")
+    parts = []
+    for name, dtype in rows:
+        if "TIME ZONE" in dtype.upper():
+            parts.append(f'cast("{name}" as timestamp) as "{name}"')
+        else:
+            parts.append(f'"{name}"')
+    return ", ".join(parts)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--warehouse", default=os.environ.get(
@@ -61,6 +91,12 @@ def main() -> int:
         print(f"warehouse is locked: {str(exc)[:100]}")
         return 1
 
+    # Every timestamp in the extracts is UTC, and says so by carrying no
+    # offset at all. DuckDB casts TIMESTAMPTZ to TIMESTAMP through whatever
+    # TimeZone the session happens to have, so pinning it here is what makes
+    # a rebuild on another machine produce byte-identical files.
+    con.execute("set TimeZone='UTC'")
+
     OUT.mkdir(parents=True, exist_ok=True)
     total = 0
     missing: list[str] = []
@@ -69,8 +105,9 @@ def main() -> int:
             for table in tables:
                 target = OUT / f"{table}.csv"
                 try:
+                    columns = select_list(con, f"main_{schema}", table)
                     con.execute(
-                        f"copy (select * from main_{schema}.{table}) "
+                        f"copy (select {columns} from main_{schema}.{table}) "
                         f"to '{target.as_posix()}' (header, delimiter ',')")
                 except duckdb.Error:
                     missing.append(f"{schema}.{table}")

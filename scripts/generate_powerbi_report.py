@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -34,6 +35,20 @@ REPORT_DIR = PBI / f"{PROJECT}.Report"
 DEFN = REPORT_DIR / "definition"
 
 SCHEMA = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition"
+
+# Which on-disk report format to write; set by --format.
+#
+# PBIR -- the folder-per-visual layout under `definition/` -- is the format
+# worth reading in a diff, and the one this generator was written for. It is
+# also a preview feature. A Desktop with that preview switched off does not
+# refuse a PBIR report: it opens the project, loads the semantic model, and
+# shows a single empty page. That is indistinguishable from a generator that
+# produced nothing, which is how 79 visuals can be on disk and none on screen.
+#
+# So the default is the legacy single `report.json`, which every build of
+# Desktop has always read. A portfolio artifact has to open on a machine whose
+# settings nobody controls, and that outranks the nicer diff.
+FORMAT = "legacy"
 
 # Canvas. 1280x720 is the 16:9 default and the size every Power BI Service
 # viewport is tuned for; a custom canvas looks deliberate in Desktop and
@@ -665,14 +680,29 @@ PAGES = [page_executive, page_network, page_site_detail, page_commercial,
 # Verification against the model
 # --------------------------------------------------------------------------
 def model_fields() -> dict[str, set[str]]:
-    """Every table, column and measure the TMDL actually defines.
+    """Every table, column and measure the model actually defines.
 
     A report is a set of promises about a model. Checking them here means a
     renamed column fails at generation with the field named, rather than in
     Desktop with a visual that silently renders blank -- which is how a broken
     report survives review.
+
+    Both model formats are read, because the model generator emits either one
+    and this check is worthless if it quietly finds nothing: an empty result
+    makes every field reference unverifiable, and unverifiable reads the same
+    as correct.
     """
     fields: dict[str, set[str]] = {}
+
+    bim = MODEL_DIR / "model.bim"
+    if bim.exists():
+        model = json.loads(bim.read_text(encoding="utf-8"))["model"]
+        for table in model.get("tables", []):
+            names = {c["name"] for c in table.get("columns", [])}
+            names |= {m["name"] for m in table.get("measures", [])}
+            fields[table["name"]] = names
+        return fields
+
     tables_dir = MODEL_DIR / "definition" / "tables"
     if not tables_dir.exists():
         return fields
@@ -754,10 +784,207 @@ def check_pages(pages) -> list[str]:
     return problems
 
 
+
+
+# --------------------------------------------------------------------------
+# Legacy serialisation
+# --------------------------------------------------------------------------
+def _section_id(name: str) -> str:
+    """A stable 20-hex-character section name.
+
+    Desktop generates these randomly. Deriving them from the page name keeps
+    them stable across regenerations, so a re-run produces the same file
+    rather than a diff in which every page looks new.
+    """
+    return hashlib.md5(name.encode()).hexdigest()[:20]
+
+
+def _prototype_query(projections: list[dict]) -> dict:
+    """Build the query a legacy visual carries.
+
+    PBIR lets each projection name its own table inline. The legacy format
+    does not: it declares every table once in `From` under a short alias, and
+    each `Select` refers to that alias. So the same field reference has to be
+    taken apart and rebuilt against a table-to-alias map that only exists once
+    all of the visual's projections have been seen.
+    """
+    aliases: dict[str, str] = {}
+    select: list[dict] = []
+    seen: set[str] = set()
+    for proj in projections:
+        field = proj["field"]
+        kind = "Measure" if "Measure" in field else "Column"
+        body = field[kind]
+        table = body["Expression"]["SourceRef"]["Entity"]
+        if table not in aliases:
+            # a, b, c ... in first-seen order, which is what Desktop itself
+            # does, so a regenerated file compares cleanly against a saved one.
+            aliases[table] = chr(ord("a") + len(aliases))
+        ref = proj["queryRef"]
+        if ref in seen:
+            continue
+        seen.add(ref)
+        select.append({
+            kind: {"Expression": {"SourceRef": {"Source": aliases[table]}},
+                   "Property": body["Property"]},
+            "Name": ref,
+        })
+    frm = [{"Name": alias, "Entity": table, "Type": 0}
+           for table, alias in aliases.items()]
+    return {"Version": 2, "From": frm, "Select": select}
+
+
+def legacy_container(vis: dict) -> dict:
+    """One PBIR visual, rewritten as a legacy visualContainer.
+
+    The position lands twice: once on the container itself and once in a
+    `layouts` entry inside the config. Both are read, and a container that
+    sets only one of them renders at the origin at default size.
+    """
+    pos = vis["position"]
+    body = vis["visual"]
+    state = body.get("query", {}).get("queryState", {})
+
+    projections: dict[str, list[dict]] = {}
+    every: list[dict] = []
+    for role, spec in state.items():
+        items = spec.get("projections", [])
+        projections[role] = [{"queryRef": item["queryRef"]} for item in items]
+        every.extend(items)
+
+    objects = dict(body.get("objects") or {})
+    # `title` is a container property in the legacy format, not a visual one.
+    # Left in `objects` it is dropped without complaint and every visual on
+    # every page renders untitled.
+    vc_objects = {}
+    if "title" in objects:
+        vc_objects["title"] = objects.pop("title")
+
+    single: dict = {"visualType": body["visualType"]}
+    if projections:
+        single["projections"] = projections
+    if every:
+        single["prototypeQuery"] = _prototype_query(every)
+    single["drillFilterOtherVisuals"] = body.get(
+        "drillFilterOtherVisuals", True)
+    if objects:
+        single["objects"] = objects
+    if vc_objects:
+        single["vcObjects"] = vc_objects
+
+    position = {
+        "x": pos["x"], "y": pos["y"], "z": pos.get("z", 0),
+        "width": pos["width"], "height": pos["height"],
+        "tabOrder": pos.get("tabOrder", 0),
+    }
+    config = {
+        "name": vis["name"],
+        "layouts": [{"id": 0, "position": position}],
+        "singleVisual": single,
+    }
+    # config and filters are JSON *strings* inside the JSON document. That is
+    # how the format has always stored them, and a nested object where a
+    # string is expected fails the open with no useful message.
+    return {**position, "config": json.dumps(config), "filters": "[]"}
+
+
+def render_legacy(pages) -> dict:
+    """The whole report as the single document Desktop has always read."""
+    sections = []
+    for ordinal, (name, display, visuals) in enumerate(pages):
+        sections.append({
+            "id": ordinal,
+            "name": _section_id(name),
+            "displayName": display,
+            "filters": "[]",
+            "ordinal": ordinal,
+            "visualContainers": [legacy_container(v) for v in visuals],
+            "config": "{}",
+            "displayOption": 1,
+            "width": W,
+            "height": H,
+        })
+
+    config = {
+        "version": "5.55",
+        "themeCollection": {"baseTheme": {
+            "name": PROJECT, "version": "5.55", "type": 2}},
+        "activeSectionIndex": 0,
+        "defaultDrillFilterOtherVisuals": True,
+        "settings": {
+            "useNewFilterPaneExperience": True,
+            "allowChangeFilterTypes": True,
+            "useStylableVisualContainerHeader": True,
+            "queryLimitOption": 6,
+            "exportDataMode": 1,
+            "useDefaultAggregateDisplayName": True,
+        },
+    }
+    return {
+        "id": 0,
+        "resourcePackages": [{"resourcePackage": {
+            "name": "SharedResources",
+            "type": 2,
+            "items": [{"type": 202,
+                       "path": f"BaseThemes/{PROJECT}.json",
+                       "name": PROJECT}],
+            "disabled": False,
+        }}],
+        "sections": sections,
+        "config": json.dumps(config),
+        "layoutOptimization": 0,
+    }
+
+
+def write_theme() -> None:
+    theme_dir = (REPORT_DIR / "StaticResources" / "SharedResources"
+                 / "BaseThemes")
+    theme_dir.mkdir(parents=True, exist_ok=True)
+    (theme_dir / f"{PROJECT}.json").write_text(
+        json.dumps(theme(), indent=2), encoding="utf-8")
+
+
+def write_scaffold() -> None:
+    """The files both formats share."""
+    (REPORT_DIR / "definition.pbir").write_text(json.dumps({
+        "version": "1.0",
+        "datasetReference": {
+            "byPath": {"path": f"../{PROJECT}.SemanticModel"},
+        },
+    }, indent=2), encoding="utf-8")
+
+    (REPORT_DIR / ".platform").write_text(json.dumps({
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/"
+                   "gitIntegration/platformProperties/2.0.0/schema.json",
+        "metadata": {"type": "Report", "displayName": PROJECT},
+        "config": {"version": "2.0", "logicalId":
+                   "00000000-0000-0000-0000-000000000002"},
+    }, indent=2), encoding="utf-8")
+
+    (PBI / f"{PROJECT}.pbip").write_text(json.dumps({
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/"
+                   "pbip/pbipProperties/1.0.0/schema.json",
+        "version": "1.0",
+        "artifacts": [{"report": {"path": f"{PROJECT}.Report"}}],
+        "settings": {"enableAutoRecovery": True},
+    }, indent=2), encoding="utf-8")
+
+
+def write_legacy(pages) -> None:
+    # A Report folder must never hold both formats: Desktop picks one, and the
+    # other sits in the same place as a second report, silently stale.
+    if DEFN.exists():
+        shutil.rmtree(DEFN)
+    (REPORT_DIR / "report.json").write_text(
+        json.dumps(render_legacy(pages), indent=2), encoding="utf-8")
+    write_theme()
+    write_scaffold()
+
+
 # --------------------------------------------------------------------------
 # Writing
 # --------------------------------------------------------------------------
-def write(pages) -> None:
+def write_pbir(pages) -> None:
     if DEFN.exists():
         shutil.rmtree(DEFN)
     (DEFN / "pages").mkdir(parents=True)
@@ -769,14 +996,6 @@ def write(pages) -> None:
     legacy = REPORT_DIR / "report.json"
     if legacy.exists():
         legacy.unlink()
-
-    (REPORT_DIR / "definition.pbir").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/1.0.0/schema.json",
-        "version": "1.0",
-        "datasetReference": {
-            "byPath": {"path": f"../{PROJECT}.SemanticModel"},
-        },
-    }, indent=2), encoding="utf-8")
 
     (DEFN / "report.json").write_text(json.dumps({
         "$schema": f"{SCHEMA}/report/2.0.0/schema.json",
@@ -791,11 +1010,7 @@ def write(pages) -> None:
         }],
     }, indent=2), encoding="utf-8")
 
-    theme_dir = (REPORT_DIR / "StaticResources" / "SharedResources"
-                 / "BaseThemes")
-    theme_dir.mkdir(parents=True, exist_ok=True)
-    (theme_dir / "DrakensEnergy360.json").write_text(
-        json.dumps(theme(), indent=2), encoding="utf-8")
+    write_theme()
 
     (DEFN / "pages" / "pages.json").write_text(json.dumps({
         "$schema": f"{SCHEMA}/pagesMetadata/1.0.0/schema.json",
@@ -820,27 +1035,20 @@ def write(pages) -> None:
             (vis_dir / "visual.json").write_text(
                 json.dumps(vis, indent=2), encoding="utf-8")
 
-    (REPORT_DIR / ".platform").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/"
-                   "gitIntegration/platformProperties/2.0.0/schema.json",
-        "metadata": {"type": "Report", "displayName": PROJECT},
-        "config": {"version": "2.0", "logicalId":
-                   "00000000-0000-0000-0000-000000000002"},
-    }, indent=2), encoding="utf-8")
-
-    (PBI / f"{PROJECT}.pbip").write_text(json.dumps({
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
-        "version": "1.0",
-        "artifacts": [{"report": {"path": f"{PROJECT}.Report"}}],
-        "settings": {"enableAutoRecovery": True},
-    }, indent=2), encoding="utf-8")
+    write_scaffold()
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
                     help="verify field references and write nothing")
+    ap.add_argument("--format", choices=("legacy", "pbir"), default="legacy",
+                    help="on-disk report format (default: legacy, which every "
+                         "Desktop build reads without a preview feature)")
     args = ap.parse_args()
+
+    global FORMAT
+    FORMAT = args.format
 
     pages = [fn() for fn in PAGES]
     problems = check_pages(pages) + check_layout(pages)
@@ -860,16 +1068,23 @@ def main() -> int:
               "against the model and the layout is clean")
         return 0
 
-    write(pages)
-    # Written, then counted from disk. The report is generated by one script
-    # and the model by another, and the model's cleanup once deleted this
-    # entire folder -- so the check that matters is what survived, not what
-    # was intended.
-    on_disk = len(list((DEFN / "pages").rglob("visual.json")))
     n_visuals = sum(len(v) for _, _, v in pages)
+    if FORMAT == "pbir":
+        write_pbir(pages)
+        on_disk = len(list((DEFN / "pages").rglob("visual.json")))
+    else:
+        write_legacy(pages)
+        # Counted back out of the written file rather than trusted. The report
+        # is generated by one script and the model by another, and the model's
+        # cleanup once deleted this entire folder -- so what matters is what
+        # survived, not what was intended.
+        written = json.loads(
+            (REPORT_DIR / "report.json").read_text(encoding="utf-8"))
+        on_disk = sum(len(sec["visualContainers"])
+                      for sec in written["sections"])
     if on_disk != n_visuals:
         print(f"  WARNING: wrote {n_visuals} visuals but {on_disk} are on disk")
-    print(f"wrote {PROJECT}.Report")
+    print(f"wrote {PROJECT}.Report ({FORMAT})")
     print(f"  {len(pages)} pages, {n_visuals} visuals, 1 theme")
     for _, display, visuals in pages:
         print(f"    {display:28} {len(visuals):>2} visuals")
