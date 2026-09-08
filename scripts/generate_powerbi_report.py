@@ -495,9 +495,22 @@ def slicer(x, y, width, height, field, title, *, mode="Dropdown") -> dict:
         title=title)
 
 
-def table_visual(x, y, width, height, projections, title) -> dict:
-    return visual("tableEx", x, y, width, height,
-                  query={"Values": {"projections": projections}}, title=title)
+def table_visual(x, y, width, height, projections, title, *,
+                 order_by=None, descending=True) -> dict:
+    """A grid, optionally sorted by one of its own fields.
+
+    Without an explicit order, Power BI sorts by the first column. A table
+    titled "Customers by revenue" then opens sorted by customer name -- and
+    the twelve customers whose name is an empty string sort to the very top,
+    so the visual's entire first screen is blank rows. The title was a promise
+    the query never made.
+    """
+    vis = visual("tableEx", x, y, width, height,
+                 query={"Values": {"projections": projections}}, title=title)
+    if order_by is not None:
+        vis["visual"]["orderBy"] = {"field": order_by,
+                                    "descending": bool(descending)}
+    return vis
 
 
 def matrix(x, y, width, height, *, rows, columns, values, title) -> dict:
@@ -629,15 +642,21 @@ def page_network() -> tuple[str, str, list[dict]]:
     # external service. The cost is the coastline, and the coastline was never
     # the point: these are town centroids plus jitter, and what the page is
     # for is where the margin sits relative to everything else.
-    v.append(scatter(
+    # A real basemap here, and the coordinate scatter on the Geography page.
+    # The two failure modes are different and so are the two jobs: this map
+    # answers "where is the network" and wants a coastline; the scatter
+    # answers "which coordinates are wrong" and has to render on any machine.
+    # Map visuals require File > Options > Global > Security > Map and Filled
+    # Map visuals, which is stated in the README.
+    v.append(map_visual(
         x, y, width, height,
-        detail=column("dim_site", "Site Name"),
-        x_measure=measure("dim_site", "Site Longitude"),
-        y_measure=measure("dim_site", "Site Latitude"),
+        latitude=column("dim_site", "Latitude"),
+        longitude=column("dim_site", "Longitude"),
         size=measure("agg_site_daily_fuel", "Gross Margin"),
         legend=column("network_investment_scorecard",
                       "Investment Recommendation"),
-        title="Where the margin sits: every site by coordinate"))
+        tooltips=[measure("agg_site_daily_fuel", "Fuel Volume (L)")],
+        title="Network by investment recommendation"))
 
     x, width = col(6, 3)
     v.append(chart(
@@ -668,7 +687,8 @@ def page_network() -> tuple[str, str, list[dict]]:
         measure("agg_site_daily_fuel", "Fuel Volume (L)"),
         measure("agg_site_daily_fuel", "Gross Margin"),
         measure("network_investment_scorecard", "Average Investment Score"),
-    ], "Sites, highest margin first"))
+    ], "Sites, highest margin first",
+        order_by=measure("agg_site_daily_fuel", "Gross Margin")))
     return "network", "Network", v
 
 
@@ -759,7 +779,8 @@ def page_commercial() -> tuple[str, str, list[dict]]:
         column("dim_customer", "Credit Band"),
         measure("fct_commercial_orders", "Commercial Revenue"),
         measure("fct_commercial_orders", "Commercial Margin"),
-    ], "Customers by revenue"))
+    ], "Customers by revenue",
+        order_by=measure("fct_commercial_orders", "Commercial Revenue")))
     return "commercial", "Commercial", v
 
 
@@ -932,11 +953,16 @@ def page_machine_learning() -> tuple[str, str, list[dict]]:
 
     top = row(112, 0)[0]
     x, width = col(0, 7)
+    # Percentage improvement, not raw lift. Raw lift mixes units: the demand
+    # forecast's lift is -15.4 in litres of MAE while a classifier's is 0.34
+    # of ROC-AUC, and plotting both on one axis renders every classifier as an
+    # invisible sliver beside one enormous bar. The chart was arithmetically
+    # correct and told the reader nothing.
     v.append(chart(
         "clusteredBarChart", x, top, width, 232,
         category=[column("obs_ml_performance", "Model")],
-        values=[measure("obs_ml_performance", "Average Lift over Baseline")],
-        title="Lift over baseline, by model (negative means it lost)"))
+        values=[measure("obs_ml_performance", "Improvement over Baseline %")],
+        title="Improvement over baseline, by model (negative means it lost)"))
 
     x, width = col(7, 5)
     v.append(chart(
@@ -1019,7 +1045,8 @@ def page_products() -> tuple[str, str, list[dict]]:
         measure("fct_retail_fuel_sales", "Litres Share %"),
         measure("fct_retail_fuel_sales", "Margin (c/L)"),
         measure("fct_retail_fuel_sales", "Retail Litres YoY %"),
-    ], "Every product, ranked"))
+    ], "Every product, ranked",
+        order_by=measure("fct_retail_fuel_sales", "Retail Litres")))
     return "products", "Products", v
 
 
@@ -1118,11 +1145,15 @@ def page_geography() -> tuple[str, str, list[dict]]:
 
     top = row(112, 0)[0]
     x, width = col(0, 6)
+    # Every field on this visual comes from obs_geo_site_analysis. Mixing a
+    # detail column from one table with axis measures from another only works
+    # when the relationship filters in that direction, and this one runs the
+    # other way -- which put all 586 sites on a single point.
     v.append(scatter(
         x, top, width, 224,
         detail=column("obs_geo_site_analysis", "Site Name"),
-        x_measure=measure("dim_site", "Site Longitude"),
-        y_measure=measure("dim_site", "Site Latitude"),
+        x_measure=measure("obs_geo_site_analysis", "Geo Longitude"),
+        y_measure=measure("obs_geo_site_analysis", "Geo Latitude"),
         size=measure("obs_geo_site_analysis", "Average Sites Within 25km"),
         legend=column("obs_geo_site_analysis", "Province Check"),
         title="Every coordinate, coloured by whether it passes the "
@@ -1158,9 +1189,86 @@ def page_geography() -> tuple[str, str, list[dict]]:
     return "geography", "Geography", v
 
 
+def page_forecast() -> tuple[str, str, list[dict]]:
+    """A year ahead, per product, with the backtest that says whether to
+    believe it.
+
+    The model predicts twelve months directly rather than predicting one month
+    and feeding its own answer back in, because a recursive forecast compounds
+    its error twelve times over and arrives confident and wrong.
+
+    Two things on this page keep it honest. The forward year is plotted
+    against the backtest that precedes it, so the reader can see how the model
+    did on months it had not seen before trusting months nobody has seen. And
+    the per-product table reports the seasonal-naive comparison per line:
+    6 of 13 products beat it, and the other 7 are named. On 32 months of
+    history a twelve-month forecast is weakly identified, and the products
+    where last year is still the better predictor should be forecast that way.
+    """
+    v = header("Forecast",
+               "Twelve months ahead per product, and the backtest that says "
+               "which lines to trust")
+
+    y = row(0, 0)[0]
+    v += kpi_row([
+        ("fct_product_revenue_forecast_12m", "Next 12 Months Revenue",
+         "Next 12 months"),
+        ("obs_ml_product_forecast_12m", "Products Forecast", "Products"),
+        ("obs_ml_product_forecast_12m", "Products Beating Naive (12m)",
+         "Beat seasonal-naive"),
+        ("obs_ml_product_forecast_12m", "Forecast Improvement % (12m)",
+         "Better than naive by"),
+        ("fct_product_revenue_forecast_12m", "Backtest Error %",
+         "Backtest error"),
+    ], y=y)
+
+    top = row(112, 0)[0]
+    x, width = col(0, 8)
+    # Actual, forecast and naive on one axis: all three are monthly revenue in
+    # rand, so this is a comparison rather than a scale error.
+    v.append(chart(
+        "lineChart", x, top, width, 232,
+        category=[column("fct_product_revenue_forecast_12m", "Month Start")],
+        values=[measure("fct_product_revenue_forecast_12m", "Actual Revenue"),
+                measure("fct_product_revenue_forecast_12m",
+                        "Forecast Revenue"),
+                measure("fct_product_revenue_forecast_12m",
+                        "Seasonal-Naive Revenue")],
+        title="Backtest then forecast: actual, model and seasonal-naive"))
+
+    x, width = col(8, 4)
+    v.append(slicer(x, top, width, 112,
+                    column("dim_product", "Reporting Line"), "Reporting line"))
+    v.append(slicer(x, top + 124, width, 108,
+                    column("obs_ml_product_forecast_12m", "Verdict"),
+                    "Backtest verdict"))
+
+    mid = row(360, 0)[0]
+    x, width = col(0, 5)
+    v.append(chart(
+        "barChart", x, mid, width, 200,
+        category=[column("obs_ml_product_forecast_12m", "Product Name")],
+        values=[measure("obs_ml_product_forecast_12m",
+                        "Forecast Improvement % (12m)")],
+        title="Improvement over seasonal-naive, by product"))
+
+    x, width = col(5, 7)
+    v.append(table_visual(x, mid, width, 200, [
+        column("obs_ml_product_forecast_12m", "Product Name"),
+        column("obs_ml_product_forecast_12m", "Reporting Line"),
+        column("obs_ml_product_forecast_12m", "Mean Monthly Revenue (R)"),
+        column("obs_ml_product_forecast_12m", "Mae (R)"),
+        column("obs_ml_product_forecast_12m", "Naive Mae (R)"),
+        column("obs_ml_product_forecast_12m", "Improvement %"),
+        column("obs_ml_product_forecast_12m", "Verdict"),
+    ], "Backtest accuracy per product, against seasonal-naive"))
+    return "forecast", "Forecast", v
+
+
 PAGES = [page_executive, page_network, page_geography, page_site_detail,
          page_products, page_petroleum, page_commercial, page_supply,
-         page_assets, page_data_quality, page_machine_learning]
+         page_assets, page_data_quality, page_forecast,
+         page_machine_learning]
 
 
 # --------------------------------------------------------------------------
@@ -1483,7 +1591,24 @@ def legacy_container(vis: dict) -> dict:
     if projections:
         single["projections"] = projections
     if every:
-        single["prototypeQuery"] = _prototype_query(every)
+        query = _prototype_query(every)
+        order = body.get("orderBy")
+        if order:
+            field = order["field"]["field"]
+            kind = "Measure" if "Measure" in field else "Column"
+            entity = field[kind]["Expression"]["SourceRef"]["Entity"]
+            alias = next((f["Name"] for f in query["From"]
+                          if f["Entity"] == entity), None)
+            if alias:
+                query["OrderBy"] = [{
+                    # 1 ascending, 2 descending -- the legacy format's own
+                    # encoding, not a boolean.
+                    "Direction": 2 if order["descending"] else 1,
+                    "Expression": {kind: {
+                        "Expression": {"SourceRef": {"Source": alias}},
+                        "Property": field[kind]["Property"]}},
+                }]
+        single["prototypeQuery"] = query
     single["drillFilterOtherVisuals"] = body.get(
         "drillFilterOtherVisuals", True)
     if objects:

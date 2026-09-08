@@ -73,6 +73,13 @@ TABLES = {
     # does not contain fails to load with an error naming the role rather than
     # the table.
     "bridge_security_user_scope":   dict(mode="import", kind="security"),
+    # Twelve-month-ahead revenue forecast, per product, across both retail
+    # and commercial channels. Written by
+    # ml/experiments/product_revenue_forecast_12m.py.
+    "obs_ml_product_forecast_12m":  dict(mode="import", kind="observability",
+                                         schema="platform"),
+    "fct_product_revenue_forecast_12m": dict(mode="import", kind="fact",
+                                             schema="platform"),
     # Spatial analysis. Written by scripts/build_geo_analysis.py using
     # DuckDB's spatial extension -- point-in-polygon against real province
     # boundaries, and geodesic nearest-neighbour distances.
@@ -245,6 +252,10 @@ RELATIONSHIPS = [
      "dim_product", "product_name", "oneDirection"),
     ("rel_geo_site", "obs_geo_site_analysis", "site_key",
      "dim_site", "site_key", "oneDirection"),
+    ("rel_fcast12_product", "fct_product_revenue_forecast_12m", "product_name",
+     "dim_product", "product_name", "oneDirection"),
+    ("rel_fcast12_scores", "obs_ml_product_forecast_12m", "product_name",
+     "dim_product", "product_name", "oneDirection"),
     ("rel_wo_date", "fct_maintenance_work_orders", "date_key",
      "dim_date", "date_key", "oneDirection"),
     ("rel_wo_site", "fct_maintenance_work_orders", "site_key",
@@ -479,6 +490,48 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "DIVIDE ( [Retail Litres] - [Retail Litres LY], "
          "[Retail Litres LY] )", "0.0%", "Products"),
     ],
+    "fct_product_revenue_forecast_12m": [
+        ("Forecast Revenue",
+         "SUM ( fct_product_revenue_forecast_12m[forecast_zar] )",
+         '"R"#,0', "Forecast"),
+        ("Actual Revenue",
+         "SUM ( fct_product_revenue_forecast_12m[actual_zar] )",
+         '"R"#,0', "Forecast"),
+        ("Seasonal-Naive Revenue",
+         "SUM ( fct_product_revenue_forecast_12m[naive_zar] )",
+         '"R"#,0', "Forecast"),
+        # The forward year only. The same table holds the backtest, and
+        # summing both would report a year of history as though it were
+        # pipeline.
+        ("Next 12 Months Revenue",
+         "CALCULATE ( [Forecast Revenue], "
+         "fct_product_revenue_forecast_12m[is_forecast] = TRUE )",
+         '"R"#,0', "Forecast"),
+        ("Backtest Error %",
+         "DIVIDE ( CALCULATE ( "
+         "SUM ( fct_product_revenue_forecast_12m[abs_error_zar] ), "
+         "fct_product_revenue_forecast_12m[is_forecast] = FALSE ), "
+         "CALCULATE ( [Actual Revenue], "
+         "fct_product_revenue_forecast_12m[is_forecast] = FALSE ) )",
+         "0.0%", "Forecast"),
+    ],
+    "obs_ml_product_forecast_12m": [
+        ("Products Forecast",
+         "COUNTROWS ( obs_ml_product_forecast_12m )", "#,0", "Forecast"),
+        ("Products Beating Naive (12m)",
+         "CALCULATE ( COUNTROWS ( obs_ml_product_forecast_12m ), "
+         "obs_ml_product_forecast_12m[verdict] = \"Beats seasonal-naive\" )",
+         "#,0", "Forecast"),
+        ("Forecast MAPE (12m)",
+         "AVERAGE ( obs_ml_product_forecast_12m[mape] )", "0.0%", "Forecast"),
+        # Volume-weighted, because a mean of per-product percentages lets the
+        # smallest line swing the headline as hard as the largest.
+        ("Forecast Improvement % (12m)",
+         "DIVIDE ( SUM ( obs_ml_product_forecast_12m[naive_mae_zar] ) - "
+         "SUM ( obs_ml_product_forecast_12m[mae_zar] ), "
+         "SUM ( obs_ml_product_forecast_12m[naive_mae_zar] ) )",
+         "0.0%", "Forecast"),
+    ],
     "obs_geo_site_analysis": [
         ("Sites Located", "COUNTROWS ( obs_geo_site_analysis )", "#,0",
          "Geography"),
@@ -511,6 +564,10 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
          "obs_geo_site_analysis[proximity_band] = \"Isolated\" )", "#,0",
          "Geography"),
+        ("Geo Latitude", "AVERAGE ( obs_geo_site_analysis[latitude] )",
+         "0.000", "Geography"),
+        ("Geo Longitude", "AVERAGE ( obs_geo_site_analysis[longitude] )",
+         "0.000", "Geography"),
         ("Average Sites Within 25km",
          "AVERAGE ( obs_geo_site_analysis[sites_within_25km] )", "#,0.0",
          "Geography"),
@@ -570,6 +627,18 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
         # row from the page entirely.
         ("Baseline Beat Rate %",
          "DIVIDE ( [Models Beating Baseline], [Models Scored] )",
+         "0.0%", "Machine learning"),
+        # Unit-free, and sign-aware. Raw lift cannot be compared across
+        # tasks: a regression's is in litres of MAE and lower is better, a
+        # classifier's is in ROC-AUC points and higher is better. Expressed as
+        # percentage improvement over each model's own baseline, one bar chart
+        # can hold all of them without a 15-litre bar burying a 0.34 one.
+        ("Improvement over Baseline %",
+         "AVERAGEX ( obs_ml_performance, "
+         "VAR m = obs_ml_performance[metric_value] "
+         "VAR b = obs_ml_performance[baseline_value] "
+         "RETURN IF ( obs_ml_performance[higher_is_better], "
+         "DIVIDE ( m - b, b ), DIVIDE ( b - m, b ) ) )",
          "0.0%", "Machine learning"),
         ("Average Lift over Baseline",
          "AVERAGE ( obs_ml_performance[lift_over_baseline] )",

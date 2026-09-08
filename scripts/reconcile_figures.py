@@ -43,6 +43,8 @@ EXPERIMENT_TABLES = {
     "obs_ml_product_performance",
     "fct_product_demand_forecast",
     "obs_geo_site_analysis",
+    "obs_ml_product_forecast_12m",
+    "fct_product_revenue_forecast_12m",
 }
 
 

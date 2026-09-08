@@ -3020,6 +3020,241 @@
         ]
       },
       {
+        "name": "obs_ml_product_forecast_12m",
+        "columns": [
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Months Tested",
+            "dataType": "int64",
+            "sourceColumn": "months_tested",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Mean Monthly Revenue (R)",
+            "dataType": "double",
+            "sourceColumn": "mean_monthly_revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Mae (R)",
+            "dataType": "double",
+            "sourceColumn": "mae_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Mape",
+            "dataType": "double",
+            "sourceColumn": "mape",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Naive Mae (R)",
+            "dataType": "double",
+            "sourceColumn": "naive_mae_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Improvement %",
+            "dataType": "double",
+            "sourceColumn": "improvement_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Verdict",
+            "dataType": "string",
+            "sourceColumn": "verdict",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Disclaimer",
+            "dataType": "string",
+            "sourceColumn": "disclaimer",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Products Forecast",
+            "expression": "COUNTROWS ( obs_ml_product_forecast_12m )",
+            "formatString": "#,0",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Products Beating Naive (12m)",
+            "expression": "CALCULATE ( COUNTROWS ( obs_ml_product_forecast_12m ), obs_ml_product_forecast_12m[Verdict] = \"Beats seasonal-naive\" )",
+            "formatString": "#,0",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Forecast MAPE (12m)",
+            "expression": "AVERAGE ( obs_ml_product_forecast_12m[Mape] )",
+            "formatString": "0.0%",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Forecast Improvement % (12m)",
+            "expression": "DIVIDE ( SUM ( obs_ml_product_forecast_12m[Naive Mae (R)] ) - SUM ( obs_ml_product_forecast_12m[Mae (R)] ), SUM ( obs_ml_product_forecast_12m[Naive Mae (R)] ) )",
+            "formatString": "0.0%",
+            "displayFolder": "Forecast"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_ml_product_forecast_12m",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_ml_product_forecast_12m.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"product_name\", \"reporting_line\", \"months_tested\", \"mean_monthly_revenue_zar\", \"mae_zar\", \"mape\", \"naive_mae_zar\", \"improvement_pct\", \"verdict\", \"disclaimer\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"product_name\", type text}, {\"reporting_line\", type text}, {\"months_tested\", Int64.Type}, {\"mean_monthly_revenue_zar\", type number}, {\"mae_zar\", type number}, {\"mape\", type number}, {\"naive_mae_zar\", type number}, {\"improvement_pct\", type number}, {\"verdict\", type text}, {\"disclaimer\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_product_revenue_forecast_12m",
+        "columns": [
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Month Start",
+            "dataType": "dateTime",
+            "sourceColumn": "month_start",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Horizon",
+            "dataType": "int64",
+            "sourceColumn": "horizon",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Actual (R)",
+            "dataType": "double",
+            "sourceColumn": "actual_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Forecast (R)",
+            "dataType": "double",
+            "sourceColumn": "forecast_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Naive (R)",
+            "dataType": "double",
+            "sourceColumn": "naive_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Is Forecast",
+            "dataType": "boolean",
+            "sourceColumn": "is_forecast",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Abs Error (R)",
+            "dataType": "double",
+            "sourceColumn": "abs_error_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Disclaimer",
+            "dataType": "string",
+            "sourceColumn": "disclaimer",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Forecast Revenue",
+            "expression": "SUM ( fct_product_revenue_forecast_12m[Forecast (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Actual Revenue",
+            "expression": "SUM ( fct_product_revenue_forecast_12m[Actual (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Seasonal-Naive Revenue",
+            "expression": "SUM ( fct_product_revenue_forecast_12m[Naive (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Next 12 Months Revenue",
+            "expression": "CALCULATE ( [Forecast Revenue], fct_product_revenue_forecast_12m[Is Forecast] = TRUE )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Forecast"
+          },
+          {
+            "name": "Backtest Error %",
+            "expression": "DIVIDE ( CALCULATE ( SUM ( fct_product_revenue_forecast_12m[Abs Error (R)] ), fct_product_revenue_forecast_12m[Is Forecast] = FALSE ), CALCULATE ( [Actual Revenue], fct_product_revenue_forecast_12m[Is Forecast] = FALSE ) )",
+            "formatString": "0.0%",
+            "displayFolder": "Forecast"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_product_revenue_forecast_12m",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_product_revenue_forecast_12m.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"product_name\", \"reporting_line\", \"month_start\", \"horizon\", \"actual_zar\", \"forecast_zar\", \"naive_zar\", \"is_forecast\", \"abs_error_zar\", \"disclaimer\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"product_name\", type text}, {\"reporting_line\", type text}, {\"month_start\", type datetime}, {\"horizon\", Int64.Type}, {\"actual_zar\", type number}, {\"forecast_zar\", type number}, {\"naive_zar\", type number}, {\"is_forecast\", type logical}, {\"abs_error_zar\", type number}, {\"disclaimer\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
         "name": "obs_geo_site_analysis",
         "columns": [
           {
@@ -3183,6 +3418,18 @@
             "name": "Isolated Sites",
             "expression": "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Proximity Band] = \"Isolated\" )",
             "formatString": "#,0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Geo Latitude",
+            "expression": "AVERAGE ( obs_geo_site_analysis[Latitude] )",
+            "formatString": "0.000",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Geo Longitude",
+            "expression": "AVERAGE ( obs_geo_site_analysis[Longitude] )",
+            "formatString": "0.000",
             "displayFolder": "Geography"
           },
           {
@@ -3608,6 +3855,12 @@
           {
             "name": "Baseline Beat Rate %",
             "expression": "DIVIDE ( [Models Beating Baseline], [Models Scored] )",
+            "formatString": "0.0%",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Improvement over Baseline %",
+            "expression": "AVERAGEX ( obs_ml_performance, VAR m = obs_ml_performance[Metric Value] VAR b = obs_ml_performance[Baseline Value] RETURN IF ( obs_ml_performance[Higher Is Better], DIVIDE ( m - b, b ), DIVIDE ( b - m, b ) ) )",
             "formatString": "0.0%",
             "displayFolder": "Machine learning"
           },
@@ -4214,6 +4467,22 @@
         "fromColumn": "Site Key",
         "toTable": "dim_site",
         "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_fcast12_product",
+        "fromTable": "fct_product_revenue_forecast_12m",
+        "fromColumn": "Product Name",
+        "toTable": "dim_product",
+        "toColumn": "Product Name",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_fcast12_scores",
+        "fromTable": "obs_ml_product_forecast_12m",
+        "fromColumn": "Product Name",
+        "toTable": "dim_product",
+        "toColumn": "Product Name",
         "crossFilteringBehavior": "oneDirection"
       },
       {
