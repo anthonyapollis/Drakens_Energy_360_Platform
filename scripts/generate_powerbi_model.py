@@ -73,6 +73,18 @@ TABLES = {
     # does not contain fails to load with an error naming the role rather than
     # the table.
     "bridge_security_user_scope":   dict(mode="import", kind="security"),
+    # Spatial analysis. Written by scripts/build_geo_analysis.py using
+    # DuckDB's spatial extension -- point-in-polygon against real province
+    # boundaries, and geodesic nearest-neighbour distances.
+    "obs_geo_site_analysis":        dict(mode="import", kind="observability",
+                                         schema="platform"),
+    # Per-product model results and the forecast series behind them. Like
+    # the ML scorecard these come from the experiment rather than from dbt,
+    # written by ml/experiments/product_demand_forecast.py.
+    "obs_ml_product_performance":   dict(mode="import", kind="observability",
+                                         schema="platform"),
+    "fct_product_demand_forecast":  dict(mode="import", kind="fact",
+                                         schema="platform"),
     # The ML scorecard. It is not produced by dbt -- it comes out of the
     # MLflow store via scripts/export_ml_results.py -- but it belongs in the
     # semantic model for the same reason the observability tables do: a claim
@@ -218,6 +230,21 @@ RELATIONSHIPS = [
      "dim_date", "date_key", "oneDirection"),
     ("rel_orders_customer", "fct_commercial_orders", "customer_key",
      "dim_customer", "customer_key", "oneDirection"),
+    # Commercial orders carried product_key and had no relationship to the
+    # product dimension, so the largest line in the business -- lubricants, at
+    # R20.3bn of revenue -- could not be sliced by product at all. Every
+    # product analysis was silently a retail-fuel analysis.
+    ("rel_orders_product", "fct_commercial_orders", "product_key",
+     "dim_product", "product_key", "oneDirection"),
+    # The forecast tables key on product name, which is unique across all 32
+    # products. Relating them lets the Petroleum page's grade slicer filter
+    # the forecast and its accuracy together.
+    ("rel_forecast_product", "fct_product_demand_forecast", "product_name",
+     "dim_product", "product_name", "oneDirection"),
+    ("rel_mlproduct_product", "obs_ml_product_performance", "product_name",
+     "dim_product", "product_name", "oneDirection"),
+    ("rel_geo_site", "obs_geo_site_analysis", "site_key",
+     "dim_site", "site_key", "oneDirection"),
     ("rel_wo_date", "fct_maintenance_work_orders", "date_key",
      "dim_date", "date_key", "oneDirection"),
     ("rel_wo_site", "fct_maintenance_work_orders", "site_key",
@@ -416,6 +443,116 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "Geography"),
         ("Site Longitude", "AVERAGE ( dim_site[longitude] )", "0.000",
          "Geography"),
+    ],
+    "fct_retail_fuel_sales": [
+        ("Retail Litres", "SUM ( fct_retail_fuel_sales[litres] )",
+         "#,0", "Products"),
+        ("Retail Revenue", "SUM ( fct_retail_fuel_sales[gross_sales_zar] )",
+         '"R"#,0', "Products"),
+        ("Retail Margin", "SUM ( fct_retail_fuel_sales[gross_margin_zar] )",
+         '"R"#,0', "Products"),
+        ("Retail Margin %",
+         "DIVIDE ( [Retail Margin], [Retail Revenue] )", "0.0%", "Products"),
+        # Cents per litre is how a fuel business talks about margin, because
+        # the rand figure moves with a gazetted price the site does not set.
+        ("Margin (c/L)",
+         "DIVIDE ( [Retail Margin], [Retail Litres] ) * 100",
+         "#,0.0", "Products"),
+        ("Average Pump Price",
+         "AVERAGE ( fct_retail_fuel_sales[unit_price_zar] )",
+         '"R"#,0.00', "Products"),
+        ("Litres Share %",
+         "DIVIDE ( [Retail Litres], "
+         "CALCULATE ( [Retail Litres], REMOVEFILTERS ( dim_product ) ) )",
+         "0.0%", "Products"),
+        ("Regulated Litres %",
+         "DIVIDE ( CALCULATE ( [Retail Litres], "
+         "fct_retail_fuel_sales[is_regulated_price] = TRUE ), "
+         "[Retail Litres] )", "0.0%", "Products"),
+        ("Fuel Grades Sold",
+         "DISTINCTCOUNT ( fct_retail_fuel_sales[fuel_grade] )",
+         "#,0", "Products"),
+        ("Retail Litres LY",
+         "CALCULATE ( [Retail Litres], "
+         "SAMEPERIODLASTYEAR ( dim_date[full_date] ) )", "#,0", "Products"),
+        ("Retail Litres YoY %",
+         "DIVIDE ( [Retail Litres] - [Retail Litres LY], "
+         "[Retail Litres LY] )", "0.0%", "Products"),
+    ],
+    "obs_geo_site_analysis": [
+        ("Sites Located", "COUNTROWS ( obs_geo_site_analysis )", "#,0",
+         "Geography"),
+        # The check nothing else in the platform can perform: a coordinate
+        # compared against a polygon rather than a value against a rule.
+        ("Province Mismatches",
+         "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
+         "obs_geo_site_analysis[province_check] = \"Province mismatch\" )",
+         "#,0", "Geography"),
+        ("Sites Outside Any Boundary",
+         "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
+         "obs_geo_site_analysis[province_check] = "
+         "\"Outside every boundary\" )", "#,0", "Geography"),
+        ("Geocoding Pass Rate %",
+         "DIVIDE ( CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
+         "obs_geo_site_analysis[province_check] = \"Matches\" ), "
+         "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
+         "obs_geo_site_analysis[country_code] = \"ZA\" ) )",
+         "0.0%", "Geography"),
+        ("Median Nearest Site (km)",
+         "MEDIAN ( obs_geo_site_analysis[nearest_site_km] )", "#,0.0",
+         "Geography"),
+        # Two forecourts under a kilometre apart do not earn twice one
+        # forecourt, and the investment scorecard has no notion of it.
+        ("Overlapping Sites",
+         "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
+         "obs_geo_site_analysis[proximity_band] = "
+         "\"Overlapping (under 1 km)\" )", "#,0", "Geography"),
+        ("Isolated Sites",
+         "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), "
+         "obs_geo_site_analysis[proximity_band] = \"Isolated\" )", "#,0",
+         "Geography"),
+        ("Average Sites Within 25km",
+         "AVERAGE ( obs_geo_site_analysis[sites_within_25km] )", "#,0.0",
+         "Geography"),
+    ],
+    "obs_ml_product_performance": [
+        ("Products Modelled", "COUNTROWS ( obs_ml_product_performance )",
+         "#,0", "Machine learning"),
+        ("Products Beating Naive",
+         "CALCULATE ( COUNTROWS ( obs_ml_product_performance ), "
+         "obs_ml_product_performance[verdict] = \"Beats seasonal-naive\" )",
+         "#,0", "Machine learning"),
+        ("Forecast MAE (L)",
+         "AVERAGE ( obs_ml_product_performance[mae] )", "#,0", "Machine learning"),
+        ("Naive MAE (L)",
+         "AVERAGE ( obs_ml_product_performance[baseline_mae] )",
+         "#,0", "Machine learning"),
+        # Weighted by volume, not a mean of percentages. Averaging the
+        # improvement across products lets a tiny grade swing the headline as
+        # hard as the one that carries half the network.
+        ("Forecast Improvement %",
+         "DIVIDE ( [Naive MAE (L)] - [Forecast MAE (L)], [Naive MAE (L)] )",
+         "0.0%", "Machine learning"),
+        ("Forecast MAPE %",
+         "AVERAGE ( obs_ml_product_performance[mape] )", "0.0%",
+         "Machine learning"),
+    ],
+    "fct_product_demand_forecast": [
+        ("Actual Litres",
+         "SUM ( fct_product_demand_forecast[actual_litres] )", "#,0",
+         "Machine learning"),
+        ("Forecast Litres",
+         "SUM ( fct_product_demand_forecast[forecast_litres] )", "#,0",
+         "Machine learning"),
+        ("Seasonal-Naive Litres",
+         "SUM ( fct_product_demand_forecast[naive_litres] )", "#,0",
+         "Machine learning"),
+        ("Forecast Error (L)",
+         "SUM ( fct_product_demand_forecast[abs_error_litres] )", "#,0",
+         "Machine learning"),
+        ("Forecast Error %",
+         "DIVIDE ( [Forecast Error (L)], [Actual Litres] )", "0.0%",
+         "Machine learning"),
     ],
     "obs_ml_performance": [
         ("Models", "COUNTROWS ( obs_ml_performance )", "#,0", "Machine learning"),

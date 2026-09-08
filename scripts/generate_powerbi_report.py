@@ -960,9 +960,207 @@ def page_machine_learning() -> tuple[str, str, list[dict]]:
     return "machine-learning", "Machine learning", v
 
 
-PAGES = [page_executive, page_network, page_site_detail, page_commercial,
-         page_supply, page_assets, page_data_quality,
-         page_machine_learning]
+def page_products() -> tuple[str, str, list[dict]]:
+    """Every reporting line, on the two axes that decide what to stock.
+
+    Volume and margin rate pull in opposite directions across this estate:
+    road fuel is most of the litres and the thinnest margin because its price
+    is gazetted, while convenience and lubricants are a rounding error in
+    litres and where the margin rate actually is. A page that ranked products
+    by either one alone would recommend the wrong thing.
+    """
+    v = header("Products",
+               "What each line sells, what it earns, and how fast it is "
+               "moving")
+
+    y = row(0, 0)[0]
+    v += kpi_row([
+        ("fct_retail_fuel_sales", "Retail Litres", "Litres sold"),
+        ("fct_retail_fuel_sales", "Retail Revenue", "Revenue"),
+        ("fct_retail_fuel_sales", "Retail Margin %", "Margin rate"),
+        ("fct_retail_fuel_sales", "Margin (c/L)", "Margin per litre"),
+        ("fct_retail_fuel_sales", "Retail Litres YoY %", "Litres vs last year"),
+    ], y=y)
+
+    top = row(112, 0)[0]
+    x, width = col(0, 5)
+    v.append(chart(
+        "barChart", x, top, width, 216,
+        category=[column("dim_product", "Reporting Line")],
+        values=[measure("fct_retail_fuel_sales", "Retail Litres")],
+        title="Volume by reporting line"))
+
+    x, width = col(5, 4)
+    v.append(chart(
+        "barChart", x, top, width, 216,
+        category=[column("dim_product", "Reporting Line")],
+        values=[measure("fct_retail_fuel_sales", "Margin (c/L)")],
+        title="Margin per litre by line (cents)"))
+
+    x, width = col(9, 3)
+    v.append(slicer(x, top, width, 104,
+                    column("dim_product", "Reporting Line"), "Reporting line"))
+    v.append(slicer(x, top + 116, width, 100,
+                    column("dim_product", "Price Regime"), "Price regime"))
+
+    mid = row(344, 0)[0]
+    x, width = col(0, 7)
+    v.append(combo(
+        x, mid, width, 216,
+        category=[column("dim_date", "Year Month")],
+        columns=[measure("fct_retail_fuel_sales", "Retail Litres")],
+        line=[measure("fct_retail_fuel_sales", "Retail Margin %")],
+        title="Monthly volume, with margin rate"))
+
+    x, width = col(7, 5)
+    v.append(table_visual(x, mid, width, 216, [
+        column("dim_product", "Product Name"),
+        measure("fct_retail_fuel_sales", "Retail Litres"),
+        measure("fct_retail_fuel_sales", "Litres Share %"),
+        measure("fct_retail_fuel_sales", "Margin (c/L)"),
+        measure("fct_retail_fuel_sales", "Retail Litres YoY %"),
+    ], "Every product, ranked"))
+    return "products", "Products", v
+
+
+def page_petroleum() -> tuple[str, str, list[dict]]:
+    """The fuel book on its own, forecast included.
+
+    Petroleum is the business: five grades carry effectively all the litres,
+    four of them at a price the state sets monthly. That last fact is why the
+    page leads with cents per litre rather than rand margin -- when the price
+    is gazetted, the only margin lever left is mix and throughput.
+
+    The forecast is here rather than on the ML page because this is where it
+    would be used. Procurement orders a grade, not a network total.
+    """
+    v = header("Petroleum",
+               "Five grades, a gazetted price, and a forecast procurement "
+               "can order against")
+
+    y = row(0, 0)[0]
+    v += kpi_row([
+        ("fct_retail_fuel_sales", "Retail Litres", "Fuel litres"),
+        ("fct_retail_fuel_sales", "Margin (c/L)", "Margin per litre"),
+        ("fct_retail_fuel_sales", "Average Pump Price", "Average pump price"),
+        ("fct_retail_fuel_sales", "Regulated Litres %", "Price-regulated"),
+        ("obs_ml_product_performance", "Forecast Improvement %",
+         "Forecast beats naive by"),
+    ], y=y)
+
+    top = row(112, 0)[0]
+    x, width = col(0, 6)
+    v.append(chart(
+        "barChart", x, top, width, 212,
+        category=[column("fct_retail_fuel_sales", "Fuel Grade")],
+        values=[measure("fct_retail_fuel_sales", "Retail Litres")],
+        title="Litres by grade"))
+
+    x, width = col(6, 6)
+    v.append(chart(
+        "clusteredBarChart", x, top, width, 212,
+        category=[column("fct_retail_fuel_sales", "Fuel Grade")],
+        values=[measure("fct_retail_fuel_sales", "Margin (c/L)")],
+        title="Margin per litre by grade (cents)"))
+
+    mid = row(340, 0)[0]
+    x, width = col(0, 7)
+    # Actual against both the model and the baseline it has to beat. Plotting
+    # a forecast without the naive line lets any forecast look competent.
+    v.append(chart(
+        "lineChart", x, mid, width, 220,
+        category=[column("fct_product_demand_forecast", "Full Date")],
+        values=[measure("fct_product_demand_forecast", "Actual Litres"),
+                measure("fct_product_demand_forecast", "Forecast Litres"),
+                measure("fct_product_demand_forecast",
+                        "Seasonal-Naive Litres")],
+        title="Forecast against actual and seasonal-naive, holdout window"))
+
+    x, width = col(7, 5)
+    v.append(table_visual(x, mid, width, 220, [
+        column("obs_ml_product_performance", "Product Name"),
+        column("obs_ml_product_performance", "Mean Daily Litres"),
+        column("obs_ml_product_performance", "Mae"),
+        column("obs_ml_product_performance", "Baseline Mae"),
+        column("obs_ml_product_performance", "Mae Improvement %"),
+        column("obs_ml_product_performance", "Verdict"),
+    ], "Forecast accuracy per grade, against seasonal-naive"))
+    return "petroleum", "Petroleum", v
+
+
+def page_geography() -> tuple[str, str, list[dict]]:
+    """What the coordinates say, checked against real boundaries.
+
+    Every other quality check in this platform compares a value against a rule
+    or another column. This page carries the one check that compares a point
+    against a polygon, and it is the only kind capable of catching a record
+    that is internally consistent and geographically wrong.
+
+    It found both kinds. Two sites sit across a provincial boundary from the
+    province their record claims -- Sasolburg and Vereeniging, on opposite
+    banks of the river that *is* the border. Fifteen coastal sites have
+    coordinates in the sea, because the generator jitters around a town
+    centroid without knowing where the coastline is. Neither would ever fail a
+    column-level test.
+    """
+    v = header("Geography",
+               "Coordinates checked against real boundaries, and how close "
+               "the network sits to itself")
+
+    y = row(0, 0)[0]
+    v += kpi_row([
+        ("obs_geo_site_analysis", "Sites Located", "Sites geocoded"),
+        ("obs_geo_site_analysis", "Geocoding Pass Rate %", "In the right province"),
+        ("obs_geo_site_analysis", "Province Mismatches", "Wrong province"),
+        ("obs_geo_site_analysis", "Sites Outside Any Boundary", "In the sea"),
+        ("obs_geo_site_analysis", "Overlapping Sites", "Under 1 km apart"),
+    ], y=y)
+
+    top = row(112, 0)[0]
+    x, width = col(0, 6)
+    v.append(scatter(
+        x, top, width, 224,
+        detail=column("obs_geo_site_analysis", "Site Name"),
+        x_measure=measure("dim_site", "Site Longitude"),
+        y_measure=measure("dim_site", "Site Latitude"),
+        size=measure("obs_geo_site_analysis", "Average Sites Within 25km"),
+        legend=column("obs_geo_site_analysis", "Province Check"),
+        title="Every coordinate, coloured by whether it passes the "
+              "boundary check"))
+
+    x, width = col(6, 3)
+    v.append(chart(
+        "barChart", x, top, width, 224,
+        category=[column("obs_geo_site_analysis", "Proximity Band")],
+        values=[measure("obs_geo_site_analysis", "Sites Located")],
+        title="How close is the nearest other site"))
+
+    x, width = col(9, 3)
+    v.append(slicer(x, top, width, 108,
+                    column("obs_geo_site_analysis", "Province Check"),
+                    "Boundary check"))
+    v.append(slicer(x, top + 120, width, 104,
+                    column("obs_geo_site_analysis", "Proximity Band"),
+                    "Proximity"))
+
+    bottom = row(352, 0)[0]
+    x, width = col(0, 12)
+    v.append(table_visual(x, bottom, width, 200, [
+        column("obs_geo_site_analysis", "Site Name"),
+        column("obs_geo_site_analysis", "City"),
+        column("obs_geo_site_analysis", "Recorded Province"),
+        column("obs_geo_site_analysis", "Boundary Province"),
+        column("obs_geo_site_analysis", "Province Check"),
+        column("obs_geo_site_analysis", "Nearest Site km"),
+        column("obs_geo_site_analysis", "Sites Within 5km"),
+        column("obs_geo_site_analysis", "Proximity Band"),
+    ], "Every site, its boundary check and its neighbours"))
+    return "geography", "Geography", v
+
+
+PAGES = [page_executive, page_network, page_geography, page_site_detail,
+         page_products, page_petroleum, page_commercial, page_supply,
+         page_assets, page_data_quality, page_machine_learning]
 
 
 # --------------------------------------------------------------------------

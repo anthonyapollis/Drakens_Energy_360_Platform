@@ -35,6 +35,16 @@ import duckdb
 REPO = Path(__file__).resolve().parent.parent
 PBI = REPO / "powerbi"
 
+# Tables the model reads that the warehouse does not produce.
+# scripts/export_ml_results.py writes the first;
+# ml/experiments/product_demand_forecast.py writes the other two.
+EXPERIMENT_TABLES = {
+    "obs_ml_performance",
+    "obs_ml_product_performance",
+    "fct_product_demand_forecast",
+    "obs_geo_site_analysis",
+}
+
 
 # --------------------------------------------------------------------------
 # The canonical figures
@@ -188,10 +198,12 @@ def check_artifacts(con: duckdb.DuckDBPyConnection, fact: dict) -> list[str]:
                 continue
             with csv.open(encoding="utf-8", newline="") as fh:
                 rows = sum(1 for _ in fh) - 1
-            if table == "obs_ml_performance":
-                # Not a warehouse table. It is written straight from the
-                # MLflow store by scripts/export_ml_results.py, so there is
-                # nothing in DuckDB to reconcile it against.
+            if table in EXPERIMENT_TABLES:
+                # Not warehouse tables. These are written by the ML layer --
+                # the MLflow store and the product forecast experiment -- so
+                # there is nothing in DuckDB to reconcile them against. They
+                # are still checked for existence above, which is the part
+                # that catches a stale or missing export.
                 continue
             schema = ("main_platform" if table.startswith("obs_")
                       else "main_gold")

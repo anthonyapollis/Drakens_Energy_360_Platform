@@ -1007,6 +1007,74 @@
             "formatString": "yyyy-mm-dd"
           }
         ],
+        "measures": [
+          {
+            "name": "Retail Litres",
+            "expression": "SUM ( fct_retail_fuel_sales[Litres] )",
+            "formatString": "#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Retail Revenue",
+            "expression": "SUM ( fct_retail_fuel_sales[Gross Sales (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Retail Margin",
+            "expression": "SUM ( fct_retail_fuel_sales[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Retail Margin %",
+            "expression": "DIVIDE ( [Retail Margin], [Retail Revenue] )",
+            "formatString": "0.0%",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Margin (c/L)",
+            "expression": "DIVIDE ( [Retail Margin], [Retail Litres] ) * 100",
+            "formatString": "#,0.0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Average Pump Price",
+            "expression": "AVERAGE ( fct_retail_fuel_sales[Unit Price (R)] )",
+            "formatString": "\"R\"#,0.00",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Litres Share %",
+            "expression": "DIVIDE ( [Retail Litres], CALCULATE ( [Retail Litres], REMOVEFILTERS ( dim_product ) ) )",
+            "formatString": "0.0%",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Regulated Litres %",
+            "expression": "DIVIDE ( CALCULATE ( [Retail Litres], fct_retail_fuel_sales[Is Regulated Price] = TRUE ), [Retail Litres] )",
+            "formatString": "0.0%",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Fuel Grades Sold",
+            "expression": "DISTINCTCOUNT ( fct_retail_fuel_sales[Fuel Grade] )",
+            "formatString": "#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Retail Litres LY",
+            "expression": "CALCULATE ( [Retail Litres], SAMEPERIODLASTYEAR ( dim_date[Full Date] ) )",
+            "formatString": "#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Retail Litres YoY %",
+            "expression": "DIVIDE ( [Retail Litres] - [Retail Litres LY], [Retail Litres LY] )",
+            "formatString": "0.0%",
+            "displayFolder": "Products"
+          }
+        ],
         "partitions": [
           {
             "name": "fct_retail_fuel_sales",
@@ -2952,6 +3020,460 @@
         ]
       },
       {
+        "name": "obs_geo_site_analysis",
+        "columns": [
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Name",
+            "dataType": "string",
+            "sourceColumn": "site_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Recorded Province",
+            "dataType": "string",
+            "sourceColumn": "recorded_province",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Boundary Province",
+            "dataType": "string",
+            "sourceColumn": "boundary_province",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Type",
+            "dataType": "string",
+            "sourceColumn": "site_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "On National Route",
+            "dataType": "boolean",
+            "sourceColumn": "on_national_route",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Latitude",
+            "dataType": "double",
+            "sourceColumn": "latitude",
+            "summarizeBy": "none",
+            "dataCategory": "Latitude"
+          },
+          {
+            "name": "Longitude",
+            "dataType": "double",
+            "sourceColumn": "longitude",
+            "summarizeBy": "none",
+            "dataCategory": "Longitude"
+          },
+          {
+            "name": "Province Check",
+            "dataType": "string",
+            "sourceColumn": "province_check",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Nearest Site M",
+            "dataType": "double",
+            "sourceColumn": "nearest_site_m",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Nearest Site km",
+            "dataType": "double",
+            "sourceColumn": "nearest_site_km",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Sites Within 5km",
+            "dataType": "int64",
+            "sourceColumn": "sites_within_5km",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Sites Within 25km",
+            "dataType": "int64",
+            "sourceColumn": "sites_within_25km",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Proximity Band",
+            "dataType": "string",
+            "sourceColumn": "proximity_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Disclaimer",
+            "dataType": "string",
+            "sourceColumn": "disclaimer",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Sites Located",
+            "expression": "COUNTROWS ( obs_geo_site_analysis )",
+            "formatString": "#,0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Province Mismatches",
+            "expression": "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Province Check] = \"Province mismatch\" )",
+            "formatString": "#,0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Sites Outside Any Boundary",
+            "expression": "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Province Check] = \"Outside every boundary\" )",
+            "formatString": "#,0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Geocoding Pass Rate %",
+            "expression": "DIVIDE ( CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Province Check] = \"Matches\" ), CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Country Code] = \"ZA\" ) )",
+            "formatString": "0.0%",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Median Nearest Site (km)",
+            "expression": "MEDIAN ( obs_geo_site_analysis[Nearest Site km] )",
+            "formatString": "#,0.0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Overlapping Sites",
+            "expression": "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Proximity Band] = \"Overlapping (under 1 km)\" )",
+            "formatString": "#,0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Isolated Sites",
+            "expression": "CALCULATE ( COUNTROWS ( obs_geo_site_analysis ), obs_geo_site_analysis[Proximity Band] = \"Isolated\" )",
+            "formatString": "#,0",
+            "displayFolder": "Geography"
+          },
+          {
+            "name": "Average Sites Within 25km",
+            "expression": "AVERAGE ( obs_geo_site_analysis[Sites Within 25km] )",
+            "formatString": "#,0.0",
+            "displayFolder": "Geography"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_geo_site_analysis",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_geo_site_analysis.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"site_key\", \"site_id\", \"site_name\", \"country_code\", \"recorded_province\", \"boundary_province\", \"city\", \"urban_class\", \"site_type\", \"on_national_route\", \"latitude\", \"longitude\", \"province_check\", \"nearest_site_m\", \"nearest_site_km\", \"sites_within_5km\", \"sites_within_25km\", \"proximity_band\", \"disclaimer\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"site_key\", Int64.Type}, {\"site_id\", type text}, {\"site_name\", type text}, {\"country_code\", type text}, {\"recorded_province\", type text}, {\"boundary_province\", type text}, {\"city\", type text}, {\"urban_class\", type text}, {\"site_type\", type text}, {\"on_national_route\", type logical}, {\"latitude\", type number}, {\"longitude\", type number}, {\"province_check\", type text}, {\"nearest_site_m\", type number}, {\"nearest_site_km\", type number}, {\"sites_within_5km\", Int64.Type}, {\"sites_within_25km\", Int64.Type}, {\"proximity_band\", type text}, {\"disclaimer\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "obs_ml_product_performance",
+        "columns": [
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fuel Grade",
+            "dataType": "string",
+            "sourceColumn": "fuel_grade",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Regulated Price",
+            "dataType": "boolean",
+            "sourceColumn": "is_regulated_price",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Test Days",
+            "dataType": "int64",
+            "sourceColumn": "test_days",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Mean Daily Litres",
+            "dataType": "double",
+            "sourceColumn": "mean_daily_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Mae",
+            "dataType": "double",
+            "sourceColumn": "mae",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Mape",
+            "dataType": "double",
+            "sourceColumn": "mape",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Baseline Mae",
+            "dataType": "double",
+            "sourceColumn": "baseline_mae",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Mae Improvement %",
+            "dataType": "double",
+            "sourceColumn": "mae_improvement_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "R2",
+            "dataType": "double",
+            "sourceColumn": "r2",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Verdict",
+            "dataType": "string",
+            "sourceColumn": "verdict",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Disclaimer",
+            "dataType": "string",
+            "sourceColumn": "disclaimer",
+            "summarizeBy": "none"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Products Modelled",
+            "expression": "COUNTROWS ( obs_ml_product_performance )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Products Beating Naive",
+            "expression": "CALCULATE ( COUNTROWS ( obs_ml_product_performance ), obs_ml_product_performance[Verdict] = \"Beats seasonal-naive\" )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Forecast MAE (L)",
+            "expression": "AVERAGE ( obs_ml_product_performance[Mae] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Naive MAE (L)",
+            "expression": "AVERAGE ( obs_ml_product_performance[Baseline Mae] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Forecast Improvement %",
+            "expression": "DIVIDE ( [Naive MAE (L)] - [Forecast MAE (L)], [Naive MAE (L)] )",
+            "formatString": "0.0%",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Forecast MAPE %",
+            "expression": "AVERAGE ( obs_ml_product_performance[Mape] )",
+            "formatString": "0.0%",
+            "displayFolder": "Machine learning"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "obs_ml_product_performance",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"obs_ml_product_performance.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"product_name\", \"reporting_line\", \"fuel_grade\", \"is_regulated_price\", \"test_days\", \"mean_daily_litres\", \"mae\", \"mape\", \"baseline_mae\", \"mae_improvement_pct\", \"r2\", \"verdict\", \"disclaimer\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"product_name\", type text}, {\"reporting_line\", type text}, {\"fuel_grade\", type text}, {\"is_regulated_price\", type logical}, {\"test_days\", Int64.Type}, {\"mean_daily_litres\", type number}, {\"mae\", type number}, {\"mape\", type number}, {\"baseline_mae\", type number}, {\"mae_improvement_pct\", type number}, {\"r2\", type number}, {\"verdict\", type text}, {\"disclaimer\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_product_demand_forecast",
+        "columns": [
+          {
+            "name": "Full Date",
+            "dataType": "dateTime",
+            "sourceColumn": "full_date",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fuel Grade",
+            "dataType": "string",
+            "sourceColumn": "fuel_grade",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Actual Litres (row)",
+            "dataType": "double",
+            "sourceColumn": "actual_litres",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Forecast Litres (row)",
+            "dataType": "double",
+            "sourceColumn": "forecast_litres",
+            "summarizeBy": "sum",
+            "isHidden": true
+          },
+          {
+            "name": "Naive Litres",
+            "dataType": "double",
+            "sourceColumn": "naive_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Margin Cents Per Litre",
+            "dataType": "double",
+            "sourceColumn": "margin_cents_per_litre",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Avg Unit Price (R)",
+            "dataType": "double",
+            "sourceColumn": "avg_unit_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Abs Error Litres",
+            "dataType": "double",
+            "sourceColumn": "abs_error_litres",
+            "summarizeBy": "sum"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Actual Litres",
+            "expression": "SUM ( fct_product_demand_forecast[Actual Litres (row)] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Forecast Litres",
+            "expression": "SUM ( fct_product_demand_forecast[Forecast Litres (row)] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Seasonal-Naive Litres",
+            "expression": "SUM ( fct_product_demand_forecast[Naive Litres] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Forecast Error (L)",
+            "expression": "SUM ( fct_product_demand_forecast[Abs Error Litres] )",
+            "formatString": "#,0",
+            "displayFolder": "Machine learning"
+          },
+          {
+            "name": "Forecast Error %",
+            "expression": "DIVIDE ( [Forecast Error (L)], [Actual Litres] )",
+            "formatString": "0.0%",
+            "displayFolder": "Machine learning"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_product_demand_forecast",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_product_demand_forecast.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"full_date\", \"product_name\", \"reporting_line\", \"fuel_grade\", \"actual_litres\", \"forecast_litres\", \"naive_litres\", \"margin_cents_per_litre\", \"avg_unit_price_zar\", \"abs_error_litres\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"full_date\", type datetime}, {\"product_name\", type text}, {\"reporting_line\", type text}, {\"fuel_grade\", type text}, {\"actual_litres\", type number}, {\"forecast_litres\", type number}, {\"naive_litres\", type number}, {\"margin_cents_per_litre\", type number}, {\"avg_unit_price_zar\", type number}, {\"abs_error_litres\", type number}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
         "name": "obs_ml_performance",
         "columns": [
           {
@@ -3660,6 +4182,38 @@
         "fromColumn": "Customer Key",
         "toTable": "dim_customer",
         "toColumn": "Customer Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_orders_product",
+        "fromTable": "fct_commercial_orders",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_forecast_product",
+        "fromTable": "fct_product_demand_forecast",
+        "fromColumn": "Product Name",
+        "toTable": "dim_product",
+        "toColumn": "Product Name",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_mlproduct_product",
+        "fromTable": "obs_ml_product_performance",
+        "fromColumn": "Product Name",
+        "toTable": "dim_product",
+        "toColumn": "Product Name",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_geo_site",
+        "fromTable": "obs_geo_site_analysis",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
         "crossFilteringBehavior": "oneDirection"
       },
       {
