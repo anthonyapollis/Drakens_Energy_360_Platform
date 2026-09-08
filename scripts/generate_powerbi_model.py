@@ -504,12 +504,20 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
         ("Seasonal-Naive Revenue",
          "SUM ( fct_product_revenue_forecast_12m[naive_zar] )",
          '"R"#,0', "Forecast"),
-        # The forward year only. The same table holds the backtest, and
-        # summing both would report a year of history as though it were
-        # pipeline.
+        # The forward year only, and business products only. The same table
+        # holds the backtest, and summing both would report a year of history
+        # as though it were pipeline. The unknown member is a data-quality
+        # bucket, not something anyone procures, so it is out of the total and
+        # still present in the table under its own label.
         ("Next 12 Months Revenue",
          "CALCULATE ( [Forecast Revenue], "
-         "fct_product_revenue_forecast_12m[is_forecast] = TRUE )",
+         "fct_product_revenue_forecast_12m[is_forecast] = TRUE, "
+         "fct_product_revenue_forecast_12m[is_business_product] = TRUE )",
+         '"R"#,0', "Forecast"),
+        ("Unknown-Product Revenue (quality)",
+         "CALCULATE ( [Forecast Revenue], "
+         "fct_product_revenue_forecast_12m[is_forecast] = TRUE, "
+         "fct_product_revenue_forecast_12m[is_business_product] = FALSE )",
          '"R"#,0', "Forecast"),
         ("Backtest Error %",
          "DIVIDE ( CALCULATE ( "
@@ -521,19 +529,25 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
     ],
     "obs_ml_product_forecast_12m": [
         ("Products Forecast",
-         "COUNTROWS ( obs_ml_product_forecast_12m )", "#,0", "Forecast"),
+         "CALCULATE ( COUNTROWS ( obs_ml_product_forecast_12m ), "
+         "obs_ml_product_forecast_12m[is_business_product] = TRUE )",
+         "#,0", "Forecast"),
         ("Products Beating Naive (12m)",
          "CALCULATE ( COUNTROWS ( obs_ml_product_forecast_12m ), "
-         "obs_ml_product_forecast_12m[verdict] = \"Beats seasonal-naive\" )",
+         "obs_ml_product_forecast_12m[verdict] = \"Beats seasonal-naive\", "
+         "obs_ml_product_forecast_12m[is_business_product] = TRUE )",
          "#,0", "Forecast"),
         ("Forecast MAPE (12m)",
          "AVERAGE ( obs_ml_product_forecast_12m[mape] )", "0.0%", "Forecast"),
         # Volume-weighted, because a mean of per-product percentages lets the
         # smallest line swing the headline as hard as the largest.
         ("Forecast Improvement % (12m)",
-         "DIVIDE ( SUM ( obs_ml_product_forecast_12m[naive_mae_zar] ) - "
-         "SUM ( obs_ml_product_forecast_12m[mae_zar] ), "
-         "SUM ( obs_ml_product_forecast_12m[naive_mae_zar] ) )",
+         "VAR biz = FILTER ( obs_ml_product_forecast_12m, "
+         "obs_ml_product_forecast_12m[is_business_product] ) "
+         "RETURN DIVIDE ( SUMX ( biz, "
+         "obs_ml_product_forecast_12m[naive_mae_zar] ) - "
+         "SUMX ( biz, obs_ml_product_forecast_12m[mae_zar] ), "
+         "SUMX ( biz, obs_ml_product_forecast_12m[naive_mae_zar] ) )",
          "0.0%", "Forecast"),
     ],
     "obs_product_coverage": [

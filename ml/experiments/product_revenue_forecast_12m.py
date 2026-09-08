@@ -22,11 +22,23 @@ Three decisions that shape what this can honestly claim:
 * **Monthly grain.** A daily 365-day-ahead forecast on under three years of
   history is a random number generator with a confidence interval. The month
   is the unit a procurement plan is actually built in.
+* **One forecast vintage, not many.** The backtest evaluates a *single*
+  origin -- the cutoff -- across horizons 1 to 12, so each product contributes
+  exactly one prediction per target month. An earlier version kept every
+  origin at or before the cutoff, which put eight different vintages of
+  September 2025 in the same table; summing them on a monthly chart inflated
+  that month's actual revenue eightfold, and the inflation decayed to onefold
+  by the last month, so the history sloped downwards for no reason but the
+  duplication. Different vintages of the same month are not additive revenue.
 * **The history is short and the forecast says so.** 32 months exist. Holding
   out the last 12 for a backtest leaves 20 to learn from, and a seasonal-naive
   baseline needs 12 of those before it can produce anything. Every number this
   writes carries that limitation, and the per-product table reports which
   products the model beats the naive baseline on -- and which it does not.
+* **The unknown member is not a product.** It is a data-quality bucket. It is
+  excluded from product counts, from the procurement total and from the
+  success tally, and kept in the table under its own label so it stays
+  visible.
 
 Usage:
     python ml/experiments/product_revenue_forecast_12m.py
@@ -57,6 +69,10 @@ OUT = REPO / "powerbi" / "data"
 HORIZONS = list(range(1, 13))
 BACKTEST_MONTHS = 12
 MEANINGFUL_IMPROVEMENT_PCT = 5.0
+
+# The unknown member stands for products that failed to resolve. Forecasting
+# it is meaningful as a data-quality signal and meaningless as procurement.
+UNKNOWN_PRODUCT = "Unknown product"
 
 QUERY = """
 with retail as (
@@ -206,7 +222,9 @@ def per_product(test: pd.DataFrame) -> pd.DataFrame:
         rows.append({
             "product_name": name,
             "reporting_line": part["reporting_line"].iloc[0],
-            "months_tested": len(part),
+            "months_tested": int(part["target_month"].nunique()),
+            "observations": len(part),
+            "is_business_product": name != UNKNOWN_PRODUCT,
             "mean_monthly_revenue_zar": round(float(part["actual"].mean()), 2),
             "mae_zar": round(float(mae), 2),
             "mape": round(float(mean_absolute_percentage_error(
@@ -235,14 +253,29 @@ def main() -> int:
     last_actual = panel.month_start.max()
     cutoff = last_actual - pd.DateOffset(months=BACKTEST_MONTHS)
 
-    # Backtest: targets in the final 12 months, from origins at or before the
-    # cutoff, so nothing the model sees postdates the origin.
+    # A single forecast origin. Standing at the cutoff, predict the next
+    # twelve months: one observation per product per target month, and no
+    # target the training set has seen.
     trainable = sup.dropna(subset=["actual", "rev_lag_12"])
     train = trainable[trainable["target_month"] <= cutoff]
-    test = trainable[(trainable["target_month"] > cutoff)
-                     & (trainable["month_start"] <= cutoff)]
-    print(f"train {len(train):,} (origin,horizon) pairs, "
-          f"backtest {len(test):,} over the last {BACKTEST_MONTHS} months")
+    test = trainable[(trainable["month_start"] == cutoff)
+                     & (trainable["target_month"] > cutoff)]
+
+    overlap = set(map(tuple, train[["product_key", "target_month"]].values)) & \
+        set(map(tuple, test[["product_key", "target_month"]].values))
+    if overlap:
+        raise RuntimeError(
+            f"{len(overlap)} target month(s) appear in both training and "
+            f"backtest; the evaluation would be scoring memorised outcomes")
+
+    dupes = test.groupby(["product_name", "target_month"]).size().max()
+    if dupes and dupes > 1:
+        raise RuntimeError(
+            f"a product/target-month appears {dupes} times in the backtest; "
+            f"summing forecast vintages is not revenue")
+
+    print(f"train {len(train):,} (origin,horizon) pairs to {cutoff:%Y-%m}, "
+          f"backtest {len(test):,} from a single origin at {cutoff:%Y-%m}")
 
     if train.empty or test.empty:
         print("not enough history for a 12-month backtest")
@@ -301,10 +334,23 @@ def main() -> int:
         log_sklearn_model(model)
         scores = per_product(test)
 
-        # Forward forecast: origin is the last actual month, horizons 1-12.
+        # The forward year gets its own fit, on every labelled pair available
+        # up to the last actual month. The backtest model deliberately never
+        # saw the final year; using it to forecast the future would throw away
+        # the most recent twelve months of signal, and reusing a held-out
+        # model as a production model blurs the line the holdout exists to
+        # draw.
+        final_train = trainable[trainable["target_month"] <= last_actual]
+        final_model = HistGradientBoostingRegressor(
+            categorical_features=CATEGORICAL, **params)
+        final_model.fit(final_train[cols], final_train["actual"])
+        mlflow.log_param("final_fit_rows", len(final_train))
+        mlflow.log_param("backtest_origin", f"{cutoff:%Y-%m}")
+        mlflow.log_param("forward_origin", f"{last_actual:%Y-%m}")
+
         forward = sup[(sup["month_start"] == last_actual)
                       & (sup["horizon"].isin(HORIZONS))].copy()
-        forward["pred"] = model.predict(forward[cols]).clip(min=0)
+        forward["pred"] = final_model.predict(forward[cols]).clip(min=0)
 
         OUT.mkdir(parents=True, exist_ok=True)
         scores.to_csv(OUT / "obs_ml_product_forecast_12m.csv", index=False)
@@ -315,6 +361,9 @@ def main() -> int:
                 "target_month": "month_start", "pred": "forecast_zar",
                 "actual": "actual_zar", "naive": "naive_zar"})
         backtest_out["is_forecast"] = False
+        backtest_out["forecast_origin"] = cutoff
+        backtest_out["is_business_product"] = (
+            backtest_out["product_name"] != UNKNOWN_PRODUCT)
 
         forward_out = forward[[
             "product_name", "reporting_line", "target_month", "horizon",
@@ -323,6 +372,9 @@ def main() -> int:
                 "naive": "naive_zar"})
         forward_out["actual_zar"] = np.nan
         forward_out["is_forecast"] = True
+        forward_out["forecast_origin"] = last_actual
+        forward_out["is_business_product"] = (
+            forward_out["product_name"] != UNKNOWN_PRODUCT)
 
         series = pd.concat([backtest_out, forward_out], ignore_index=True)
         series["abs_error_zar"] = (
@@ -345,9 +397,13 @@ def main() -> int:
                    else f"{r['improvement_pct']:>+6.1f}%")
             print(f"    {r['product_name'][:26]:26} mae={r['mae_zar']:>14,.0f}"
                   f"  naive={naive}  {imp}  {r['verdict']}")
-        beat = int((scores.verdict == "Beats seasonal-naive").sum())
-        print(f"\n  {beat} of {len(scores)} products beat seasonal-naive")
-        print(f"  forward forecast written for {forward.product_key.nunique()} "
+        business = scores[scores.is_business_product]
+        beat = int((business.verdict == "Beats seasonal-naive").sum())
+        print(f"\n  {beat} of {len(business)} business products beat "
+              f"seasonal-naive ({UNKNOWN_PRODUCT} excluded; it is a "
+              f"data-quality bucket)")
+        n_fwd = forward[forward.product_name != UNKNOWN_PRODUCT]
+        print(f"  forward forecast written for {n_fwd.product_key.nunique()} "
               f"products, {forward['target_month'].min():%Y-%m} to "
               f"{forward['target_month'].max():%Y-%m}")
     return 0
