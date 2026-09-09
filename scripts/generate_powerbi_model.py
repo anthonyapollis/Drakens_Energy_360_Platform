@@ -80,6 +80,9 @@ TABLES = {
                                          schema="platform"),
     "fct_product_revenue_forecast_12m": dict(mode="import", kind="fact",
                                              schema="platform"),
+    # EV charging. Carries a product key now, so the Energy line is
+    # reportable rather than merely present in the dimension.
+    "fct_ev_charging_sessions":     dict(mode="import", kind="fact"),
     # Which reporting lines the platform can report on, and why not. Written
     # by scripts/build_product_coverage.py.
     "obs_product_coverage":         dict(mode="import", kind="observability",
@@ -256,6 +259,12 @@ RELATIONSHIPS = [
      "dim_product", "product_name", "oneDirection"),
     ("rel_geo_site", "obs_geo_site_analysis", "site_key",
      "dim_site", "site_key", "oneDirection"),
+    ("rel_ev_date", "fct_ev_charging_sessions", "date_key",
+     "dim_date", "date_key", "oneDirection"),
+    ("rel_ev_site", "fct_ev_charging_sessions", "site_key",
+     "dim_site", "site_key", "oneDirection"),
+    ("rel_ev_product", "fct_ev_charging_sessions", "product_key",
+     "dim_product", "product_key", "oneDirection"),
     ("rel_fcast12_product", "fct_product_revenue_forecast_12m", "product_name",
      "dim_product", "product_name", "oneDirection"),
     ("rel_fcast12_scores", "obs_ml_product_forecast_12m", "product_name",
@@ -549,6 +558,31 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "SUMX ( biz, obs_ml_product_forecast_12m[mae_zar] ), "
          "SUMX ( biz, obs_ml_product_forecast_12m[naive_mae_zar] ) )",
          "0.0%", "Forecast"),
+    ],
+    "fct_ev_charging_sessions": [
+        ("EV Sessions", "COUNTROWS ( fct_ev_charging_sessions )", "#,0",
+         "New energy"),
+        ("EV Revenue", "SUM ( fct_ev_charging_sessions[revenue_zar] )",
+         '"R"#,0', "New energy"),
+        ("EV Margin", "SUM ( fct_ev_charging_sessions[gross_margin_zar] )",
+         '"R"#,0', "New energy"),
+        # kWh is its own unit and is never added to litres. A "total volume"
+        # spanning both would be a number without a unit.
+        ("EV Energy (kWh)", "SUM ( fct_ev_charging_sessions[energy_kwh] )",
+         "#,0", "New energy"),
+        ("EV Revenue per kWh",
+         "DIVIDE ( [EV Revenue], [EV Energy (kWh)] )", '"R"#,0.00',
+         "New energy"),
+        ("DC Fast Share %",
+         "DIVIDE ( CALCULATE ( [EV Sessions], "
+         "fct_ev_charging_sessions[is_dc_fast] = TRUE ), [EV Sessions] )",
+         "0.0%", "New energy"),
+        # The sessions a power-only rule would have called DC fast on an AC
+        # connector. Published, not corrected away.
+        ("Sessions Misclassified by Power Rating",
+         "CALCULATE ( COUNTROWS ( fct_ev_charging_sessions ), "
+         "fct_ev_charging_sessions[power_rating_contradicts_connector] "
+         "= TRUE )", "#,0", "New energy"),
     ],
     "obs_product_coverage": [
         ("Reporting Lines", "COUNTROWS ( obs_product_coverage )", "#,0",

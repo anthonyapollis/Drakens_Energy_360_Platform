@@ -5,10 +5,12 @@ call for three different fixes:
 
 * **No gold fact at all.** Nothing anywhere sells this line. The pipeline is
   the gap.
-* **A gold fact exists but carries no product key.** EV charging is the case
-  in point: `fct_ev_charging_sessions` holds R1.67m of revenue and 232,029
-  kWh, and has no `product_key`, so it cannot be joined to `dim_product`. The
-  data is there and the mapping is missing.
+* **A gold fact exists but carries no product key.** The data is there and
+  the mapping is missing. EV charging was this case until the key was derived
+  from `connector_type`: R1.67m of revenue and 232,029 kWh sat in
+  `fct_ev_charging_sessions` unable to join `dim_product`, so the Energy line
+  read as zero on every product chart while the money was in the warehouse
+  all along.
 * **Both exist but the table is not in the semantic model.** The warehouse can
   answer the question and the report cannot ask it.
 
@@ -40,10 +42,12 @@ OUT = REPO / "powerbi" / "data" / "obs_product_coverage.csv"
 # explicitly, with the column that stands in for the mapping, because guessing
 # this from column names is how a line gets silently attributed to the wrong
 # fact.
-UNMAPPED_FACTS = {
-    "Energy": ("fct_ev_charging_sessions", "no product_key; EV sessions are "
-                                           "keyed by charger and site"),
-}
+# Energy used to live here: fct_ev_charging_sessions held R1.67m of revenue
+# with no product_key, so it could not join dim_product. The key is derived
+# from connector_type now and the line resolves like any other, which is why
+# this map is empty rather than deleted -- the next fact that arrives without
+# a mapping belongs in it.
+UNMAPPED_FACTS: dict[str, tuple[str, str]] = {}
 
 
 def gold_facts_with_product(con: duckdb.DuckDBPyConnection) -> list[str]:

@@ -616,6 +616,12 @@
             "summarizeBy": "none"
           },
           {
+            "name": "Is Name Missing",
+            "dataType": "boolean",
+            "sourceColumn": "is_name_missing",
+            "summarizeBy": "none"
+          },
+          {
             "name": "Sector",
             "dataType": "string",
             "sourceColumn": "sector",
@@ -749,8 +755,8 @@
                 "    Path    = DataFolder & \"dim_customer.csv\",",
                 "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
                 "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
-                "    Chosen  = Table.SelectColumns(Headers, {\"customer_key\", \"customer_id\", \"customer_name\", \"sector\", \"segment\", \"country_code\", \"credit_band\", \"credit_limit_zar\", \"payment_terms_days\", \"onboarded_date\", \"is_active\", \"revenue_index\", \"service_model\", \"credit_risk_tier\", \"is_industrial\", \"customer_tenure_days\", \"effective_from_date\", \"effective_to_date\", \"is_current\", \"scd_version\", \"dw_hash_diff\", \"record_source\"}),",
-                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"customer_key\", Int64.Type}, {\"customer_id\", type text}, {\"customer_name\", type text}, {\"sector\", type text}, {\"segment\", type text}, {\"country_code\", type text}, {\"credit_band\", type text}, {\"credit_limit_zar\", type number}, {\"payment_terms_days\", Int64.Type}, {\"onboarded_date\", type datetime}, {\"is_active\", type logical}, {\"revenue_index\", type number}, {\"service_model\", type text}, {\"credit_risk_tier\", type text}, {\"is_industrial\", type logical}, {\"customer_tenure_days\", Int64.Type}, {\"effective_from_date\", type datetime}, {\"effective_to_date\", type datetime}, {\"is_current\", type logical}, {\"scd_version\", Int64.Type}, {\"dw_hash_diff\", type text}, {\"record_source\", type text}}, \"en-US\")",
+                "    Chosen  = Table.SelectColumns(Headers, {\"customer_key\", \"customer_id\", \"customer_name\", \"is_name_missing\", \"sector\", \"segment\", \"country_code\", \"credit_band\", \"credit_limit_zar\", \"payment_terms_days\", \"onboarded_date\", \"is_active\", \"revenue_index\", \"service_model\", \"credit_risk_tier\", \"is_industrial\", \"customer_tenure_days\", \"effective_from_date\", \"effective_to_date\", \"is_current\", \"scd_version\", \"dw_hash_diff\", \"record_source\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"customer_key\", Int64.Type}, {\"customer_id\", type text}, {\"customer_name\", type text}, {\"is_name_missing\", type logical}, {\"sector\", type text}, {\"segment\", type text}, {\"country_code\", type text}, {\"credit_band\", type text}, {\"credit_limit_zar\", type number}, {\"payment_terms_days\", Int64.Type}, {\"onboarded_date\", type datetime}, {\"is_active\", type logical}, {\"revenue_index\", type number}, {\"service_model\", type text}, {\"credit_risk_tier\", type text}, {\"is_industrial\", type logical}, {\"customer_tenure_days\", Int64.Type}, {\"effective_from_date\", type datetime}, {\"effective_to_date\", type datetime}, {\"is_current\", type logical}, {\"scd_version\", Int64.Type}, {\"dw_hash_diff\", type text}, {\"record_source\", type text}}, \"en-US\")",
                 "in",
                 "    Typed"
               ]
@@ -3286,6 +3292,309 @@
         ]
       },
       {
+        "name": "fct_ev_charging_sessions",
+        "columns": [
+          {
+            "name": "EV Session ID",
+            "dataType": "string",
+            "sourceColumn": "ev_session_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Session Start Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "session_start_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Session End Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "session_end_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Time Key",
+            "dataType": "int64",
+            "sourceColumn": "time_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "EV Charger ID",
+            "dataType": "string",
+            "sourceColumn": "ev_charger_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "On National Route",
+            "dataType": "boolean",
+            "sourceColumn": "on_national_route",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Power Rating Contradicts Connector",
+            "dataType": "boolean",
+            "sourceColumn": "power_rating_contradicts_connector",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Connector Type",
+            "dataType": "string",
+            "sourceColumn": "connector_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Rated Power Kw",
+            "dataType": "double",
+            "sourceColumn": "rated_power_kw",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Payment Method",
+            "dataType": "string",
+            "sourceColumn": "payment_method",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Session Ended By",
+            "dataType": "string",
+            "sourceColumn": "session_ended_by",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Duration Minutes",
+            "dataType": "double",
+            "sourceColumn": "duration_minutes",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Energy kWh",
+            "dataType": "double",
+            "sourceColumn": "energy_kwh",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Average Power Kw",
+            "dataType": "double",
+            "sourceColumn": "average_power_kw",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Tariff (R) Per kWh",
+            "dataType": "double",
+            "sourceColumn": "tariff_zar_per_kwh",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Grid Cost (R)",
+            "dataType": "decimal",
+            "sourceColumn": "grid_cost_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Start Soc %",
+            "dataType": "double",
+            "sourceColumn": "start_soc_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "End Soc %",
+            "dataType": "double",
+            "sourceColumn": "end_soc_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Is Dc Fast",
+            "dataType": "boolean",
+            "sourceColumn": "is_dc_fast",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Power Utilisation %",
+            "dataType": "double",
+            "sourceColumn": "power_utilisation_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Margin (R) Per kWh",
+            "dataType": "double",
+            "sourceColumn": "margin_zar_per_kwh",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Soc Delta %",
+            "dataType": "double",
+            "sourceColumn": "soc_delta_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Session Profile",
+            "dataType": "string",
+            "sourceColumn": "session_profile",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "EV Sessions",
+            "expression": "COUNTROWS ( fct_ev_charging_sessions )",
+            "formatString": "#,0",
+            "displayFolder": "New energy"
+          },
+          {
+            "name": "EV Revenue",
+            "expression": "SUM ( fct_ev_charging_sessions[Revenue (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "New energy"
+          },
+          {
+            "name": "EV Margin",
+            "expression": "SUM ( fct_ev_charging_sessions[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "New energy"
+          },
+          {
+            "name": "EV Energy (kWh)",
+            "expression": "SUM ( fct_ev_charging_sessions[Energy kWh] )",
+            "formatString": "#,0",
+            "displayFolder": "New energy"
+          },
+          {
+            "name": "EV Revenue per kWh",
+            "expression": "DIVIDE ( [EV Revenue], [EV Energy (kWh)] )",
+            "formatString": "\"R\"#,0.00",
+            "displayFolder": "New energy"
+          },
+          {
+            "name": "DC Fast Share %",
+            "expression": "DIVIDE ( CALCULATE ( [EV Sessions], fct_ev_charging_sessions[Is Dc Fast] = TRUE ), [EV Sessions] )",
+            "formatString": "0.0%",
+            "displayFolder": "New energy"
+          },
+          {
+            "name": "Sessions Misclassified by Power Rating",
+            "expression": "CALCULATE ( COUNTROWS ( fct_ev_charging_sessions ), fct_ev_charging_sessions[Power Rating Contradicts Connector] = TRUE )",
+            "formatString": "#,0",
+            "displayFolder": "New energy"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_ev_charging_sessions",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_ev_charging_sessions.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"ev_session_id\", \"session_start_ts\", \"session_end_ts\", \"date_key\", \"time_key\", \"site_key\", \"ev_charger_id\", \"site_id\", \"province\", \"city\", \"urban_class\", \"on_national_route\", \"product_key\", \"product_name\", \"power_rating_contradicts_connector\", \"connector_type\", \"rated_power_kw\", \"payment_method\", \"session_ended_by\", \"duration_minutes\", \"energy_kwh\", \"average_power_kw\", \"tariff_zar_per_kwh\", \"revenue_zar\", \"grid_cost_zar\", \"gross_margin_zar\", \"start_soc_pct\", \"end_soc_pct\", \"is_dc_fast\", \"power_utilisation_pct\", \"margin_zar_per_kwh\", \"soc_delta_pct\", \"session_profile\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"ev_session_id\", type text}, {\"session_start_ts\", type datetime}, {\"session_end_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"time_key\", Int64.Type}, {\"site_key\", Int64.Type}, {\"ev_charger_id\", type text}, {\"site_id\", type text}, {\"province\", type text}, {\"city\", type text}, {\"urban_class\", type text}, {\"on_national_route\", type logical}, {\"product_key\", Int64.Type}, {\"product_name\", type text}, {\"power_rating_contradicts_connector\", type logical}, {\"connector_type\", type text}, {\"rated_power_kw\", type number}, {\"payment_method\", type text}, {\"session_ended_by\", type text}, {\"duration_minutes\", type number}, {\"energy_kwh\", type number}, {\"average_power_kw\", type number}, {\"tariff_zar_per_kwh\", type number}, {\"revenue_zar\", type number}, {\"grid_cost_zar\", type number}, {\"gross_margin_zar\", type number}, {\"start_soc_pct\", type number}, {\"end_soc_pct\", type number}, {\"is_dc_fast\", type logical}, {\"power_utilisation_pct\", type number}, {\"margin_zar_per_kwh\", type number}, {\"soc_delta_pct\", type number}, {\"session_profile\", type text}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
         "name": "obs_product_coverage",
         "columns": [
           {
@@ -4610,6 +4919,30 @@
         "fromColumn": "Site Key",
         "toTable": "dim_site",
         "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_ev_date",
+        "fromTable": "fct_ev_charging_sessions",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_ev_site",
+        "fromTable": "fct_ev_charging_sessions",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_ev_product",
+        "fromTable": "fct_ev_charging_sessions",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
         "crossFilteringBehavior": "oneDirection"
       },
       {

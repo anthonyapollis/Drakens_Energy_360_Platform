@@ -26,7 +26,35 @@ enriched as (
     select
         customer_key,
         customer_id,
-        customer_name,
+
+        /*
+            A missing customer name is a defect, not a customer.
+
+            Twelve rows arrive from the landing zone with a null name and an
+            otherwise valid key, sector and credit band. Passed through, they
+            reach the gold dimension as nulls, and any report sorted by name
+            puts all twelve at the top -- which is exactly how they were
+            found: a table titled "Customers by revenue" opened on a screen of
+            blank rows.
+
+            Quarantining the row would be worse than the defect. The key is
+            valid and the orders against it are real revenue, so dropping the
+            customer would orphan its orders onto the unknown member and move
+            real money to a bucket that means "we do not know who this is" --
+            when in fact we know exactly who it is, we just do not have their
+            name.
+
+            So the row stays, the attribute says what is true about it, and
+            the count is published in obs_cleansing_summary rather than left
+            for someone to notice in a sort order.
+        */
+        case
+            when trim(coalesce(customer_name, '')) = ''
+                then 'Unnamed customer (' || customer_id || ')'
+            else customer_name
+        end as customer_name,
+        trim(coalesce(customer_name, '')) = '' as is_name_missing,
+
         sector,
         segment,
         country_code,
@@ -79,6 +107,7 @@ unknown_member as (
         -1 as customer_key,
         'UNKNOWN' as customer_id,
         'Unknown customer' as customer_name,
+        false as is_name_missing,
         'Unknown' as sector,
         'Unknown' as segment,
         'ZZ' as country_code,
