@@ -15,6 +15,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -371,6 +372,40 @@ def build_html(manifest: dict, wh: dict, dbx: dict) -> str:
         ("09_databricks_medallion.png",
          "Rows through bronze, silver and gold on Databricks at portfolio "
          "scale."),
+        # The data model. Rendered from model.bim rather than drawn, so a
+        # relationship added tomorrow appears in tomorrow's ebook and a
+        # diagram can never quietly disagree with the warehouse it describes.
+        ("erd_complete.png",
+         "The complete model: 23 tables and every relationship between them. "
+         "Facts sit above and below a central band of conformed dimensions, "
+         "and every arrow is many-to-one pointing at the dimension it "
+         "resolves against. Observability and bridge tables stand alone by "
+         "design -- they key on a table name, a control code or a user scope "
+         "rather than on a dimension -- which is a different thing from a "
+         "fact that has lost its key."),
+        ("erd_00_overview.png",
+         "Conformed dimensions ranked by how many tables resolve against "
+         "them. A dimension only one fact uses is not conformed; it is a "
+         "lookup table with ambitions. dim_date and dim_site carry the "
+         "network, which is what lets a delivery, a work order and a fuel "
+         "transaction be compared on the same day and the same forecourt."),
+        ("erd_retail.png",
+         "Retail fuel in detail. The transaction fact and the site-day "
+         "aggregate resolve against the same three dimensions, which is what "
+         "makes the aggregate reconcilable against the detail rather than "
+         "merely similar to it -- and that reconciliation is one of the five "
+         "controls that has to pass before a build is accepted."),
+        ("erd_commercial.png",
+         "Commercial B2B. The relationship from orders to dim_product was "
+         "missing until it was found while writing this: lubricants are "
+         "R20.3bn of revenue, the largest product line in the business, and "
+         "no product analysis could see them. Every 'product' figure in the "
+         "platform was silently a retail-fuel figure."),
+        ("erd_forecast.png",
+         "The forecasting tables. These key on product name rather than a "
+         "surrogate because they are produced by the ML layer rather than by "
+         "dbt, which is a deliberate seam: the warehouse owns surrogate keys "
+         "and the model layer is not allowed to mint them."),
     ]:
         block = figure(name, cap, n)
         if block:
@@ -380,7 +415,24 @@ def build_html(manifest: dict, wh: dict, dbx: dict) -> str:
     def fig(i):
         return figs[i - 1] if len(figs) >= i else ""
 
-    return f"""<!doctype html>
+    # Numbering is assigned where a figure is *emitted*, not where its caption
+    # is declared. The caption list is grouped by subject and the document is
+    # ordered by argument, so the two diverged: Figure 7 appeared before
+    # Figure 6 and Figure 3 before Figure 2. Renumbering at emission makes the
+    # document order the numbering by construction, so the next figure
+    # inserted anywhere cannot reintroduce it.
+    def renumber(html: str) -> str:
+        seen: dict[str, int] = {}
+
+        def swap(match):
+            original = match.group(1)
+            if original not in seen:
+                seen[original] = len(seen) + 1
+            return f"<strong>Figure {seen[original]}.</strong>"
+
+        return re.sub(r"<strong>Figure (\d+)\.</strong>", swap, html)
+
+    document = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>Drakens Energy 360</title><style>{CSS}</style></head><body>
 
@@ -404,11 +456,12 @@ def build_html(manifest: dict, wh: dict, dbx: dict) -> str:
      <a href="#cleansing">5. Cleansing that accounts for everything</a><br>
      <a href="#selffound">6. Two defects it found in itself</a><br>
      <a href="#architecture">7. Architecture</a><br>
-     <a href="#decision">8. Decision support</a><br>
-     <a href="#ml">9. Machine learning</a><br>
-     <a href="#governance">10. Governance</a><br>
-     <a href="#databricks">11. Running on Databricks</a><br>
-     <a href="#lessons">12. What I would do differently</a></p>
+     <a href="#model">8. The data model</a><br>
+     <a href="#decision">9. Decision support</a><br>
+     <a href="#ml">10. Machine learning</a><br>
+     <a href="#governance">11. Governance</a><br>
+     <a href="#databricks">12. Running on Databricks</a><br>
+     <a href="#lessons">13. What I would do differently</a></p>
 </div>
 
 <h2 id="brief">1. The brief</h2>
@@ -540,7 +593,64 @@ catch the faults that reach a board pack.
 Lake. Cross-adapter differences are handled in a small set of dbt macros, so
 the models themselves have no environment-specific branching.</p>
 
-<h2 id="decision">8. Decision support</h2>
+<h2 id="model" class="page-break">8. The data model</h2>
+<p>Every diagram in this section is rendered from <code>model.bim</code>, the
+semantic model the Power BI report actually loads. None of them is drawn by
+hand, and none is transcribed from a design document. That matters more than it
+sounds: a hand-maintained diagram is correct on the day it is drawn and
+plausible forever afterwards, and a diagram that quietly disagrees with the
+warehouse is worse than no diagram at all. These are generated on every build,
+so a relationship added tomorrow appears in tomorrow&rsquo;s copy, and one
+removed disappears.</p>
+
+{fig(10)}
+
+<p>The shape is a set of star schemas sharing their dimensions rather than one
+schema per subject area. <code>dim_date</code> and <code>dim_site</code> are
+the two that carry the network: because a delivery, a maintenance work order
+and a fuel transaction all resolve against the same site row and the same
+calendar day, they can be compared without anyone writing a join that
+reconciles three different notions of &ldquo;site&rdquo;.</p>
+
+{fig(11)}
+
+<p>Two things on these diagrams are absences rather than presences, and both
+are deliberate. Observability and bridge tables stand alone: they key on a
+table name, a control code or a user scope, so having no dimension is correct
+for them. A <em>fact</em> with no relationship would be a different matter
+entirely, and the generator labels that case separately rather than letting the
+two look alike.</p>
+
+{fig(12)}
+
+<p>The retail pair is where the reconciliation lives. Because
+<code>fct_retail_fuel_sales</code> and <code>agg_site_daily_fuel</code> resolve
+against the same three dimensions, the aggregate can be tied back to the
+transactions row by row &mdash; and it is, as one of the five controls that has
+to pass before a build is accepted. An aggregate built on a different set of
+keys would still produce a number every morning; it just would not be the same
+number.</p>
+
+{fig(13)}
+
+<p>The commercial diagram records a defect found while writing this chapter.
+<code>fct_commercial_orders</code> carried a <code>product_key</code> and had no
+relationship to <code>dim_product</code>, so lubricants &mdash; R20.3bn of
+revenue and the largest product line in the business &mdash; could not be
+sliced by product at all. Every figure the platform called a
+&ldquo;product&rdquo; number was silently a retail-fuel number. The
+relationship exists now, and the diagram is how it became visible.</p>
+
+{fig(14)}
+
+<p>The forecasting tables key on product name rather than on a surrogate key,
+which is a deliberate seam rather than an oversight. The warehouse owns
+surrogate keys; the ML layer is not permitted to mint them, because a model
+that invents keys quietly becomes a second source of truth for identity. Names
+are unique across all 32 products, and the relationship is validated on every
+build like any other.</p>
+
+<h2 id="decision">9. Decision support</h2>
 <p><code>network_investment_scorecard</code> scores every site by combining
 trading performance, growth, non-fuel mix, reliability, downtime, safety and
 asset condition. Percentile ranks put rand figures and incident counts on a
@@ -570,7 +680,7 @@ competitor's neighbour 200&nbsp;km away.</p>
 {df_table(wh.get('provinces_table'), 'Volume and margin by province. Only South African sites carry a province; every other market is grouped as Outside South Africa, which is the largest row.')}
 {fig(8)}
 
-<h2 id="ml">9. Machine learning</h2>
+<h2 id="ml">10. Machine learning</h2>
 <p>Six MLflow experiments: demand forecast, predictive maintenance, customer
 churn, stock-out risk, late delivery, and unsupervised forecourt anomaly
 detection. Three rules applied to all of them.</p>
@@ -596,7 +706,7 @@ explicitly: a high score means <em>unlike this site's own history</em>, not
 <em>fraudulent</em>. Most of what surfaces will be a miscalibrated meter or a
 badly closed shift, and that is still worth finding.</blockquote>
 
-<h2 id="governance">10. Governance</h2>
+<h2 id="governance">11. Governance</h2>
 <p>Unity Catalog column masks and row filters, mirrored by Power BI row-level
 security so a user sees the same rows whichever way they query.</p>
 
@@ -610,7 +720,7 @@ taken from it will disagree with the dashboard. And the row-filter scope comes
 from a table rather than hard-coded group names, so adding a region to
 someone's remit is a data change, not a deployment.</p>
 
-<h2 id="databricks" class="page-break">11. Running on Databricks</h2>
+<h2 id="databricks" class="page-break">12. Running on Databricks</h2>
 <p>The full medallion was deployed and executed on a Databricks workspace at
 portfolio scale. Bronze is generated in-platform rather than uploaded: pushing
 37 million rows over a domestic connection takes hours, and Spark produces the
@@ -618,7 +728,7 @@ same distributions on the cluster in minutes.</p>
 {dbx_table}
 {fig(9)}
 
-<h2 id="lessons">12. What I would do differently</h2>
+<h2 id="lessons">13. What I would do differently</h2>
 
 <h4>The row-count plan drove the model</h4>
 <p>Starting from &ldquo;we need 15 million rows&rdquo; produced 85 fact tables,
@@ -651,6 +761,7 @@ production streaming experience on the strength of this.</p>
 </div>
 
 </body></html>"""
+    return renumber(document)
 
 
 def render_pdf(html_path: Path, pdf_path: Path) -> bool:

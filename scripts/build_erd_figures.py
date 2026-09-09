@@ -225,6 +225,127 @@ def figure(name: str, title: str, facts: list[str], tables: dict,
     return out
 
 
+def complete(tables: dict, rels: list) -> Path:
+    """Every table and every relationship on one page.
+
+    Names only, deliberately. The subject-area diagrams carry columns; this one
+    answers a different question -- how the whole model hangs together -- and
+    23 tables with five columns each on a single page is the unreadable
+    shrink-to-fit that a complete ERD is usually criticised for. Dimensions sit
+    in a central band with facts above and below, so no edge has to cross the
+    whole page to reach its dimension.
+    """
+    targets = {r["toTable"] for r in rels}
+    sources = [t for t in tables if t not in targets]
+    dims = [t for t in tables if t in targets]
+    unrelated = [t for t in sources
+                 if not any(r["fromTable"] == t for r in rels)]
+    related = [t for t in sources if t not in unrelated]
+
+    top = related[:len(related) // 2 + len(related) % 2]
+    bottom = related[len(related) // 2 + len(related) % 2:] + unrelated
+
+    fig, ax = plt.subplots(figsize=(13.2, 7.6))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+
+    def lay(names, y, fill, edge_c, fg, style=None):
+        pos = {}
+        if not names:
+            return pos
+        span = 0.96 / len(names)
+        w = min(span * 0.88, 0.155)
+        for i, name in enumerate(names):
+            x = 0.02 + span * i + span / 2 - w / 2
+            h = 0.072
+            f, e, c = style(name) if style else (fill, edge_c, fg)
+            ax.add_patch(mpatches.FancyBboxPatch(
+                (x, y), w, h,
+                boxstyle="round,pad=0.006,rounding_size=0.012",
+                linewidth=1.0, edgecolor=e, facecolor=f, zorder=3))
+            ax.text(x + w / 2, y + h / 2, wrap_name(name, w),
+                    ha="center", va="center", fontsize=6.4,
+                    fontweight="bold", color=c, linespacing=1.1, zorder=4)
+            pos[name] = (x + w / 2, y, y + h)
+        return pos
+
+    def style(name):
+        if name.startswith(("obs_", "bridge_")):
+            return OBS_FILL, LINE, INK
+        return FACT_FILL, "#08512F", "#FFFFFF"
+
+    top_pos = lay(top, 0.815, None, None, None, style)
+    dim_pos = lay(dims, 0.470, DIM_FILL, LINE, INK)
+    bot_pos = lay(bottom, 0.085, None, None, None, style)
+    fact_pos = {**top_pos, **bot_pos}
+
+    drawn = 0
+    for r in rels:
+        f, t = r["fromTable"], r["toTable"]
+        if f not in fact_pos or t not in dim_pos:
+            continue
+        fx, fy0, fy1 = fact_pos[f]
+        dx, dy0, dy1 = dim_pos[t]
+        # From the edge of the fact that faces the dimension band.
+        y_from = fy0 if fy0 > dy1 else fy1
+        y_to = dy1 if fy0 > dy1 else dy0
+        ax.annotate("", xy=(dx, y_to), xytext=(fx, y_from),
+                    arrowprops=dict(arrowstyle="-|>", color=EDGE,
+                                    linewidth=0.7, alpha=0.75,
+                                    connectionstyle="arc3,rad=0.08",
+                                    shrinkA=1.5, shrinkB=1.5), zorder=2)
+        drawn += 1
+
+    ax.text(0.0, 0.995, "Complete model", fontsize=14, fontweight="bold",
+            color=INK, va="top")
+    ax.text(0.0, 0.955,
+            f"{len(tables)} tables and all {drawn} relationships. Facts above "
+            f"and below, conformed dimensions in the centre. Every arrow is "
+            f"many-to-one, pointing at the dimension it resolves against.",
+            fontsize=7.6, color=MUTED, va="top")
+    # Two different reasons a table has no relationship, and only one of them
+    # is a defect. Observability and bridge tables key on their own subject --
+    # a table name, a control code, a user scope -- not on a conformed
+    # dimension, so standing alone is correct for them. A *fact* with no
+    # relationship is the finding. Calling both the same thing would cry wolf
+    # on seven tables and hide the one that matters.
+    by_design = sorted(t for t in unrelated
+                       if t.startswith(("obs_", "bridge_")))
+    defects = sorted(t for t in unrelated if t not in by_design)
+    note_y = 0.930
+    if by_design:
+        ax.text(0.0, note_y,
+                f"Standalone by design ({len(by_design)}): observability and "
+                f"bridge tables key on a table name, a control code or a user "
+                f"scope rather than on a conformed dimension.",
+                fontsize=7.2, color=MUTED, va="top")
+        note_y -= 0.028
+    if defects:
+        ax.text(0.0, note_y,
+                f"Fact tables with no modelled relationship: "
+                f"{', '.join(defects)}. That is a finding, not a layout "
+                f"accident.",
+                fontsize=7.2, color="#B3341F", va="top")
+    for i, (label, fill) in enumerate((("fact", FACT_FILL),
+                                       ("dimension", DIM_FILL),
+                                       ("observability / bridge", OBS_FILL))):
+        x = 0.0 + i * 0.135
+        ax.add_patch(mpatches.Rectangle((x, 0.028), 0.016, 0.016,
+                                        facecolor=fill, edgecolor=LINE,
+                                        linewidth=0.8, zorder=4))
+        ax.text(x + 0.022, 0.036, label, fontsize=6.4, color=MUTED,
+                va="center", zorder=4)
+
+    ax.text(0.0, 0.008, CAPTION, fontsize=6.2, color=MUTED, va="top")
+
+    out = IMG / "erd_complete.png"
+    IMG.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    return out
+
+
 def overview(tables: dict, rels: list) -> Path:
     """One page showing how many tables hang off each dimension."""
     fig, ax = plt.subplots(figsize=(9.6, 5.0))
@@ -260,7 +381,7 @@ def main() -> int:
     tables, rels = load_model()
     print(f"{len(tables)} tables, {len(rels)} relationships\n")
 
-    written = [overview(tables, rels)]
+    written = [complete(tables, rels), overview(tables, rels)]
     grouped = {t for _, _, fs in GROUPS for t in fs}
     for name, title, facts in GROUPS:
         out = figure(name, title, facts, tables, rels)
