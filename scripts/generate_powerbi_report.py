@@ -1000,12 +1000,16 @@ def page_products() -> tuple[str, str, list[dict]]:
                "moving")
 
     y = row(0, 0)[0]
+    # Across every channel, not retail fuel alone. Until the four missing
+    # gold facts were built this page could only see forecourt fuel, so
+    # Convenience, LPG, Aviation and Marine all read as zero -- and marine
+    # bunkers alone are R16.6bn.
     v += kpi_row([
-        ("fct_retail_fuel_sales", "Retail Litres", "Litres sold"),
-        ("fct_retail_fuel_sales", "Retail Revenue", "Revenue"),
-        ("fct_retail_fuel_sales", "Retail Margin %", "Margin rate"),
-        ("fct_retail_fuel_sales", "Margin (c/L)", "Margin per litre"),
-        ("fct_retail_fuel_sales", "Retail Litres YoY %", "Litres vs last year"),
+        ("dim_product", "Product Revenue (all channels)", "Revenue, all channels"),
+        ("dim_product", "Product Margin (all channels)", "Margin, all channels"),
+        ("dim_product", "Product Margin % (all channels)", "Margin rate"),
+        ("fct_retail_fuel_sales", "Retail Litres", "Forecourt litres"),
+        ("fct_retail_fuel_sales", "Margin (c/L)", "Forecourt c/L"),
     ], y=y)
 
     top = row(112, 0)[0]
@@ -1013,15 +1017,15 @@ def page_products() -> tuple[str, str, list[dict]]:
     v.append(chart(
         "barChart", x, top, width, 216,
         category=[column("dim_product", "Reporting Line")],
-        values=[measure("fct_retail_fuel_sales", "Retail Litres")],
-        title="Volume by reporting line"))
+        values=[measure("dim_product", "Product Revenue (all channels)")],
+        title="Revenue by reporting line, all channels"))
 
     x, width = col(5, 4)
     v.append(chart(
         "barChart", x, top, width, 216,
         category=[column("dim_product", "Reporting Line")],
-        values=[measure("fct_retail_fuel_sales", "Margin (c/L)")],
-        title="Margin per litre by line (cents)"))
+        values=[measure("dim_product", "Product Margin % (all channels)")],
+        title="Margin rate by line"))
 
     x, width = col(9, 3)
     v.append(slicer(x, top, width, 104,
@@ -1051,12 +1055,12 @@ def page_products() -> tuple[str, str, list[dict]]:
 
     v.append(table_visual(x, mid + 112, width, 104, [
         column("dim_product", "Product Name"),
-        measure("fct_retail_fuel_sales", "Retail Litres"),
-        measure("fct_retail_fuel_sales", "Litres Share %"),
-        measure("fct_retail_fuel_sales", "Margin (c/L)"),
-        measure("fct_retail_fuel_sales", "Retail Litres YoY %"),
-    ], "Every product, ranked",
-        order_by=measure("fct_retail_fuel_sales", "Retail Litres")))
+        column("dim_product", "Reporting Line"),
+        measure("dim_product", "Product Revenue (all channels)"),
+        measure("dim_product", "Product Revenue Share %"),
+        measure("dim_product", "Product Margin % (all channels)"),
+    ], "Every product, ranked by revenue across all channels",
+        order_by=measure("dim_product", "Product Revenue (all channels)")))
     return "products", "Products", v
 
 

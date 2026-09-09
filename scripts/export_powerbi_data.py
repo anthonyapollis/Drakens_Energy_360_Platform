@@ -37,7 +37,9 @@ TABLES = {
         "agg_executive_daily_kpi", "network_investment_scorecard",
         "fct_deliveries", "fct_commercial_orders",
         "fct_maintenance_work_orders", "bridge_security_user_scope",
-        "fct_ev_charging_sessions",
+        "fct_ev_charging_sessions", "fct_shop_sales",
+        "fct_lpg_sales", "fct_aviation_sales",
+        "fct_marine_sales",
     ],
     "platform": [
         "obs_cleansing_summary", "obs_quarantine_reasons",

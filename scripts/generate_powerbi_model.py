@@ -80,6 +80,12 @@ TABLES = {
                                          schema="platform"),
     "fct_product_revenue_forecast_12m": dict(mode="import", kind="fact",
                                              schema="platform"),
+    # The four lines that had data in the cleansed layer and no gold model,
+    # so every product chart showed them at zero.
+    "fct_shop_sales":               dict(mode="import", kind="fact"),
+    "fct_lpg_sales":                dict(mode="import", kind="fact"),
+    "fct_aviation_sales":           dict(mode="import", kind="fact"),
+    "fct_marine_sales":             dict(mode="import", kind="fact"),
     # EV charging. Carries a product key now, so the Energy line is
     # reportable rather than merely present in the dimension.
     "fct_ev_charging_sessions":     dict(mode="import", kind="fact"),
@@ -265,6 +271,30 @@ RELATIONSHIPS = [
      "dim_site", "site_key", "oneDirection"),
     ("rel_ev_product", "fct_ev_charging_sessions", "product_key",
      "dim_product", "product_key", "oneDirection"),
+    ("rel_shop_date", "fct_shop_sales", "date_key",
+     "dim_date", "date_key", "oneDirection"),
+    ("rel_shop_site", "fct_shop_sales", "site_key",
+     "dim_site", "site_key", "oneDirection"),
+    ("rel_shop_product", "fct_shop_sales", "product_key",
+     "dim_product", "product_key", "oneDirection"),
+    ("rel_lpg_date", "fct_lpg_sales", "date_key",
+     "dim_date", "date_key", "oneDirection"),
+    ("rel_lpg_site", "fct_lpg_sales", "site_key",
+     "dim_site", "site_key", "oneDirection"),
+    ("rel_lpg_product", "fct_lpg_sales", "product_key",
+     "dim_product", "product_key", "oneDirection"),
+    ("rel_avi_date", "fct_aviation_sales", "date_key",
+     "dim_date", "date_key", "oneDirection"),
+    ("rel_avi_product", "fct_aviation_sales", "product_key",
+     "dim_product", "product_key", "oneDirection"),
+    ("rel_avi_customer", "fct_aviation_sales", "customer_key",
+     "dim_customer", "customer_key", "oneDirection"),
+    ("rel_mar_date", "fct_marine_sales", "date_key",
+     "dim_date", "date_key", "oneDirection"),
+    ("rel_mar_product", "fct_marine_sales", "product_key",
+     "dim_product", "product_key", "oneDirection"),
+    ("rel_mar_customer", "fct_marine_sales", "customer_key",
+     "dim_customer", "customer_key", "oneDirection"),
     ("rel_fcast12_product", "fct_product_revenue_forecast_12m", "product_name",
      "dim_product", "product_name", "oneDirection"),
     ("rel_fcast12_scores", "obs_ml_product_forecast_12m", "product_name",
@@ -558,6 +588,94 @@ MEASURES: dict[str, list[tuple[str, str, str, str]]] = {
          "SUMX ( biz, obs_ml_product_forecast_12m[mae_zar] ), "
          "SUMX ( biz, obs_ml_product_forecast_12m[naive_mae_zar] ) )",
          "0.0%", "Forecast"),
+    ],
+    "dim_product": [
+        # Revenue across every channel that sells a product, on one measure.
+        # Each term is filtered by dim_product, so slicing by reporting line
+        # picks up exactly the facts that serve it and contributes nothing
+        # from the ones that do not.
+        #
+        # Deliberately revenue and not volume: litres, kilograms and kilowatt-
+        # hours cannot be added, and a "total volume" spanning all three would
+        # be a number with no unit. Rand is the only measure every channel
+        # expresses.
+        ("Product Revenue (all channels)",
+         "[Retail Revenue] + [Commercial Revenue] + [Shop Revenue] + "
+         "[LPG Revenue] + [Aviation Revenue] + [Marine Revenue] + "
+         "[EV Revenue]", '"R"#,0', "Products"),
+        ("Product Margin (all channels)",
+         "[Retail Margin] + [Commercial Margin] + [Shop Margin] + "
+         "[LPG Margin] + [Aviation Margin] + [Marine Margin] + [EV Margin]",
+         '"R"#,0', "Products"),
+        ("Product Margin % (all channels)",
+         "DIVIDE ( [Product Margin (all channels)], "
+         "[Product Revenue (all channels)] )", "0.0%", "Products"),
+        ("Product Revenue Share %",
+         "DIVIDE ( [Product Revenue (all channels)], "
+         "CALCULATE ( [Product Revenue (all channels)], "
+         "REMOVEFILTERS ( dim_product ) ) )", "0.0%", "Products"),
+    ],
+    "fct_shop_sales": [
+        ("Shop Revenue", "SUM ( fct_shop_sales[gross_sales_zar] )",
+         '"R"#,0', "Non-fuel"),
+        ("Shop Margin", "SUM ( fct_shop_sales[gross_margin_zar] )",
+         '"R"#,0', "Non-fuel"),
+        ("Shop Margin %", "DIVIDE ( [Shop Margin], [Shop Revenue] )",
+         "0.0%", "Non-fuel"),
+        ("Shop Lines", "COUNTROWS ( fct_shop_sales )", "#,0", "Non-fuel"),
+        ("Baskets", "DISTINCTCOUNT ( fct_shop_sales[basket_id] )", "#,0",
+         "Non-fuel"),
+        ("Items per Basket",
+         "DIVIDE ( SUM ( fct_shop_sales[quantity] ), [Baskets] )",
+         "#,0.0", "Non-fuel"),
+        # The argument the whole non-fuel story rests on: forecourt fuel is
+        # price-regulated and thin, and this is where the rate is.
+        ("Non-Fuel Margin Uplift (pp)",
+         "( [Shop Margin %] - [Gross Margin %] ) * 100", "#,0.0", "Non-fuel"),
+    ],
+    "fct_lpg_sales": [
+        ("LPG Revenue", "SUM ( fct_lpg_sales[revenue_zar] )", '"R"#,0', "LPG"),
+        ("LPG Margin", "SUM ( fct_lpg_sales[gross_margin_zar] )", '"R"#,0',
+         "LPG"),
+        # Kilograms. Never added to litres or kWh.
+        ("LPG Mass (kg)", "SUM ( fct_lpg_sales[quantity_kg] )", "#,0", "LPG"),
+        ("LPG Margin per kg",
+         "DIVIDE ( [LPG Margin], [LPG Mass (kg)] )", '"R"#,0.00', "LPG"),
+        ("LPG Winter Share %",
+         "DIVIDE ( CALCULATE ( [LPG Mass (kg)], "
+         "fct_lpg_sales[is_winter_peak] = TRUE ), [LPG Mass (kg)] )",
+         "0.0%", "LPG"),
+    ],
+    "fct_aviation_sales": [
+        ("Aviation Revenue", "SUM ( fct_aviation_sales[revenue_zar] )",
+         '"R"#,0', "Aviation and marine"),
+        ("Aviation Margin", "SUM ( fct_aviation_sales[gross_margin_zar] )",
+         '"R"#,0', "Aviation and marine"),
+        ("Aviation Uplift (L)", "SUM ( fct_aviation_sales[uplift_litres] )",
+         "#,0", "Aviation and marine"),
+        ("Aviation Margin (c/L)",
+         "DIVIDE ( [Aviation Margin], [Aviation Uplift (L)] ) * 100",
+         "#,0.0", "Aviation and marine"),
+        ("Into-Plane Share %",
+         "DIVIDE ( CALCULATE ( [Aviation Uplift (L)], "
+         "fct_aviation_sales[is_into_plane] = TRUE ), "
+         "[Aviation Uplift (L)] )", "0.0%", "Aviation and marine"),
+    ],
+    "fct_marine_sales": [
+        ("Marine Revenue", "SUM ( fct_marine_sales[revenue_zar] )",
+         '"R"#,0', "Aviation and marine"),
+        ("Marine Margin", "SUM ( fct_marine_sales[gross_margin_zar] )",
+         '"R"#,0', "Aviation and marine"),
+        ("Bunker Volume (L)", "SUM ( fct_marine_sales[bunker_litres] )",
+         "#,0", "Aviation and marine"),
+        ("Marine Margin (c/L)",
+         "DIVIDE ( [Marine Margin], [Bunker Volume (L)] ) * 100",
+         "#,0.0", "Aviation and marine"),
+        # The only compliance question anyone asks of a bunker book.
+        ("IMO 2020 Compliant %",
+         "DIVIDE ( CALCULATE ( [Bunker Volume (L)], "
+         "fct_marine_sales[is_imo2020_compliant] = TRUE ), "
+         "[Bunker Volume (L)] )", "0.0%", "Aviation and marine"),
     ],
     "fct_ev_charging_sessions": [
         ("EV Sessions", "COUNTROWS ( fct_ev_charging_sessions )", "#,0",

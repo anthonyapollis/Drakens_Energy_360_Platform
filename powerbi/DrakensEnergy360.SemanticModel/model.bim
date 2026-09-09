@@ -573,6 +573,32 @@
             "isHidden": true
           }
         ],
+        "measures": [
+          {
+            "name": "Product Revenue (all channels)",
+            "expression": "[Retail Revenue] + [Commercial Revenue] + [Shop Revenue] + [LPG Revenue] + [Aviation Revenue] + [Marine Revenue] + [EV Revenue]",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Product Margin (all channels)",
+            "expression": "[Retail Margin] + [Commercial Margin] + [Shop Margin] + [LPG Margin] + [Aviation Margin] + [Marine Margin] + [EV Margin]",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Product Margin % (all channels)",
+            "expression": "DIVIDE ( [Product Margin (all channels)], [Product Revenue (all channels)] )",
+            "formatString": "0.0%",
+            "displayFolder": "Products"
+          },
+          {
+            "name": "Product Revenue Share %",
+            "expression": "DIVIDE ( [Product Revenue (all channels)], CALCULATE ( [Product Revenue (all channels)], REMOVEFILTERS ( dim_product ) ) )",
+            "formatString": "0.0%",
+            "displayFolder": "Products"
+          }
+        ],
         "partitions": [
           {
             "name": "dim_product",
@@ -3292,6 +3318,1010 @@
         ]
       },
       {
+        "name": "fct_shop_sales",
+        "columns": [
+          {
+            "name": "Shop Line ID",
+            "dataType": "string",
+            "sourceColumn": "shop_line_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Basket ID",
+            "dataType": "string",
+            "sourceColumn": "basket_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Transaction Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "transaction_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Time Key",
+            "dataType": "int64",
+            "sourceColumn": "time_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Site Type",
+            "dataType": "string",
+            "sourceColumn": "site_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Category",
+            "dataType": "string",
+            "sourceColumn": "category",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Subcategory",
+            "dataType": "string",
+            "sourceColumn": "subcategory",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Site",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_site",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Product",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_product",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Promotion Applied",
+            "dataType": "boolean",
+            "sourceColumn": "promotion_applied",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Payment Method",
+            "dataType": "string",
+            "sourceColumn": "payment_method",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Quantity",
+            "dataType": "int64",
+            "sourceColumn": "quantity",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Unit Price (R)",
+            "dataType": "decimal",
+            "sourceColumn": "unit_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Sales (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_sales_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Line Margin %",
+            "dataType": "double",
+            "sourceColumn": "line_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Shop Revenue",
+            "expression": "SUM ( fct_shop_sales[Gross Sales (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Non-fuel"
+          },
+          {
+            "name": "Shop Margin",
+            "expression": "SUM ( fct_shop_sales[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Non-fuel"
+          },
+          {
+            "name": "Shop Margin %",
+            "expression": "DIVIDE ( [Shop Margin], [Shop Revenue] )",
+            "formatString": "0.0%",
+            "displayFolder": "Non-fuel"
+          },
+          {
+            "name": "Shop Lines",
+            "expression": "COUNTROWS ( fct_shop_sales )",
+            "formatString": "#,0",
+            "displayFolder": "Non-fuel"
+          },
+          {
+            "name": "Baskets",
+            "expression": "DISTINCTCOUNT ( fct_shop_sales[Basket ID] )",
+            "formatString": "#,0",
+            "displayFolder": "Non-fuel"
+          },
+          {
+            "name": "Items per Basket",
+            "expression": "DIVIDE ( SUM ( fct_shop_sales[Quantity] ), [Baskets] )",
+            "formatString": "#,0.0",
+            "displayFolder": "Non-fuel"
+          },
+          {
+            "name": "Non-Fuel Margin Uplift (pp)",
+            "expression": "( [Shop Margin %] - [Gross Margin %] ) * 100",
+            "formatString": "#,0.0",
+            "displayFolder": "Non-fuel"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_shop_sales",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_shop_sales.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"shop_line_id\", \"basket_id\", \"transaction_ts\", \"date_key\", \"time_key\", \"site_key\", \"product_key\", \"site_id\", \"product_id\", \"province\", \"city\", \"country_code\", \"urban_class\", \"site_type\", \"product_name\", \"category\", \"subcategory\", \"reporting_line\", \"is_unmatched_site\", \"is_unmatched_product\", \"promotion_applied\", \"payment_method\", \"quantity\", \"unit_price_zar\", \"gross_sales_zar\", \"cogs_zar\", \"gross_margin_zar\", \"line_margin_pct\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"shop_line_id\", type text}, {\"basket_id\", type text}, {\"transaction_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"time_key\", Int64.Type}, {\"site_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"site_id\", type text}, {\"product_id\", type text}, {\"province\", type text}, {\"city\", type text}, {\"country_code\", type text}, {\"urban_class\", type text}, {\"site_type\", type text}, {\"product_name\", type text}, {\"category\", type text}, {\"subcategory\", type text}, {\"reporting_line\", type text}, {\"is_unmatched_site\", type logical}, {\"is_unmatched_product\", type logical}, {\"promotion_applied\", type logical}, {\"payment_method\", type text}, {\"quantity\", Int64.Type}, {\"unit_price_zar\", type number}, {\"gross_sales_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"line_margin_pct\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_lpg_sales",
+        "columns": [
+          {
+            "name": "LPG Sale ID",
+            "dataType": "string",
+            "sourceColumn": "lpg_sale_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sale Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "sale_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site Key",
+            "dataType": "int64",
+            "sourceColumn": "site_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Site ID",
+            "dataType": "string",
+            "sourceColumn": "site_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer ID",
+            "dataType": "string",
+            "sourceColumn": "customer_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Cylinder Type Code",
+            "dataType": "string",
+            "sourceColumn": "cylinder_type_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Province",
+            "dataType": "string",
+            "sourceColumn": "province",
+            "summarizeBy": "none",
+            "dataCategory": "StateOrProvince"
+          },
+          {
+            "name": "City",
+            "dataType": "string",
+            "sourceColumn": "city",
+            "summarizeBy": "none",
+            "dataCategory": "City"
+          },
+          {
+            "name": "Country Code",
+            "dataType": "string",
+            "sourceColumn": "country_code",
+            "summarizeBy": "none",
+            "dataCategory": "Country"
+          },
+          {
+            "name": "Urban Class",
+            "dataType": "string",
+            "sourceColumn": "urban_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Cylinder Size",
+            "dataType": "string",
+            "sourceColumn": "cylinder_size",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Site",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_site",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Product",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_product",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Channel",
+            "dataType": "string",
+            "sourceColumn": "channel",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Winter Peak",
+            "dataType": "boolean",
+            "sourceColumn": "is_winter_peak",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Quantity kg",
+            "dataType": "double",
+            "sourceColumn": "quantity_kg",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Unit Price (R)",
+            "dataType": "decimal",
+            "sourceColumn": "unit_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Line Margin %",
+            "dataType": "double",
+            "sourceColumn": "line_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Margin (R) Per kg",
+            "dataType": "double",
+            "sourceColumn": "margin_zar_per_kg",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "LPG Revenue",
+            "expression": "SUM ( fct_lpg_sales[Revenue (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "LPG"
+          },
+          {
+            "name": "LPG Margin",
+            "expression": "SUM ( fct_lpg_sales[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "LPG"
+          },
+          {
+            "name": "LPG Mass (kg)",
+            "expression": "SUM ( fct_lpg_sales[Quantity kg] )",
+            "formatString": "#,0",
+            "displayFolder": "LPG"
+          },
+          {
+            "name": "LPG Margin per kg",
+            "expression": "DIVIDE ( [LPG Margin], [LPG Mass (kg)] )",
+            "formatString": "\"R\"#,0.00",
+            "displayFolder": "LPG"
+          },
+          {
+            "name": "LPG Winter Share %",
+            "expression": "DIVIDE ( CALCULATE ( [LPG Mass (kg)], fct_lpg_sales[Is Winter Peak] = TRUE ), [LPG Mass (kg)] )",
+            "formatString": "0.0%",
+            "displayFolder": "LPG"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_lpg_sales",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_lpg_sales.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"lpg_sale_id\", \"sale_ts\", \"date_key\", \"site_key\", \"product_key\", \"site_id\", \"product_id\", \"customer_id\", \"cylinder_type_code\", \"province\", \"city\", \"country_code\", \"urban_class\", \"product_name\", \"cylinder_size\", \"reporting_line\", \"is_unmatched_site\", \"is_unmatched_product\", \"channel\", \"is_winter_peak\", \"quantity_kg\", \"unit_price_zar\", \"revenue_zar\", \"cogs_zar\", \"gross_margin_zar\", \"line_margin_pct\", \"margin_zar_per_kg\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"lpg_sale_id\", type text}, {\"sale_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"site_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"site_id\", type text}, {\"product_id\", type text}, {\"customer_id\", type text}, {\"cylinder_type_code\", type text}, {\"province\", type text}, {\"city\", type text}, {\"country_code\", type text}, {\"urban_class\", type text}, {\"product_name\", type text}, {\"cylinder_size\", type text}, {\"reporting_line\", type text}, {\"is_unmatched_site\", type logical}, {\"is_unmatched_product\", type logical}, {\"channel\", type text}, {\"is_winter_peak\", type logical}, {\"quantity_kg\", type number}, {\"unit_price_zar\", type number}, {\"revenue_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"line_margin_pct\", type number}, {\"margin_zar_per_kg\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_aviation_sales",
+        "columns": [
+          {
+            "name": "Aviation Sale ID",
+            "dataType": "string",
+            "sourceColumn": "aviation_sale_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sale Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "sale_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Customer Key",
+            "dataType": "int64",
+            "sourceColumn": "customer_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer ID",
+            "dataType": "string",
+            "sourceColumn": "customer_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Airport Code",
+            "dataType": "string",
+            "sourceColumn": "airport_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Airline Code",
+            "dataType": "string",
+            "sourceColumn": "airline_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fuel Grade",
+            "dataType": "string",
+            "sourceColumn": "fuel_grade",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer Name",
+            "dataType": "string",
+            "sourceColumn": "customer_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sector",
+            "dataType": "string",
+            "sourceColumn": "sector",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Credit Band",
+            "dataType": "string",
+            "sourceColumn": "credit_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Product",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_product",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Customer",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_customer",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Flight Type",
+            "dataType": "string",
+            "sourceColumn": "flight_type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Into Plane",
+            "dataType": "boolean",
+            "sourceColumn": "is_into_plane",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Uplift Litres",
+            "dataType": "double",
+            "sourceColumn": "uplift_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Unit Price (R)",
+            "dataType": "decimal",
+            "sourceColumn": "unit_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Line Margin %",
+            "dataType": "double",
+            "sourceColumn": "line_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Aviation Revenue",
+            "expression": "SUM ( fct_aviation_sales[Revenue (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Aviation Margin",
+            "expression": "SUM ( fct_aviation_sales[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Aviation Uplift (L)",
+            "expression": "SUM ( fct_aviation_sales[Uplift Litres] )",
+            "formatString": "#,0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Aviation Margin (c/L)",
+            "expression": "DIVIDE ( [Aviation Margin], [Aviation Uplift (L)] ) * 100",
+            "formatString": "#,0.0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Into-Plane Share %",
+            "expression": "DIVIDE ( CALCULATE ( [Aviation Uplift (L)], fct_aviation_sales[Is Into Plane] = TRUE ), [Aviation Uplift (L)] )",
+            "formatString": "0.0%",
+            "displayFolder": "Aviation and marine"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_aviation_sales",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_aviation_sales.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"aviation_sale_id\", \"sale_ts\", \"date_key\", \"product_key\", \"customer_key\", \"product_id\", \"customer_id\", \"airport_code\", \"airline_code\", \"product_name\", \"fuel_grade\", \"reporting_line\", \"customer_name\", \"sector\", \"credit_band\", \"is_unmatched_product\", \"is_unmatched_customer\", \"flight_type\", \"is_into_plane\", \"uplift_litres\", \"unit_price_zar\", \"revenue_zar\", \"cogs_zar\", \"gross_margin_zar\", \"line_margin_pct\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"aviation_sale_id\", type text}, {\"sale_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"customer_key\", Int64.Type}, {\"product_id\", type text}, {\"customer_id\", type text}, {\"airport_code\", type text}, {\"airline_code\", type text}, {\"product_name\", type text}, {\"fuel_grade\", type text}, {\"reporting_line\", type text}, {\"customer_name\", type text}, {\"sector\", type text}, {\"credit_band\", type text}, {\"is_unmatched_product\", type logical}, {\"is_unmatched_customer\", type logical}, {\"flight_type\", type text}, {\"is_into_plane\", type logical}, {\"uplift_litres\", type number}, {\"unit_price_zar\", type number}, {\"revenue_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"line_margin_pct\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "fct_marine_sales",
+        "columns": [
+          {
+            "name": "Marine Sale ID",
+            "dataType": "string",
+            "sourceColumn": "marine_sale_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sale Timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "sale_ts",
+            "summarizeBy": "none",
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Date Key",
+            "dataType": "int64",
+            "sourceColumn": "date_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product Key",
+            "dataType": "int64",
+            "sourceColumn": "product_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Customer Key",
+            "dataType": "int64",
+            "sourceColumn": "customer_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "Product ID",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer ID",
+            "dataType": "string",
+            "sourceColumn": "customer_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Port Code",
+            "dataType": "string",
+            "sourceColumn": "port_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Vessel Imo",
+            "dataType": "string",
+            "sourceColumn": "vessel_imo",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Vessel Class",
+            "dataType": "string",
+            "sourceColumn": "vessel_class",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Product Name",
+            "dataType": "string",
+            "sourceColumn": "product_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Fuel Grade",
+            "dataType": "string",
+            "sourceColumn": "fuel_grade",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Reporting Line",
+            "dataType": "string",
+            "sourceColumn": "reporting_line",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Customer Name",
+            "dataType": "string",
+            "sourceColumn": "customer_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sector",
+            "dataType": "string",
+            "sourceColumn": "sector",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Credit Band",
+            "dataType": "string",
+            "sourceColumn": "credit_band",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Product",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_product",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Is Unmatched Customer",
+            "dataType": "boolean",
+            "sourceColumn": "is_unmatched_customer",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Sulphur %",
+            "dataType": "double",
+            "sourceColumn": "sulphur_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Is Imo2020 Compliant",
+            "dataType": "boolean",
+            "sourceColumn": "is_imo2020_compliant",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Bunker Litres",
+            "dataType": "double",
+            "sourceColumn": "bunker_litres",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "Unit Price (R)",
+            "dataType": "decimal",
+            "sourceColumn": "unit_price_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Revenue (R)",
+            "dataType": "decimal",
+            "sourceColumn": "revenue_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Cogs (R)",
+            "dataType": "decimal",
+            "sourceColumn": "cogs_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Gross Margin (R)",
+            "dataType": "decimal",
+            "sourceColumn": "gross_margin_zar",
+            "summarizeBy": "sum",
+            "formatString": "\"R\"#,0.00"
+          },
+          {
+            "name": "Line Margin %",
+            "dataType": "double",
+            "sourceColumn": "line_margin_pct",
+            "summarizeBy": "none",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Source System Code",
+            "dataType": "string",
+            "sourceColumn": "source_system_code",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Ingested At",
+            "dataType": "dateTime",
+            "sourceColumn": "ingested_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          },
+          {
+            "name": "Cleansed At",
+            "dataType": "dateTime",
+            "sourceColumn": "_cleansed_at",
+            "summarizeBy": "none",
+            "isHidden": true,
+            "formatString": "yyyy-mm-dd"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Marine Revenue",
+            "expression": "SUM ( fct_marine_sales[Revenue (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Marine Margin",
+            "expression": "SUM ( fct_marine_sales[Gross Margin (R)] )",
+            "formatString": "\"R\"#,0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Bunker Volume (L)",
+            "expression": "SUM ( fct_marine_sales[Bunker Litres] )",
+            "formatString": "#,0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "Marine Margin (c/L)",
+            "expression": "DIVIDE ( [Marine Margin], [Bunker Volume (L)] ) * 100",
+            "formatString": "#,0.0",
+            "displayFolder": "Aviation and marine"
+          },
+          {
+            "name": "IMO 2020 Compliant %",
+            "expression": "DIVIDE ( CALCULATE ( [Bunker Volume (L)], fct_marine_sales[Is Imo2020 Compliant] = TRUE ), [Bunker Volume (L)] )",
+            "formatString": "0.0%",
+            "displayFolder": "Aviation and marine"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "fct_marine_sales",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Path    = DataFolder & \"fct_marine_sales.csv\",",
+                "    Source  = Csv.Document(File.Contents(Path), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    Chosen  = Table.SelectColumns(Headers, {\"marine_sale_id\", \"sale_ts\", \"date_key\", \"product_key\", \"customer_key\", \"product_id\", \"customer_id\", \"port_code\", \"vessel_imo\", \"vessel_class\", \"product_name\", \"fuel_grade\", \"reporting_line\", \"customer_name\", \"sector\", \"credit_band\", \"is_unmatched_product\", \"is_unmatched_customer\", \"sulphur_pct\", \"is_imo2020_compliant\", \"bunker_litres\", \"unit_price_zar\", \"revenue_zar\", \"cogs_zar\", \"gross_margin_zar\", \"line_margin_pct\", \"source_system_code\", \"ingested_at\", \"_cleansed_at\"}),",
+                "    Typed   = Table.TransformColumnTypes(Chosen, {{\"marine_sale_id\", type text}, {\"sale_ts\", type datetime}, {\"date_key\", Int64.Type}, {\"product_key\", Int64.Type}, {\"customer_key\", Int64.Type}, {\"product_id\", type text}, {\"customer_id\", type text}, {\"port_code\", type text}, {\"vessel_imo\", type text}, {\"vessel_class\", type text}, {\"product_name\", type text}, {\"fuel_grade\", type text}, {\"reporting_line\", type text}, {\"customer_name\", type text}, {\"sector\", type text}, {\"credit_band\", type text}, {\"is_unmatched_product\", type logical}, {\"is_unmatched_customer\", type logical}, {\"sulphur_pct\", type number}, {\"is_imo2020_compliant\", type logical}, {\"bunker_litres\", type number}, {\"unit_price_zar\", type number}, {\"revenue_zar\", type number}, {\"cogs_zar\", type number}, {\"gross_margin_zar\", type number}, {\"line_margin_pct\", type number}, {\"source_system_code\", type text}, {\"ingested_at\", type datetime}, {\"_cleansed_at\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
         "name": "fct_ev_charging_sessions",
         "columns": [
           {
@@ -4943,6 +5973,102 @@
         "fromColumn": "Product Key",
         "toTable": "dim_product",
         "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_shop_date",
+        "fromTable": "fct_shop_sales",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_shop_site",
+        "fromTable": "fct_shop_sales",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_shop_product",
+        "fromTable": "fct_shop_sales",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_lpg_date",
+        "fromTable": "fct_lpg_sales",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_lpg_site",
+        "fromTable": "fct_lpg_sales",
+        "fromColumn": "Site Key",
+        "toTable": "dim_site",
+        "toColumn": "Site Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_lpg_product",
+        "fromTable": "fct_lpg_sales",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_avi_date",
+        "fromTable": "fct_aviation_sales",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_avi_product",
+        "fromTable": "fct_aviation_sales",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_avi_customer",
+        "fromTable": "fct_aviation_sales",
+        "fromColumn": "Customer Key",
+        "toTable": "dim_customer",
+        "toColumn": "Customer Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_mar_date",
+        "fromTable": "fct_marine_sales",
+        "fromColumn": "Date Key",
+        "toTable": "dim_date",
+        "toColumn": "Date Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_mar_product",
+        "fromTable": "fct_marine_sales",
+        "fromColumn": "Product Key",
+        "toTable": "dim_product",
+        "toColumn": "Product Key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "rel_mar_customer",
+        "fromTable": "fct_marine_sales",
+        "fromColumn": "Customer Key",
+        "toTable": "dim_customer",
+        "toColumn": "Customer Key",
         "crossFilteringBehavior": "oneDirection"
       },
       {

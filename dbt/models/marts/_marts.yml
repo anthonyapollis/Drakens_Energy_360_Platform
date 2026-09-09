@@ -208,3 +208,111 @@ models:
         data_tests:
           - accepted_values:
               arguments: {values: [true], quote: false}
+
+  - name: fct_shop_sales
+    description: >
+      One row per convenience shop sales line. The non-fuel margin book:
+      forecourt fuel is price-regulated and thin, and this is where the rate
+      is, so the two are reported separately rather than blended.
+    columns:
+      - name: shop_line_id
+        data_tests: [unique, not_null]
+      - name: site_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_site')
+                field: site_key
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: gross_sales_zar
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: true}
+
+  - name: fct_lpg_sales
+    description: >
+      One row per LPG sales line. Measured in kilograms, which is never added
+      to litres or kilowatt-hours: a total spanning all three has no unit.
+    columns:
+      - name: lpg_sale_id
+        data_tests: [unique, not_null]
+      - name: site_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_site')
+                field: site_key
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: quantity_kg
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: true}
+
+  - name: fct_aviation_sales
+    description: >
+      One row per aviation fuel uplift. Deliberately carries no site key: an
+      uplift happens at an airport, not a service station, and a fact that has
+      no site is a different thing from a fact whose site did not resolve.
+    columns:
+      - name: aviation_sale_id
+        data_tests: [unique, not_null]
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: uplift_litres
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: true}
+
+  - name: fct_marine_sales
+    description: >
+      One row per marine bunker sale. sulphur_pct is carried because it is the
+      regulatory attribute: IMO 2020 caps sulphur at 0.50% outside emission
+      control areas, and a bunker book that cannot report on it cannot answer
+      the compliance question.
+    columns:
+      - name: marine_sale_id
+        data_tests: [unique, not_null]
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: bunker_litres
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: true}
